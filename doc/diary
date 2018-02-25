@@ -55,3 +55,8 @@ Byte access had some minor complications because of two chips
 being involved in storing 32-bit data, each with two byte
 enable lines (and, on top of that, negative logic being used
 everywhere). But now it seems to work.
+
+25-Feb-2018
+After determining the memory map of the system, I have now
+RAM and PROM simulations running. Even I/O is detected and
+directed to two dummy simulation routines.
