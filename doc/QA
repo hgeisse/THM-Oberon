@@ -1,0 +1,43 @@
+Questions and Answers
+---------------------
+
+Q: What is the byte order of the RISC machine?
+A: Little-endian
+S: Confirmed
+
+Q: Is I/O memory-mapped?
+A: Yes
+S: Confirmed
+
+Q: What is the memory map of the system?
+A: ?
+S: ?
+
+Q: Does the PC hold a byte address or a word address?
+A: This is a word address, 22 bits wide (RISC5.v):
+   assign nxpc = PC + 1;
+   assign pcmux = ... : nxpc;
+   PC <= pcmux;
+S: Confirmed
+
+Q: The first instruction fetch after reset is at which address?
+A: Memory address 0xFFE000 (PC = 0x3FF800)
+S: Confirmed
+
+Q: The memory is byte addressed. What happens if during a word access
+   the least significant two bits of the address are not both zero?
+A: ?
+S: ?
+
+Q: What is the exact meaning of a branch (with link) to register R15?
+A: ?
+S: ?
+
+Q: Is the link always stored or only in case the condition is true?
+A: Only in case the condition is true (RISC5.v):
+   assign regwr = ... | (BR & cond & v & ~stallX);
+S: ?
+
+Q: Is the offset within memory instructions a signed offset?
+A: Yes
+S: Confirmed

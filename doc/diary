@@ -1,0 +1,57 @@
+15-Feb-2018
+I discovered the revival of Wirth's Oberon which took place
+in 2013. It's even running on an FPGA - very nice! There may
+be two ways to get it running on my Terasic DE2-115 board:
+a) port the RISC5 system to my board or
+b) modify the code generator to produce ECO32 instructions.
+(ECO32 is a RISC processor which already has implementations
+running on this specific board).
+
+16-Feb-2018
+Downloaded. It is not clear for me, what exactly needs to be
+copied from Wirth's FPGA work. In the Oberon section of his
+website there is an implementation of his RISC5 system, but
+essentially no documentation. In the section "FPGA-related
+Work" some explanation of the architectures RISC0..RISC5 is
+present, but I don't know the exact connection to Oberon.
+
+17-Feb-2018
+Project "THM-Oberon" started.
+
+20-Feb-2018
+If one wants to bring up an Oberon system on a specific FPGA
+board, at least two important parts are missing on Wirth's
+personal "Project Oberon" website:
+a) the system in an executable format (e.g., as a disk image)
+b) a simulation (or at least an exact specification) of the
+RISC processor and its peripherals, which can execute the disk
+image. This is necessary because a running Oberon system is
+needed to adapt the software to the hardware which is intended
+to be used. The given Verilog implementation is not suitable for
+this task, because it is tightly coupled to specific hardware,
+which may not be available for a new user.
+It is therefore mandatory for an "Oberon Kit" to include these
+two items in addition to the complete sources of the system.
+
+21-Feb-2018
+RISC simulator started. There are a bunch of questions which
+must be answered in order to write a reliable simulator, but
+their answers are nowhere explicitly stated. "Questions and
+Answers" started.
+
+22-Feb-2018
+The simulator should get a command line interpreter which can
+execute a few (but much needed) debugging commands. Started.
+
+23-Feb-2018
+I managed to simulate Wirth's original hardware design with
+Icarus Verilog, but only the CPU proper and a very simple
+main memory simulation. This should make answering some of
+the questions a lot easier. I will add byte access to main
+memory. This needs a more exact simulation of the RAM chips.
+
+24-Feb-2018
+Byte access had some minor complications because of two chips
+being involved in storing 32-bit data, each with two byte
+enable lines (and, on top of that, negative logic being used
+everywhere). But now it seems to work.

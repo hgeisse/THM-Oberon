@@ -1,0 +1,17 @@
+1) Changes
+
+There are two changes in PROM.v (to avoid a warning from Icarus
+and adjust the path to the PROM contents file):
+
+7,8c7,8
+< reg [31:0] mem [511: 0];
+< initial $readmemh("../prom.mem", mem);
+---
+> reg [31:0] mem [0:511];
+> initial $readmemh("prom.mem", mem);
+
+
+2) Usage
+
+Copy the desired PROM from subdirectory "proms" to a file with
+name "prom.mem" in this directory, then simply "make" the project.
