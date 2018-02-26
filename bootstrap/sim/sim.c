@@ -229,36 +229,37 @@ static Bool run;		/* CPU runs continuously if true */
 
 static void execNextInstruction(void) {
   Word ir;
-  int fmt, u, v;
+  int pq, u, v;
   int a, b, op, c;
-  int imm16, imm20, imm24;
+  int imm;
   Word n, aux;
+  Bool cond;
 
   ir = readWord(pc << 2);
   pc++;
-  fmt = (ir >> 30) & 0x03;
+  pq = (ir >> 30) & 0x03;
   u = (ir >> 29) & 0x01;
   v = (ir >> 28) & 0x01;
   a = (ir >> 24) & 0x0F;
   b = (ir >> 20) & 0x0F;
   op = (ir >> 16) & 0x0F;
   c = ir & 0x0F;
-  switch (fmt) {
+  switch (pq) {
     case 0:
     case 1:
       /* register instructions */
-      imm16 = ir & 0xFFFF;
-      if (fmt == 0) {
+      imm = ir & 0x0000FFFF;
+      if (pq == 0) {
         /* second operand is register value */
         n = reg[c];
       } else {
         /* second operand is immediate value */
         if (v == 0) {
           /* extend with zeros */
-          n = imm16;
+          n = imm;
         } else {
           /* extend with ones */
-          n = 0xFFFF0000 | imm16;
+          n = 0xFFFF0000 | imm;
         }
       }
       switch (op) {
@@ -332,7 +333,7 @@ static void execNextInstruction(void) {
       break;
     case 2:
       /* memory instructions */
-      imm20 = ir & 0xFFFFF;
+      imm = ir & 0x000FFFFF;
       if (u) {
         /* store */
         if (v) {
@@ -355,35 +356,46 @@ static void execNextInstruction(void) {
       break;
     case 3:
       /* branch instructions */
-      error("no branch instructions yet");
-      imm24 = ir & 0xFFFFFF;
-      if ((a == 0x00 && N) ||
-          (a == 0x01 && Z) ||
-          (a == 0x02 && C) ||
-          (a == 0x03 && V) ||
-          (a == 0x04 && (!C || Z)) ||
-          (a == 0x05 && (N != V)) ||
-          (a == 0x06 && (N != V || Z)) ||
-          (a == 0x07 && true) ||
-          (a == 0x08 && !N) ||
-          (a == 0x09 && !Z) ||
-          (a == 0x0A && !C) ||
-          (a == 0x0B && !V) ||
-          (a == 0x0C && !(!C || Z)) ||
-          (a == 0x0D && !(N != V)) ||
-          (a == 0x0E && !(N != V || Z)) ||
-          (a == 0x0F && false)) {
+      imm = ir & 0x00FFFFFF;
+      cond = (a >> 3) & 1;
+      switch (a & 7) {
+        case 0:
+          cond ^= N;
+          break;
+        case 1:
+          cond ^= Z;
+          break;
+        case 2:
+          cond ^= C;
+          break;
+        case 3:
+          cond ^= V;
+          break;
+        case 4:
+          cond ^= (C ^ 1) | Z;
+          break;
+        case 5:
+          cond ^= N ^ V;
+          break;
+        case 6:
+          cond ^= (N ^ V) | Z;
+          break;
+        case 7:
+          cond ^= true;
+          break;
+      }
+      if (cond) {
         /* take the branch */
-        aux = pc;
+        aux = pc << 2;
         if (u) {
           /* target is pc + off */
-          pc += SIGN_EXT_24(imm24);
+          pc += SIGN_EXT_24(imm);
         } else {
           /* target is reg[c] */
-          pc = reg[c];
+          pc = reg[c] >> 2;
         }
         if (v) {
-          /* set link */
+          /* set link register */
           reg[15] = aux;
         }
       }
@@ -570,72 +582,78 @@ static void disasmF2(Word instr) {
 static void disasmF3(Word instr, Word locus) {
   char *cond;
   int c;
-  Word offset;
+  int offset;
   Word target;
 
   switch ((instr >> 24) & 0x0F) {
-    case 0x0:
+    case 0x00:
       cond = "MI";
       break;
-    case 0x1:
+    case 0x01:
       cond = "EQ";
       break;
-    case 0x2:
+    case 0x02:
       cond = "CS";
       break;
-    case 0x3:
+    case 0x03:
       cond = "VS";
       break;
-    case 0x4:
+    case 0x04:
       cond = "LS";
       break;
-    case 0x5:
+    case 0x05:
       cond = "LT";
       break;
-    case 0x6:
+    case 0x06:
       cond = "LE";
       break;
-    case 0x7:
+    case 0x07:
       cond = "";
       break;
-    case 0x8:
+    case 0x08:
       cond = "PL";
       break;
-    case 0x9:
+    case 0x09:
       cond = "NE";
       break;
-    case 0xA:
+    case 0x0A:
       cond = "CC";
       break;
-    case 0xB:
+    case 0x0B:
       cond = "VC";
       break;
-    case 0xC:
+    case 0x0C:
       cond = "HI";
       break;
-    case 0xD:
+    case 0x0D:
       cond = "GE";
       break;
-    case 0xE:
+    case 0x0E:
       cond = "GT";
       break;
-    case 0xF:
+    case 0x0F:
       cond = "NVR";
       break;
   }
   if (((instr >> 29) & 1) == 0) {
+    /* branch target is in register */
     c = instr & 0x0F;
     if (((instr >> 28) & 1) == 0) {
+      /* branch */
       sprintf(instrBuffer, "B%-6s R%d", cond, c);
     } else {
+      /* call */
       sprintf(instrBuffer, "C%-6s R%d", cond, c);
     }
   } else {
-    offset = SIGN_EXT_24(instr & 0xFFFFFF);
+    /* branch target is pc + 1 + offset */
+    offset = SIGN_EXT_24(instr & 0x00FFFFFF);
     target = ((locus >> 2) + 1 + offset) << 2;
     if (((instr >> 28) & 1) == 0) {
+      /* branch */
       sprintf(instrBuffer, "B%-6s %08X", cond, target);
     } else {
+      /* call */
       sprintf(instrBuffer, "C%-6s %08X", cond, target);
     }
   }

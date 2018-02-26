@@ -41,3 +41,15 @@ S: ?
 Q: Is the offset within memory instructions a signed offset?
 A: Yes
 S: Confirmed
+
+Q: What is stored in the link register R15, a word or a byte address?
+A: The return address is stored as a byte address.
+S: Confirmed
+
+Q: A register's contents used as branch target: word or byte address?
+A: According to the previous question, this must be a byte address.
+S: Confirmed
+
+Q: What is the exact meaning of the C flag?
+A: ?
+S: ?
