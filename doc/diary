@@ -60,3 +60,6 @@ everywhere). But now it seems to work.
 After determining the memory map of the system, I have now
 RAM and PROM simulations running. Even I/O is detected and
 directed to two dummy simulation routines.
+
+27-Feb-2018
+Oberon-0 scanner working.
