@@ -1,9 +1,11 @@
+(*
 OSP.Compile @
 TestOberon0.Permutations 2 3 4~
 TestOberon0.MagicSquares  3~.
 TestOberon0.PrimeNumbers 12
 TestOberon0.Fractions 16
 TestOberon0.Powers 16
+*)
 
 MODULE TestOberon0;
   VAR n: INTEGER;
