@@ -62,4 +62,26 @@ RAM and PROM simulations running. Even I/O is detected and
 directed to two dummy simulation routines.
 
 27-Feb-2018
-Oberon-0 scanner working.
+Started work on an Oberon-0 cross-compiler.
+The Oberon-0 scanner is working.
+Work on Oberon-0 parser started.
+*** BUT: The given syntax for Oberon-0 is not LL(1)! Both
+'Assigment' as well as 'ProcedureCall' may begin with an
+identifier. There is a way to distinguish both cases,
+however: the token following the identifier must be '.',
+'[', or ':=' in case of an assignment.
+
+28-Feb-2018
+Problems with the Oberon-0 syntax:
+a) In a procedure call, what should a '*' instead of actual
+parameters mean? I guess that it's misplaced in the grammar
+(see b) below). My solution: disallow this.
+b) The example Oberon-0 program 'TestOberon0.Mod.txt' has
+occasionally a '*' attached to the procedure's name in a
+procedure declaration. This is legal Oberon, but illegal
+in Oberon-0. My solution: allow this.
+c) The example Oberon-0 program 'TestOberon0.Mod.txt' uses
+the boolean constant TRUE. This is illegal in Oberon-0.
+My solution: allow TRUE and FALSE in factors.
+The Oberon-0 parser is now working.
+Alas, Oberon-0 is not Oberon-07, not even remotely.
