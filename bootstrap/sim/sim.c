@@ -18,6 +18,7 @@
 #define IO_SIZE		0x00000040		/* counted in bytes */
 
 #define SIGN_EXT_24(x)	((x) & 0x00800000 ? (x) | 0xFF000000 : (x))
+#define SIGN_EXT_20(x)	((x) & 0x00080000 ? (x) | 0xFFF00000 : (x))
 
 #define LINE_SIZE	200
 #define MAX_TOKENS	20
@@ -193,16 +194,25 @@ void memInit(char *promName) {
     if (*p == '\n') {
       continue;
     }
+    if (*(p + 0) == '/' &&
+        *(p + 1) == '/') {
+      continue;
+    }
     data = strtoul(p, &endp, 16);
+    rom[addr++] = data;
     p = endp;
     while (*p == ' ' || *p == '\t') {
       p++;
     }
-    if (*endp != '\n') {
-      error("garbage at end of line %d in prom file '%s'",
-            lineno, promName);
+    if (*p == '\n') {
+      continue;
     }
-    rom[addr++] = data;
+    if (*(p + 0) == '/' &&
+        *(p + 1) == '/') {
+      continue;
+    }
+    error("garbage at end of line %d in prom file '%s'",
+          lineno, promName);
   }
   printf("0x%08X words loaded from prom file '%s'\n",
          addr, promName);
@@ -333,30 +343,30 @@ static void execNextInstruction(void) {
       break;
     case 2:
       /* memory instructions */
-      imm = ir & 0x000FFFFF;
+      imm = SIGN_EXT_20(ir & 0x000FFFFF);
       if (u) {
         /* store */
         if (v) {
           /* byte */
-          error("store byte not yet");
+          writeByte(reg[b] + imm, reg[a]);
         } else {
           /* word */
-          error("store word not yet");
+          writeWord(reg[b] + imm, reg[a]);
         }
       } else {
         /* load */
         if (v) {
           /* byte */
-          error("load byte not yet");
+          reg[a] = readByte(reg[b] + imm);
         } else {
           /* word */
-          error("load word not yet");
+          reg[a] = readWord(reg[b] + imm);
         }
       }
       break;
     case 3:
       /* branch instructions */
-      imm = ir & 0x00FFFFFF;
+      imm = SIGN_EXT_24(ir & 0x00FFFFFF);
       cond = (a >> 3) & 1;
       switch (a & 7) {
         case 0:
@@ -386,17 +396,17 @@ static void execNextInstruction(void) {
       }
       if (cond) {
         /* take the branch */
-        aux = pc << 2;
+        aux = pc;
         if (u) {
           /* target is pc + off */
-          pc += SIGN_EXT_24(imm);
+          pc += imm;
         } else {
           /* target is reg[c] */
           pc = reg[c] >> 2;
         }
         if (v) {
           /* set link register */
-          reg[15] = aux;
+          reg[15] = aux << 2;
         }
       }
       break;
@@ -502,22 +512,10 @@ static char instrBuffer[100];
 
 
 static char *regOps[16] = {
-  /* 0x00 */  "MOV",
-  /* 0x01 */  "LSL",
-  /* 0x02 */  "ASR",
-  /* 0x03 */  "ROR",
-  /* 0x04 */  "AND",
-  /* 0x05 */  "ANN",
-  /* 0x06 */  "IOR",
-  /* 0x07 */  "XOR",
-  /* 0x08 */  "ADD",
-  /* 0x09 */  "SUB",
-  /* 0x0A */  "MUL",
-  /* 0x0B */  "DIV",
-  /* 0x0C */  "FAD",
-  /* 0x0D */  "FSB",
-  /* 0x0E */  "FML",
-  /* 0x0F */  "FDV",
+  /* 0x00 */  "MOV", "LSL", "ASR", "ROR",
+  /* 0x04 */  "AND", "ANN", "IOR", "XOR",
+  /* 0x08 */  "ADD", "SUB", "MUL", "DIV",
+  /* 0x0C */  "FAD", "FSB", "FML", "FDV",
 };
 
 
@@ -557,7 +555,7 @@ static void disasmF1(Word instr) {
 static void disasmF2(Word instr) {
   char *opName;
   int a, b;
-  Word offset;
+  int offset;
 
   if (((instr >> 29) & 1) == 0) {
     if (((instr >> 28) & 1) == 0) {
@@ -574,9 +572,18 @@ static void disasmF2(Word instr) {
   }
   a = (instr >> 24) & 0x0F;
   b = (instr >> 20) & 0x0F;
-  offset = instr & 0xFFFFF;
-  sprintf(instrBuffer, "%-7s R%d,R%d,%08X", opName, a, b, offset);
+  offset = SIGN_EXT_20(instr & 0x000FFFFF);
+  sprintf(instrBuffer, "%-7s R%d,R%d,%s%05X",
+          opName, a, b,
+          offset < 0 ? "-" : "+",
+          offset < 0 ? -offset : offset);
 }
+
+
+static char *condName[16] = {
+  /* 0x00 */  "MI", "EQ", "CS", "VS", "LS", "LT", "LE", "",
+  /* 0x08 */  "PL", "NE", "CC", "VC", "HI", "GE", "GT", "NVR",
+};
 
 
 static void disasmF3(Word instr, Word locus) {
@@ -585,56 +592,7 @@ static void disasmF3(Word instr, Word locus) {
   int offset;
   Word target;
 
-  switch ((instr >> 24) & 0x0F) {
-    case 0x00:
-      cond = "MI";
-      break;
-    case 0x01:
-      cond = "EQ";
-      break;
-    case 0x02:
-      cond = "CS";
-      break;
-    case 0x03:
-      cond = "VS";
-      break;
-    case 0x04:
-      cond = "LS";
-      break;
-    case 0x05:
-      cond = "LT";
-      break;
-    case 0x06:
-      cond = "LE";
-      break;
-    case 0x07:
-      cond = "";
-      break;
-    case 0x08:
-      cond = "PL";
-      break;
-    case 0x09:
-      cond = "NE";
-      break;
-    case 0x0A:
-      cond = "CC";
-      break;
-    case 0x0B:
-      cond = "VC";
-      break;
-    case 0x0C:
-      cond = "HI";
-      break;
-    case 0x0D:
-      cond = "GE";
-      break;
-    case 0x0E:
-      cond = "GT";
-      break;
-    case 0x0F:
-      cond = "NVR";
-      break;
-  }
+  cond = condName[(instr >> 24) & 0x0F];
   if (((instr >> 29) & 1) == 0) {
     /* branch target is in register */
     c = instr & 0x0F;
@@ -686,7 +644,7 @@ char *disasm(Word instr, Word locus) {
  */
 
 
-Bool quit;
+static Bool quit;
 
 
 typedef struct {
