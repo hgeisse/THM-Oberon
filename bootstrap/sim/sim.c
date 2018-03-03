@@ -91,13 +91,12 @@ Word currentSwitches;
 
 
 Word readSwitches(void) {
-  error("reading switches not allowed yet");
   return currentSwitches;
 }
 
 
 void writeLEDs(Word data) {
-  static Word currentLEDs = 0x80000000;
+  static Word currentLEDs = 0;
   int i;
 
   data &= 0x000000FF;
@@ -112,8 +111,8 @@ void writeLEDs(Word data) {
 }
 
 
-void initSWLED(void) {
-  currentSwitches = 0;
+void initSWLED(Word initialSwitches) {
+  currentSwitches = initialSwitches & 0x0FFF;
   writeLEDs(0);
 }
 
@@ -171,7 +170,7 @@ void initRS232(void) {
 #define DISK_WRT1	3
 
 
-static Bool debugDisk = true;
+static Bool debugDisk = false;
 
 static FILE *diskImage;
 static int diskState;
@@ -740,6 +739,26 @@ static Word breakAddr;		/* if breakSet, this is where */
 static Bool run;		/* CPU runs continuously if true */
 
 
+Word intMul(Word op1, Word op2, Word *hiResPtr) {
+  Word loRes;
+
+  error("intMul() not yet");
+  loRes = 0;
+  *hiResPtr = 0;
+  return loRes;
+}
+
+
+Word intDiv(Word op1, Word op2, Word *remPtr) {
+  Word quo;
+
+  error("intDiv() not yet");
+  quo = 0;
+  *remPtr = 0;
+  return quo;
+}
+
+
 static void execNextInstruction(void) {
   Word ir;
   int p, q, u, v;
@@ -768,7 +787,7 @@ static void execNextInstruction(void) {
     c = reg[irc];
     d = q ? imm : c;
     switch (op) {
-      case 0:
+      case 0x00:
         /* MOV */
         if (q) {
           if (u == 0) {
@@ -792,71 +811,71 @@ static void execNextInstruction(void) {
           }
         }
         break;
-      case 1:
+      case 0x01:
         /* LSL */
         res = b << (d & 0x1F);
         break;
-      case 2:
+      case 0x02:
         /* ASR */
         mask = b & 0x80000000 ?
                  ~(((Word) 0xFFFFFFFF) >> (d & 0x1F)) : 0x00000000;
         res = mask | (b >> (d & 0x1F));
         break;
-      case 3:
+      case 0x03:
         /* ROR */
         res = (b << (-d & 0x1F)) | (b >> (d & 0x1F));
         break;
-      case 4:
+      case 0x04:
         /* AND */
         res = b & d;
         break;
-      case 5:
+      case 0x05:
         /* ANN */
         res = b & ~d;
         break;
-      case 6:
+      case 0x06:
         /* IOR */
         res = b | d;
         break;
-      case 7:
+      case 0x07:
         /* XOR */
         res = b ^ d;
         break;
-      case 8:
+      case 0x08:
         /* ADD */
         res = b + d + (u & C);
         C = res < b;
         V = ((res ^ d) & (res ^ b)) >> 31;
         break;
-      case 9:
+      case 0x09:
         /* SUB */
         res = b - d - (u & C);
         C = res > b;
         V = ((b ^ d) & (res ^ b)) >> 31;
         break;
-      case 10:
+      case 0x0A:
         /* MUL */
-        error("illegal register instruction %d", op);
+        res = intMul(b, d, &H);
         break;
-      case 11:
+      case 0x0B:
         /* DIV */
-        error("illegal register instruction %d", op);
+        res = intDiv(b, d, &H);
         break;
-      case 12:
+      case 0x0C:
         /* FAD */
-        error("illegal register instruction %d", op);
+        error("illegal register instruction 0x%02X", op);
         break;
-      case 13:
+      case 0x0D:
         /* FSB */
-        error("illegal register instruction %d", op);
+        error("illegal register instruction 0x%02X", op);
         break;
-      case 14:
+      case 0x0E:
         /* FML */
-        error("illegal register instruction %d", op);
+        error("illegal register instruction 0x%02X", op);
         break;
-      case 15:
+      case 0x0F:
         /* FDV */
-        error("illegal register instruction %d", op);
+        error("illegal register instruction 0x%02X", op);
         break;
     }
     reg[ira] = res;
@@ -1292,6 +1311,7 @@ static void help(void) {
   printf("  #       show/set PC\n");
   printf("  r       show/set register\n");
   printf("  d       dump memory\n");
+  printf("  ss      set switches\n");
   printf("  q       quit simulator\n");
   printf("type 'help <cmd>' to get help for <cmd>\n");
 }
@@ -1634,6 +1654,40 @@ static void doDump(char *tokens[], int n) {
 }
 
 
+static void helpSwitches(void) {
+  printf("  ss                show button/switch settings\n");
+  printf("  ss <data>         set buttons/switches to <data>\n");
+}
+
+
+static void doSwitches(char *tokens[], int n) {
+  static char *st[2] = { "off", "on " };
+  Word cs;
+
+  if (n == 1) {
+    cs = currentSwitches;
+    printf("buttons: %s %s %s %s",
+           st[(cs >> 11) & 1], st[(cs >> 10) & 1],
+           st[(cs >>  9) & 1], st[(cs >>  8) & 1]);
+    printf("    ");
+    printf("switches: %s %s %s %s %s %s %s %s\n",
+           st[(cs >>  7) & 1], st[(cs >>  6) & 1],
+           st[(cs >>  5) & 1], st[(cs >>  4) & 1],
+           st[(cs >>  3) & 1], st[(cs >>  2) & 1],
+           st[(cs >>  1) & 1], st[(cs >>  0) & 1]);
+  } else
+  if (n == 2) {
+    if (!getHexNumber(tokens[1], &cs)) {
+      printf("illegal data\n");
+      return;
+    }
+    currentSwitches = cs & 0x0FFF;
+  } else {
+    helpSwitches();
+  }
+}
+
+
 static void helpQuit(void) {
   printf("  q                 quit simulator\n");
 }
@@ -1658,6 +1712,7 @@ Command commands[] = {
   { "#",    helpPC,         doPC         },
   { "r",    helpRegister,   doRegister   },
   { "d",    helpDump,       doDump       },
+  { "ss",   helpSwitches,   doSwitches   },
   { "q",    helpQuit,       doQuit       },
 };
 
@@ -1704,8 +1759,10 @@ Bool execCommand(char *line) {
 
 static void usage(char *myself) {
   printf("Usage: %s\n", myself);
-  printf("    [-i]           set interactive mode\n");
-  printf("    [-p <prom>]    set prom file name\n");
+  printf("    [-i]                set interactive mode\n");
+  printf("    [-p <prom>]         set prom image file name\n");
+  printf("    [-d <disk>]         set disk image file name\n");
+  printf("    [-s <3 nibbles>]    set initial buttons(1)/switches(2)\n");
   exit(1);
 }
 
@@ -1722,11 +1779,14 @@ int main(int argc, char *argv[]) {
   Bool interactive;
   char *promName;
   char *diskName;
+  Word initialSwitches;
+  char *endp;
   char line[LINE_SIZE];
 
   interactive = false;
   promName = NULL;
   diskName = NULL;
+  initialSwitches = 0;
   for (i = 1; i < argc; i++) {
     argp = argv[i];
     if (strcmp(argp, "-i") == 0) {
@@ -1743,6 +1803,16 @@ int main(int argc, char *argv[]) {
         usage(argv[0]);
       }
       diskName = argv[++i];
+    } else
+    if (strcmp(argp, "-s") == 0) {
+      if (i == argc - 1) {
+        usage(argv[0]);
+      }
+      i++;
+      initialSwitches = strtoul(argv[i], &endp, 16);
+      if (*endp != '\0') {
+        error("illegal button/switch value, must be 3 hex digits");
+      }
     } else {
       usage(argv[0]);
     }
@@ -1755,7 +1825,7 @@ int main(int argc, char *argv[]) {
     interactive = true;
   }
   initTimer();
-  initSWLED();
+  initSWLED(initialSwitches);
   initRS232();
   initSPI(diskName);
   initPS2();
