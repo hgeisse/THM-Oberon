@@ -739,22 +739,61 @@ static Word breakAddr;		/* if breakSet, this is where */
 static Bool run;		/* CPU runs continuously if true */
 
 
-Word intMul(Word op1, Word op2, Word *hiResPtr) {
-  Word loRes;
+Word intMul(Word op1, Word op2, Word *hiResPtr, Bool u) {
+  Word hiRes, loRes;
+  Bool neg1, neg2;
+  int i;
 
-  error("intMul() not yet");
+  if (!u) {
+    neg1 = (op1 >> 31) & 1;
+    if (neg1) {
+      op1 = -op1;
+    }
+    neg2 = (op2 >> 31) & 1;
+    if (neg2) {
+      op2 = -op2;
+    }
+  }
+  hiRes = 0;
   loRes = 0;
-  *hiResPtr = 0;
+  for (i = 0; i < 32; i++) {
+    if (loRes & 0x80000000) {
+      hiRes <<= 1;
+      hiRes++;
+    } else {
+      hiRes <<= 1;
+    }
+    loRes <<= 1;
+    if (op2 & 0x80000000) {
+      loRes += op1;
+      if (loRes < op1) {
+        hiRes++;
+      }
+    }
+    op2 <<= 1;
+  }
+  if (!u && (neg1 != neg2)) {
+    hiRes = ~hiRes;
+    loRes = ~loRes;
+    if (loRes == 0xFFFFFFFF) {
+      loRes = 0;
+      hiRes++;
+    } else {
+      loRes++;
+    }
+  }
+  *hiResPtr = hiRes;
   return loRes;
 }
 
 
-Word intDiv(Word op1, Word op2, Word *remPtr) {
+Word intDiv(Word op1, Word op2, Word *remPtr, Bool u) {
   Word quo;
+  Word rem;
 
-  error("intDiv() not yet");
-  quo = 0;
-  *remPtr = 0;
+  quo = op1 / op2;
+  rem = op1 % op2;
+  *remPtr = rem;
   return quo;
 }
 
@@ -855,11 +894,11 @@ static void execNextInstruction(void) {
         break;
       case 0x0A:
         /* MUL */
-        res = intMul(b, d, &H);
+        res = intMul(b, d, &H, u);
         break;
       case 0x0B:
         /* DIV */
-        res = intDiv(b, d, &H);
+        res = intDiv(b, d, &H, u);
         break;
       case 0x0C:
         /* FAD */
@@ -1090,12 +1129,13 @@ static void disasmF0(Word instr) {
   } else {
     /* any operation other than MOV */
     sprintf(instrBuffer, "%-7s R%d,R%d,R%d", regOps[op], a, b, c);
-    if (op == 8 || op == 9) {
-      /* ADD, SUB */
-      if ((instr >> 29) & 1) {
-        /* u == 1: add/subtract with carry */
-        instrBuffer[2] = 'C';
-      }
+    if ((op == 8 || op == 9) && ((instr >> 29) & 1) != 0) {
+      /* ADD, SUB with u = 1: add/subtract with carry */
+      instrBuffer[3] = 'C';
+    } else
+    if (op == 10 && ((instr >> 29) & 1) != 0) {
+      /* MUL with u = 1: unsigned mul */
+      instrBuffer[3] = 'U';
     }
   }
 }
@@ -1124,12 +1164,13 @@ static void disasmF1(Word instr) {
   } else {
     /* any operation other than MOV */
     sprintf(instrBuffer, "%-7s R%d,R%d,0x%08X", regOps[op], a, b, im);
-    if (op == 8 || op == 9) {
-      /* ADD, SUB */
-      if ((instr >> 29) & 1) {
-        /* u == 1: add/subtract with carry */
-        instrBuffer[2] = 'C';
-      }
+    if ((op == 8 || op == 9) && ((instr >> 29) & 1) != 0) {
+      /* ADD, SUB with u = 1: add/subtract with carry */
+      instrBuffer[3] = 'C';
+    } else
+    if (op == 10 && ((instr >> 29) & 1) != 0) {
+      /* MUL with u = 1: unsigned mul */
+      instrBuffer[3] = 'U';
     }
   }
 }
