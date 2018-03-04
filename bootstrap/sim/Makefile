@@ -5,9 +5,9 @@
 CC=gcc
 CFLAGS=-g -Wall
 LDFLAGS=-g -Wall
-LDLIBS=-lm
+LDLIBS=-lX11 -lpthread -lm
 
-SRCS=sim.c
+SRCS=sim.c common.c graph.c
 OBJS=$(patsubst %.c,%.o,$(SRCS))
 BIN=sim
 

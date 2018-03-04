@@ -6,8 +6,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <stdarg.h>
 #include <signal.h>
+
+#include "common.h"
+#include "graph.h"
 
 
 #define RAM_START	0x00000000		/* byte address */
@@ -23,39 +25,6 @@
 
 #define LINE_SIZE	200
 #define MAX_TOKENS	20
-
-
-/**************************************************************/
-
-/*
- * type definitions
- */
-
-
-typedef enum { false = 0, true = 1 } Bool;
-
-
-typedef unsigned int Word;
-typedef unsigned char Byte;
-
-
-/**************************************************************/
-
-/*
- * error handling
- */
-
-
-void error(char *fmt, ...) {
-  va_list ap;
-
-  va_start(ap, fmt);
-  printf("Error: ");
-  vprintf(fmt, ap);
-  printf("\n");
-  va_end(ap);
-  exit(1);
-}
 
 
 /**************************************************************/
@@ -577,6 +546,25 @@ void writeIO(int dev, Word data) {
 /**************************************************************/
 
 /*
+ * video memory
+ */
+
+
+#define VIDEO_START	0x00000000
+#define VIDEO_SIZE	0xFFFFFFFF
+
+
+void writeVideo(Word addr, Word data) {
+  static int count = 0;
+  if (count++ < 20) {
+    printf("video write @ 0x%08X, data = 0x%08X\n", addr, data);
+  }
+}
+
+
+/**************************************************************/
+
+/*
  * main memory
  */
 
@@ -605,6 +593,9 @@ Word readWord(Word addr) {
 void writeWord(Word addr, Word data) {
   addr &= ADDR_MASK;
   if (addr >= RAM_START && addr < RAM_START + RAM_SIZE) {
+    if (addr >= VIDEO_START && addr < VIDEO_START + VIDEO_SIZE) {
+      writeVideo((addr - VIDEO_START) >> 2, data);
+    }
     ram[(addr - RAM_START) >> 2] = data;
     return;
   }
@@ -1909,6 +1900,7 @@ int main(int argc, char *argv[]) {
   initSPI(diskName);
   initPS2();
   initGPIO();
+  graphInit();
   memInit(promName);
   cpuInit(0xFFE000);
   if (!interactive) {
@@ -1928,6 +1920,7 @@ int main(int argc, char *argv[]) {
       }
     }
   }
+  graphExit();
   printf("RISC Simulator finished\n");
   return 0;
 }
