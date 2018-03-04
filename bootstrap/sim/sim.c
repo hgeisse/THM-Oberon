@@ -788,11 +788,49 @@ Word intMul(Word op1, Word op2, Word *hiResPtr, Bool u) {
 
 
 Word intDiv(Word op1, Word op2, Word *remPtr, Bool u) {
-  Word quo;
-  Word rem;
+  Word quo, rem;
+  Bool neg1, neg2;
+  int i;
 
-  quo = op1 / op2;
-  rem = op1 % op2;
+  if (!u) {
+    neg1 = (op1 >> 31) & 1;
+    if (neg1) {
+      op1 = -op1;
+    }
+    neg2 = (op2 >> 31) & 1;
+    if (neg2) {
+      op2 = -op2;
+    }
+  }
+  quo = 0;
+  rem = 0;
+  for (i = 0; i < 32; i++) {
+    if (op1 & 0x80000000) {
+      rem <<= 1;
+      rem++;
+    } else {
+      rem <<= 1;
+    }
+    op1 <<= 1;
+    quo <<= 1;
+    if (rem >= op2) {
+      rem -= op2;
+      quo++;
+    }
+  }
+  if (!u) {
+    if (neg1 != neg2) {
+      quo = -quo;
+    }
+    if (neg1) {
+      if (neg2) {
+        quo++;
+      } else {
+        quo--;
+      }
+      rem = -rem + op2;
+    }
+  }
   *remPtr = rem;
   return quo;
 }
