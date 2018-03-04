@@ -32,8 +32,8 @@ static Bool volatile installed = false;
 
 #define WINDOW_SIZE_X		1024
 #define WINDOW_SIZE_Y		768
-#define WINDOW_POS_X		100
-#define WINDOW_POS_Y		100
+#define WINDOW_POS_X		0
+#define WINDOW_POS_Y		0
 
 
 #define C2B(c,ch)		(((((c) & 0xFF) * ch.scale) >> 8) * ch.factor)
@@ -376,8 +376,8 @@ void graphWrite(Word addr, Word data) {
     return;
   }
   /* write to frame buffer memory */
-  vgaWrite((addr >> 2) % WINDOW_SIZE_X,
-           (addr >> 2) / WINDOW_SIZE_X,
+  vgaWrite(addr % WINDOW_SIZE_X,
+           WINDOW_SIZE_Y - 1 - addr / WINDOW_SIZE_X,
            (data >> 16) & 0xFF,
            (data >>  8) & 0xFF,
            (data >>  0) & 0xFF);

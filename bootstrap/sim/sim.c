@@ -394,6 +394,7 @@ void initSPI(char *diskName) {
 
 
 Word readPS2_0(void) {
+  fgetc(stdin);
   error("readPS2_0");
   return 0;
 }
@@ -550,14 +551,22 @@ void writeIO(int dev, Word data) {
  */
 
 
-#define VIDEO_START	0x00000000
-#define VIDEO_SIZE	0xFFFFFFFF
+#define VIDEO_START	0x000E7F00
+#define VIDEO_SIZE	0x00018000
+
+#define BACKGROUND	0x007CD4D6
+#define FOREGROUND	0x00000000
 
 
 void writeVideo(Word addr, Word data) {
-  static int count = 0;
-  if (count++ < 20) {
-    printf("video write @ 0x%08X, data = 0x%08X\n", addr, data);
+  int i;
+
+  for (i = 0; i < 32; i++) {
+    if ((data & (1 << i)) == 0) {
+      graphWrite((addr << 5) + i, BACKGROUND);
+    } else {
+      graphWrite((addr << 5) + i, FOREGROUND);
+    }
   }
 }
 
