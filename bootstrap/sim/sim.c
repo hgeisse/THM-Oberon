@@ -35,13 +35,13 @@
 
 
 Word readTimer(void) {
-  error("readTimer");
+  printf("NOTE: reading from timer\n");
   return 0;
 }
 
 
 void writeTimer(Word data) {
-  error("writeTimer");
+  printf("NOTE: writing to timer, data = 0x%08X\n", data);
 }
 
 
@@ -94,24 +94,24 @@ void initSWLED(Word initialSwitches) {
 
 
 Word readRS232_0(void) {
-  error("readRS232_0");
+  printf("NOTE: reading from RS232_0\n");
   return 0;
 }
 
 
 void writeRS232_0(Word data) {
-  error("writeRS232_0");
+  printf("NOTE: writing to RS232_0, data = 0x%08X\n", data);
 }
 
 
 Word readRS232_1(void) {
-  error("readRS232_1");
+  printf("NOTE: reading from RS232_1\n");
   return 0;
 }
 
 
 void writeRS232_1(Word data) {
-  error("writeRS232_1");
+  printf("NOTE: writing to RS232_1, data = 0x%08X\n", data);
 }
 
 
@@ -394,25 +394,24 @@ void initSPI(char *diskName) {
 
 
 Word readPS2_0(void) {
-  fgetc(stdin);
-  error("readPS2_0");
+  printf("NOTE: reading from PS2_0\n");
   return 0;
 }
 
 
 void writePS2_0(Word data) {
-  error("writePS2_0");
+  printf("NOTE: writing to PS2_0, data = 0x%08X\n", data);
 }
 
 
 Word readPS2_1(void) {
-  error("readPS2_1");
+  printf("NOTE: reading from PS2_1\n");
   return 0;
 }
 
 
 void writePS2_1(Word data) {
-  error("writePS2_1");
+  printf("NOTE: writing to PS2_1, data = 0x%08X\n", data);
 }
 
 
@@ -428,24 +427,24 @@ void initPS2(void) {
 
 
 Word readGPIO_0(void) {
-  error("readGPIO_0");
+  printf("NOTE: reading from GPIO_0\n");
   return 0;
 }
 
 
 void writeGPIO_0(Word data) {
-  error("writeGPIO_0");
+  printf("NOTE: writing to GPIO_0, data = 0x%08X\n", data);
 }
 
 
 Word readGPIO_1(void) {
-  error("readGPIO_1");
+  printf("NOTE: reading from GPIO_1\n");
   return 0;
 }
 
 
 void writeGPIO_1(Word data) {
-  error("writeGPIO_1");
+  printf("NOTE: writing to GPIO_1, data = 0x%08X\n", data);
 }
 
 
@@ -495,8 +494,7 @@ Word readIO(int dev) {
       data = readGPIO_1();
       break;
     default:
-      error("reading from I/O device %d\n", dev);
-      /* never reached */
+      printf("NOTE: reading from I/O device %d\n", dev);
       data = 0;
       break;
   }
@@ -537,8 +535,8 @@ void writeIO(int dev, Word data) {
       writeGPIO_1(data);
       break;
     default:
-      error("writing to I/O device %d\n", dev);
-      /* never reached */
+      printf("NOTE: writing to I/O device %d, data = 0x%08X\n",
+             dev, data);
       break;
   }
 }
