@@ -35,7 +35,7 @@
 
 
 Word readTimer(void) {
-  printf("NOTE: reading from timer\n");
+  /* !!!!! */
   return 0;
 }
 
@@ -394,7 +394,7 @@ void initSPI(char *diskName) {
 
 
 Word readPS2_0(void) {
-  printf("NOTE: reading from PS2_0\n");
+  /* !!!!! */
   return 0;
 }
 
@@ -455,6 +455,24 @@ void initGPIO(void) {
 /**************************************************************/
 
 /*
+ * I/O device 15: 'Special', function is not known
+ */
+
+
+Word readSpecial(void) {
+  /* ignore reading from special device */
+  return 0;
+}
+
+
+void writeSpecial(Word data) {
+  /* ignore writing to special device */
+}
+
+
+/**************************************************************/
+
+/*
  * I/O
  */
 
@@ -493,8 +511,12 @@ Word readIO(int dev) {
     case 9:
       data = readGPIO_1();
       break;
+    case 15:
+      data = readSpecial();
+      break;
     default:
-      printf("NOTE: reading from I/O device %d\n", dev);
+      printf("NOTE: reading from unknown I/O device %d\n",
+             dev);
       data = 0;
       break;
   }
@@ -534,8 +556,11 @@ void writeIO(int dev, Word data) {
     case 9:
       writeGPIO_1(data);
       break;
+    case 15:
+      writeSpecial(data);
+      break;
     default:
-      printf("NOTE: writing to I/O device %d, data = 0x%08X\n",
+      printf("NOTE: writing to unknown I/O device %d, data = 0x%08X\n",
              dev, data);
       break;
   }
