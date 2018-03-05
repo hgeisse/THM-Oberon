@@ -12,6 +12,8 @@
 #include "graph.h"
 
 
+#define INST_PER_MSEC	25000			/* execution speed */
+
 #define RAM_START	0x00000000		/* byte address */
 #define RAM_SIZE	0x00100000		/* counted in bytes */
 #define ROM_START	0x00FFE000		/* byte address */
@@ -34,18 +36,31 @@
  */
 
 
+static Word milliSeconds;
+
+
+void tickTimer(void) {
+  static int count = 0;
+
+  if (count++ == INST_PER_MSEC) {
+    count = 0;
+    milliSeconds++;
+  }
+}
+
+
 Word readTimer(void) {
-  /* !!!!! */
-  return 0;
+  return milliSeconds;
 }
 
 
 void writeTimer(Word data) {
-  printf("NOTE: writing to timer, data = 0x%08X\n", data);
+  /* ignore writing to timer */
 }
 
 
 void initTimer(void) {
+  milliSeconds = 0;
 }
 
 
@@ -56,7 +71,12 @@ void initTimer(void) {
  */
 
 
-Word currentSwitches;
+static Word currentSwitches;
+
+
+void setSwitches(Word data) {
+  currentSwitches = data & 0x0FFF;
+}
 
 
 Word readSwitches(void) {
@@ -81,7 +101,7 @@ void writeLEDs(Word data) {
 
 
 void initSWLED(Word initialSwitches) {
-  currentSwitches = initialSwitches & 0x0FFF;
+  setSwitches(initialSwitches);
   writeLEDs(0);
 }
 
@@ -870,6 +890,7 @@ static void execNextInstruction(void) {
   Bool cond;
   Word aux;
 
+  tickTimer();
   ir = readWord(pc << 2);
   pc++;
   p = (ir >> 31) & 0x01;
@@ -1413,7 +1434,7 @@ static void help(void) {
   printf("  #       show/set PC\n");
   printf("  r       show/set register\n");
   printf("  d       dump memory\n");
-  printf("  ss      set switches\n");
+  printf("  ss      show/set switches\n");
   printf("  q       quit simulator\n");
   printf("type 'help <cmd>' to get help for <cmd>\n");
 }
@@ -1767,7 +1788,7 @@ static void doSwitches(char *tokens[], int n) {
   Word cs;
 
   if (n == 1) {
-    cs = currentSwitches;
+    cs = readSwitches();
     printf("buttons: %s %s %s %s",
            st[(cs >> 11) & 1], st[(cs >> 10) & 1],
            st[(cs >>  9) & 1], st[(cs >>  8) & 1]);
@@ -1783,7 +1804,7 @@ static void doSwitches(char *tokens[], int n) {
       printf("illegal data\n");
       return;
     }
-    currentSwitches = cs & 0x0FFF;
+    setSwitches(cs);
   } else {
     helpSwitches();
   }
