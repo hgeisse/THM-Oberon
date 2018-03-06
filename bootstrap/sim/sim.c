@@ -16,6 +16,8 @@
 
 #define RAM_START	0x00000000		/* byte address */
 #define RAM_SIZE	0x00100000		/* counted in bytes */
+#define GRAPH_START	0x000E7F00		/* frame buffer memory */
+#define GRAPH_SIZE	0x00018000		/* located within RAM */
 #define ROM_START	0x00FFE000		/* byte address */
 #define ROM_SIZE	0x00000800		/* counted in bytes */
 #define IO_START	0x00FFFFC0		/* byte address */
@@ -409,33 +411,32 @@ void initSPI(char *diskName) {
 /**************************************************************/
 
 /*
- * I/O device 6, 7: PS/2 (keyboard, mouse)
+ * I/O device 6, 7: PS/2 (mouse, keyboard)
  */
 
 
-Word readPS2_0(void) {
-  /* !!!!! */
-  return 0;
+Word readMouse(void) {
+  return mouseRead();
 }
 
 
-void writePS2_0(Word data) {
-  printf("NOTE: writing to PS2_0, data = 0x%08X\n", data);
+void writeMouse(Word data) {
+  /* ignore writing to mouse */
 }
 
 
-Word readPS2_1(void) {
-  printf("NOTE: reading from PS2_1\n");
-  return 0;
+Word readKeybd(void) {
+  return keybdRead();
 }
 
 
-void writePS2_1(Word data) {
-  printf("NOTE: writing to PS2_1, data = 0x%08X\n", data);
+void writeKeybd(Word data) {
+  /* ignore writing to keyboard */
 }
 
 
-void initPS2(void) {
+void initMouseKeybd(void) {
+  mouseKeybdInit();
 }
 
 
@@ -520,10 +521,10 @@ Word readIO(int dev) {
       data = readSPIctrl();
       break;
     case 6:
-      data = readPS2_0();
+      data = readMouse();
       break;
     case 7:
-      data = readPS2_1();
+      data = readKeybd();
       break;
     case 8:
       data = readGPIO_0();
@@ -565,10 +566,10 @@ void writeIO(int dev, Word data) {
       writeSPIctrl(data);
       break;
     case 6:
-      writePS2_0(data);
+      writeMouse(data);
       break;
     case 7:
-      writePS2_1(data);
+      writeKeybd(data);
       break;
     case 8:
       writeGPIO_0(data);
@@ -583,33 +584,6 @@ void writeIO(int dev, Word data) {
       printf("NOTE: writing to unknown I/O device %d, data = 0x%08X\n",
              dev, data);
       break;
-  }
-}
-
-
-/**************************************************************/
-
-/*
- * video memory
- */
-
-
-#define VIDEO_START	0x000E7F00
-#define VIDEO_SIZE	0x00018000
-
-#define BACKGROUND	0x007CD4D6
-#define FOREGROUND	0x00000000
-
-
-void writeVideo(Word addr, Word data) {
-  int i;
-
-  for (i = 0; i < 32; i++) {
-    if ((data & (1 << i)) == 0) {
-      graphWrite((addr << 5) + i, BACKGROUND);
-    } else {
-      graphWrite((addr << 5) + i, FOREGROUND);
-    }
   }
 }
 
@@ -645,8 +619,8 @@ Word readWord(Word addr) {
 void writeWord(Word addr, Word data) {
   addr &= ADDR_MASK;
   if (addr >= RAM_START && addr < RAM_START + RAM_SIZE) {
-    if (addr >= VIDEO_START && addr < VIDEO_START + VIDEO_SIZE) {
-      writeVideo((addr - VIDEO_START) >> 2, data);
+    if (addr >= GRAPH_START && addr < GRAPH_START + GRAPH_SIZE) {
+      graphWrite((addr - GRAPH_START) >> 2, data);
     }
     ram[(addr - RAM_START) >> 2] = data;
     return;
@@ -1951,7 +1925,7 @@ int main(int argc, char *argv[]) {
   initSWLED(initialSwitches);
   initRS232();
   initSPI(diskName);
-  initPS2();
+  initMouseKeybd();
   initGPIO();
   graphInit();
   memInit(promName);

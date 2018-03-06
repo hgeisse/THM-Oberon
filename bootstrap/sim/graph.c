@@ -92,6 +92,20 @@ static ColorChannel mask2channel(unsigned long mask) {
 }
 
 
+static Cursor makeBlankCursor(Display *display, Window win) {
+  char data[1] = { 0 };
+  Pixmap blank;
+  XColor dummy;
+  Cursor cursor;
+
+  blank = XCreateBitmapFromData(display, win, data, 1, 1);
+  cursor = XCreatePixmapCursor(display, blank, blank,
+                               &dummy, &dummy, 0, 0);
+  XFreePixmap(display, blank);
+  return cursor;
+}
+
+
 static void initMonitor(int argc, char *argv[]) {
   int screenNum;
   Window rootWin;
@@ -165,7 +179,10 @@ static void initMonitor(int argc, char *argv[]) {
   colormap = XCreateColormap(vga.display, rootWin, visual, AllocNone);
   /* create the window */
   attrib.colormap = colormap;
-  attrib.event_mask = ExposureMask;
+  attrib.event_mask = ExposureMask |
+                      PointerMotionMask |
+                      ButtonPressMask | ButtonReleaseMask |
+                      KeyPressMask | KeyReleaseMask;
   attrib.background_pixel = RGB2PIXEL(0, 0, 0);
   attrib.border_pixel = RGB2PIXEL(0, 0, 0);
   vga.win =
@@ -201,6 +218,9 @@ static void initMonitor(int argc, char *argv[]) {
                    argv, argc, sizeHints, wmHints, classHints);
   /* create a GC */
   vga.gc = XCreateGC(vga.display, vga.win, 0, &gcValues);
+  /* create an invisible cursor (the application rolls its own) */
+  XDefineCursor(vga.display, vga.win,
+                makeBlankCursor(vga.display, vga.win));
   /* finally get the window displayed */
   XMapWindow(vga.display, vga.win);
   /* prepare expose event */
@@ -241,6 +261,13 @@ static int ioErrorHandler(Display *display) {
 }
 
 
+static void doMouseMove(int x, int y);
+static void doButtonPress(int b);
+static void doButtonRelease(int b);
+static void doKeyPress(int k);
+static void doKeyRelease(int k);
+
+
 static void *server(void *ignore) {
   Bool run;
   XEvent event;
@@ -262,6 +289,21 @@ static void *server(void *ignore) {
             event.xclient.format == 8) {
           run = false;
         }
+        break;
+      case MotionNotify:
+        doMouseMove(event.xmotion.x, event.xmotion.y);
+        break;
+      case ButtonPress:
+        doButtonPress(event.xbutton.button);
+        break;
+      case ButtonRelease:
+        doButtonRelease(event.xbutton.button);
+        break;
+      case KeyPress:
+        doKeyPress(event.xkey.keycode);
+        break;
+      case KeyRelease:
+        doKeyRelease(event.xkey.keycode);
         break;
       default:
         break;
@@ -287,7 +329,7 @@ static void *refresh(void *ignore) {
     XSendEvent(vga.display, vga.win, False, 0, (XEvent *) &vga.expose);
     XFlush(vga.display);
     delay.tv_sec = 0;
-    delay.tv_nsec = 100 * 1000 * 1000;
+    delay.tv_nsec = 20 * 1000 * 1000;
     nanosleep(&delay, &delay);
   }
   return NULL;
@@ -342,29 +384,17 @@ static void vgaWrite(int x, int y, int r, int g, int b) {
 /**************************************************************/
 /**************************************************************/
 
+/* graphics device interface */
 
-Word graphRead(Word addr) {
-  Word data;
 
-  if (debug) {
-    printf("\n**** GRAPH READ from 0x%08X", addr);
-  }
-  if (!installed) {
-    return 0;
-  }
-  if (addr >= WINDOW_SIZE_X * WINDOW_SIZE_Y * 4) {
-    return 0;
-  }
-  /* the frame buffer memory yields 0 on every read */
-  data = 0;
-  if (debug) {
-    printf(", data = 0x%08X ****\n", data);
-  }
-  return data;
-}
+#define BACKGROUND	0x007CD4D6
+#define FOREGROUND	0x00000000
 
 
 void graphWrite(Word addr, Word data) {
+  int x, y;
+  int i;
+
   if (debug) {
     printf("\n**** GRAPH WRITE to 0x%08X, data = 0x%08X ****\n",
            addr, data);
@@ -372,23 +402,31 @@ void graphWrite(Word addr, Word data) {
   if (!installed) {
     return;
   }
-  if (addr >= WINDOW_SIZE_X * WINDOW_SIZE_Y * 4) {
+  if (addr >= WINDOW_SIZE_X * WINDOW_SIZE_Y / 32) {
     return;
   }
-  /* write to frame buffer memory */
-  vgaWrite(addr % WINDOW_SIZE_X,
-           WINDOW_SIZE_Y - 1 - addr / WINDOW_SIZE_X,
-           (data >> 16) & 0xFF,
-           (data >>  8) & 0xFF,
-           (data >>  0) & 0xFF);
+  /* write pixels to frame buffer memory */
+  addr <<= 5;
+  x = addr % WINDOW_SIZE_X;
+  y = WINDOW_SIZE_Y - 1 - addr / WINDOW_SIZE_X;
+  for (i = 0; i < 32; i++) {
+    if ((data & (1 << i)) == 0) {
+      vgaWrite(x + i, y,
+               (BACKGROUND >> 16) & 0xFF,
+               (BACKGROUND >>  8) & 0xFF,
+               (BACKGROUND >>  0) & 0xFF);
+    } else {
+      vgaWrite(x + i, y,
+               (FOREGROUND >> 16) & 0xFF,
+               (FOREGROUND >>  8) & 0xFF,
+               (FOREGROUND >>  0) & 0xFF);
+    }
+  }
 }
 
 
 void graphInit(void) {
   vgaInit();
-  if (!installed) {
-    return;
-  }
 }
 
 
@@ -397,4 +435,285 @@ void graphExit(void) {
     return;
   }
   vgaExit();
+}
+
+
+/**************************************************************/
+/**************************************************************/
+
+/* keycode mapping */
+
+
+#define MAX_MAKE	2
+#define MAX_BREAK	3
+
+
+typedef struct {
+  unsigned int xKeycode;
+  int pcNumMake;
+  Byte pcKeyMake[MAX_MAKE];
+  int pcNumBreak;
+  Byte pcKeyBreak[MAX_BREAK];
+} Keycode;
+
+
+static Keycode kbdCodeTbl[] = {
+  { 0x09, 1, { 0x76, 0x00 }, 2, { 0xF0, 0x76, 0x00 } },
+  { 0x43, 1, { 0x05, 0x00 }, 2, { 0xF0, 0x05, 0x00 } },
+  { 0x44, 1, { 0x06, 0x00 }, 2, { 0xF0, 0x06, 0x00 } },
+  { 0x45, 1, { 0x04, 0x00 }, 2, { 0xF0, 0x04, 0x00 } },
+  { 0x46, 1, { 0x0C, 0x00 }, 2, { 0xF0, 0x0C, 0x00 } },
+  { 0x47, 1, { 0x03, 0x00 }, 2, { 0xF0, 0x03, 0x00 } },
+  { 0x48, 1, { 0x0B, 0x00 }, 2, { 0xF0, 0x0B, 0x00 } },
+  { 0x49, 1, { 0x83, 0x00 }, 2, { 0xF0, 0x83, 0x00 } },
+  { 0x4A, 1, { 0x0A, 0x00 }, 2, { 0xF0, 0x0A, 0x00 } },
+  { 0x4B, 1, { 0x01, 0x00 }, 2, { 0xF0, 0x01, 0x00 } },
+  { 0x4C, 1, { 0x09, 0x00 }, 2, { 0xF0, 0x09, 0x00 } },
+  { 0x5F, 1, { 0x78, 0x00 }, 2, { 0xF0, 0x78, 0x00 } },
+  { 0x60, 1, { 0x07, 0x00 }, 2, { 0xF0, 0x07, 0x00 } },
+  /*------------------------------------------------*/
+  { 0x31, 1, { 0x0E, 0x00 }, 2, { 0xF0, 0x0E, 0x00 } },
+  { 0x0A, 1, { 0x16, 0x00 }, 2, { 0xF0, 0x16, 0x00 } },
+  { 0x0B, 1, { 0x1E, 0x00 }, 2, { 0xF0, 0x1E, 0x00 } },
+  { 0x0C, 1, { 0x26, 0x00 }, 2, { 0xF0, 0x26, 0x00 } },
+  { 0x0D, 1, { 0x25, 0x00 }, 2, { 0xF0, 0x25, 0x00 } },
+  { 0x0E, 1, { 0x2E, 0x00 }, 2, { 0xF0, 0x2E, 0x00 } },
+  { 0x0F, 1, { 0x36, 0x00 }, 2, { 0xF0, 0x36, 0x00 } },
+  { 0x10, 1, { 0x3D, 0x00 }, 2, { 0xF0, 0x3D, 0x00 } },
+  { 0x11, 1, { 0x3E, 0x00 }, 2, { 0xF0, 0x3E, 0x00 } },
+  { 0x12, 1, { 0x46, 0x00 }, 2, { 0xF0, 0x46, 0x00 } },
+  { 0x13, 1, { 0x45, 0x00 }, 2, { 0xF0, 0x45, 0x00 } },
+  { 0x14, 1, { 0x4E, 0x00 }, 2, { 0xF0, 0x4E, 0x00 } },
+  { 0x15, 1, { 0x55, 0x00 }, 2, { 0xF0, 0x55, 0x00 } },
+  { 0x16, 1, { 0x66, 0x00 }, 2, { 0xF0, 0x66, 0x00 } },
+  /*------------------------------------------------*/
+  { 0x17, 1, { 0x0D, 0x00 }, 2, { 0xF0, 0x0D, 0x00 } },
+  { 0x18, 1, { 0x15, 0x00 }, 2, { 0xF0, 0x15, 0x00 } },
+  { 0x19, 1, { 0x1D, 0x00 }, 2, { 0xF0, 0x1D, 0x00 } },
+  { 0x1A, 1, { 0x24, 0x00 }, 2, { 0xF0, 0x24, 0x00 } },
+  { 0x1B, 1, { 0x2D, 0x00 }, 2, { 0xF0, 0x2D, 0x00 } },
+  { 0x1C, 1, { 0x2C, 0x00 }, 2, { 0xF0, 0x2C, 0x00 } },
+  { 0x1D, 1, { 0x35, 0x00 }, 2, { 0xF0, 0x35, 0x00 } },
+  { 0x1E, 1, { 0x3C, 0x00 }, 2, { 0xF0, 0x3C, 0x00 } },
+  { 0x1F, 1, { 0x43, 0x00 }, 2, { 0xF0, 0x43, 0x00 } },
+  { 0x20, 1, { 0x44, 0x00 }, 2, { 0xF0, 0x44, 0x00 } },
+  { 0x21, 1, { 0x4D, 0x00 }, 2, { 0xF0, 0x4D, 0x00 } },
+  { 0x22, 1, { 0x54, 0x00 }, 2, { 0xF0, 0x54, 0x00 } },
+  { 0x23, 1, { 0x5B, 0x00 }, 2, { 0xF0, 0x5B, 0x00 } },
+  { 0x24, 1, { 0x5A, 0x00 }, 2, { 0xF0, 0x5A, 0x00 } },
+  /*------------------------------------------------*/
+  { 0x42, 1, { 0x58, 0x00 }, 2, { 0xF0, 0x58, 0x00 } },
+  { 0x26, 1, { 0x1C, 0x00 }, 2, { 0xF0, 0x1C, 0x00 } },
+  { 0x27, 1, { 0x1B, 0x00 }, 2, { 0xF0, 0x1B, 0x00 } },
+  { 0x28, 1, { 0x23, 0x00 }, 2, { 0xF0, 0x23, 0x00 } },
+  { 0x29, 1, { 0x2B, 0x00 }, 2, { 0xF0, 0x2B, 0x00 } },
+  { 0x2A, 1, { 0x34, 0x00 }, 2, { 0xF0, 0x34, 0x00 } },
+  { 0x2B, 1, { 0x33, 0x00 }, 2, { 0xF0, 0x33, 0x00 } },
+  { 0x2C, 1, { 0x3B, 0x00 }, 2, { 0xF0, 0x3B, 0x00 } },
+  { 0x2D, 1, { 0x42, 0x00 }, 2, { 0xF0, 0x42, 0x00 } },
+  { 0x2E, 1, { 0x4B, 0x00 }, 2, { 0xF0, 0x4B, 0x00 } },
+  { 0x2F, 1, { 0x4C, 0x00 }, 2, { 0xF0, 0x4C, 0x00 } },
+  { 0x30, 1, { 0x52, 0x00 }, 2, { 0xF0, 0x52, 0x00 } },
+  { 0x33, 1, { 0x5D, 0x00 }, 2, { 0xF0, 0x5D, 0x00 } },
+  /*------------------------------------------------*/
+  { 0x32, 1, { 0x12, 0x00 }, 2, { 0xF0, 0x12, 0x00 } },
+  { 0x5E, 1, { 0x61, 0x00 }, 2, { 0xF0, 0x61, 0x00 } },
+  { 0x34, 1, { 0x1A, 0x00 }, 2, { 0xF0, 0x1A, 0x00 } },
+  { 0x35, 1, { 0x22, 0x00 }, 2, { 0xF0, 0x22, 0x00 } },
+  { 0x36, 1, { 0x21, 0x00 }, 2, { 0xF0, 0x21, 0x00 } },
+  { 0x37, 1, { 0x2A, 0x00 }, 2, { 0xF0, 0x2A, 0x00 } },
+  { 0x38, 1, { 0x32, 0x00 }, 2, { 0xF0, 0x32, 0x00 } },
+  { 0x39, 1, { 0x31, 0x00 }, 2, { 0xF0, 0x31, 0x00 } },
+  { 0x3A, 1, { 0x3A, 0x00 }, 2, { 0xF0, 0x3A, 0x00 } },
+  { 0x3B, 1, { 0x41, 0x00 }, 2, { 0xF0, 0x41, 0x00 } },
+  { 0x3C, 1, { 0x49, 0x00 }, 2, { 0xF0, 0x49, 0x00 } },
+  { 0x3D, 1, { 0x4A, 0x00 }, 2, { 0xF0, 0x4A, 0x00 } },
+  { 0x3E, 1, { 0x59, 0x00 }, 2, { 0xF0, 0x59, 0x00 } },
+  /*------------------------------------------------*/
+  { 0x25, 1, { 0x14, 0x00 }, 2, { 0xF0, 0x14, 0x00 } },
+  { 0x73, 2, { 0xE0, 0x1F }, 3, { 0xE0, 0xF0, 0x1F } },
+  { 0x40, 1, { 0x11, 0x00 }, 2, { 0xF0, 0x11, 0x00 } },
+  { 0x41, 1, { 0x29, 0x00 }, 2, { 0xF0, 0x29, 0x00 } },
+  { 0x71, 2, { 0xE0, 0x11 }, 3, { 0xE0, 0xF0, 0x11 } },
+  { 0x74, 2, { 0xE0, 0x27 }, 3, { 0xE0, 0xF0, 0x27 } },
+  { 0x75, 2, { 0xE0, 0x2F }, 3, { 0xE0, 0xF0, 0x2F } },
+  { 0x6D, 2, { 0xE0, 0x14 }, 3, { 0xE0, 0xF0, 0x14 } },
+  /*------------------------------------------------*/
+  { 0x6A, 2, { 0xE0, 0x70 }, 3, { 0xE0, 0xF0, 0x70 } },
+  { 0x61, 2, { 0xE0, 0x6C }, 3, { 0xE0, 0xF0, 0x6C } },
+  { 0x63, 2, { 0xE0, 0x7D }, 3, { 0xE0, 0xF0, 0x7D } },
+  { 0x6B, 2, { 0xE0, 0x71 }, 3, { 0xE0, 0xF0, 0x71 } },
+  { 0x67, 2, { 0xE0, 0x69 }, 3, { 0xE0, 0xF0, 0x69 } },
+  { 0x69, 2, { 0xE0, 0x7A }, 3, { 0xE0, 0xF0, 0x7A } },
+  { 0x62, 2, { 0xE0, 0x75 }, 3, { 0xE0, 0xF0, 0x75 } },
+  { 0x64, 2, { 0xE0, 0x6B }, 3, { 0xE0, 0xF0, 0x6B } },
+  { 0x68, 2, { 0xE0, 0x72 }, 3, { 0xE0, 0xF0, 0x72 } },
+  { 0x66, 2, { 0xE0, 0x74 }, 3, { 0xE0, 0xF0, 0x74 } },
+  /*------------------------------------------------*/
+  { 0x4D, 1, { 0x77, 0x00 }, 2, { 0xF0, 0x77, 0x00 } },
+  { 0x70, 2, { 0xE0, 0x4A }, 3, { 0xE0, 0xF0, 0x4A } },
+  { 0x3F, 1, { 0x7C, 0x00 }, 2, { 0xF0, 0x7C, 0x00 } },
+  { 0x52, 1, { 0x7B, 0x00 }, 2, { 0xF0, 0x7B, 0x00 } },
+  { 0x4F, 1, { 0x6C, 0x00 }, 2, { 0xF0, 0x6C, 0x00 } },
+  { 0x50, 1, { 0x75, 0x00 }, 2, { 0xF0, 0x75, 0x00 } },
+  { 0x51, 1, { 0x7D, 0x00 }, 2, { 0xF0, 0x7D, 0x00 } },
+  { 0x56, 1, { 0x79, 0x00 }, 2, { 0xF0, 0x79, 0x00 } },
+  { 0x53, 1, { 0x6B, 0x00 }, 2, { 0xF0, 0x6B, 0x00 } },
+  { 0x54, 1, { 0x73, 0x00 }, 2, { 0xF0, 0x73, 0x00 } },
+  { 0x55, 1, { 0x74, 0x00 }, 2, { 0xF0, 0x74, 0x00 } },
+  { 0x57, 1, { 0x69, 0x00 }, 2, { 0xF0, 0x69, 0x00 } },
+  { 0x58, 1, { 0x72, 0x00 }, 2, { 0xF0, 0x72, 0x00 } },
+  { 0x59, 1, { 0x7A, 0x00 }, 2, { 0xF0, 0x7A, 0x00 } },
+  { 0x6C, 2, { 0xE0, 0x5A }, 3, { 0xE0, 0xF0, 0x5A } },
+  { 0x5A, 1, { 0x70, 0x00 }, 2, { 0xF0, 0x70, 0x00 } },
+  { 0x5B, 1, { 0x71, 0x00 }, 2, { 0xF0, 0x71, 0x00 } },
+};
+
+
+static int keycodeCompare(const void *code1, const void *code2) {
+  return ((Keycode *) code1)->xKeycode - ((Keycode *) code2)->xKeycode;
+}
+
+
+static void initKeycode(void) {
+  qsort(kbdCodeTbl, sizeof(kbdCodeTbl)/sizeof(kbdCodeTbl[0]),
+        sizeof(kbdCodeTbl[0]), keycodeCompare);
+}
+
+
+static Keycode *lookupKeycode(unsigned int xKeycode) {
+  int lo, hi, tst;
+  int res;
+
+  lo = 0;
+  hi = sizeof(kbdCodeTbl) / sizeof(kbdCodeTbl[0]) - 1;
+  while (lo <= hi) {
+    tst = (lo + hi) / 2;
+    res = kbdCodeTbl[tst].xKeycode - xKeycode;
+    if (res == 0) {
+      return &kbdCodeTbl[tst];
+    }
+    if (res < 0) {
+      lo = tst + 1;
+    } else {
+      hi = tst - 1;
+    }
+  }
+  return NULL;
+}
+
+
+/**************************************************************/
+
+/* keyboard buffer */
+
+
+#define KEYBD_BUF_SIZE		(1 << 4)
+#define KEYBD_BUF_MASK		(KEYBD_BUF_SIZE - 1)
+
+
+static int rKeybd = 0;		/* keyboard ready? */
+
+static Byte keybdBuf[KEYBD_BUF_SIZE];
+static int keybdBufWrIndex = 0;
+static int keybdBufRdIndex = 0;
+
+
+static void putKeycode(Byte code) {
+  int newWrIndex;
+
+  newWrIndex = (keybdBufWrIndex + 1) & KEYBD_BUF_MASK;
+  if (newWrIndex != keybdBufRdIndex) {
+    keybdBuf[keybdBufWrIndex] = code;
+    keybdBufWrIndex = newWrIndex;
+    rKeybd = 1;
+  }
+}
+
+
+static Byte getKeycode(void) {
+  Byte code;
+
+  if (keybdBufRdIndex != keybdBufWrIndex) {
+    code = keybdBuf[keybdBufRdIndex];
+    keybdBufRdIndex = (keybdBufRdIndex + 1) & KEYBD_BUF_MASK;
+    if (keybdBufRdIndex == keybdBufWrIndex) {
+      rKeybd = 0;
+    }
+  } else {
+    code = 0;
+  }
+  return code;
+}
+
+
+/**************************************************************/
+
+/* event handlers */
+
+
+static int xMouse = 0;		/* mouse x position */
+static int yMouse = 0;		/* mouse y position */
+static int bMouse = 0;		/* mouse button status */
+
+
+static void doMouseMove(int x, int y) {
+  xMouse = x;
+  yMouse = WINDOW_SIZE_Y - 1 - y;
+}
+
+
+static void doButtonPress(int b) {
+  bMouse |= (1 << (3 - b));
+}
+
+
+static void doButtonRelease(int b) {
+  bMouse &= ~(1 << (3 - b));
+}
+
+
+static void doKeyPress(int k) {
+  Keycode *keycode;
+  int i;
+
+  keycode = lookupKeycode(k);
+  if (keycode != NULL) {
+    for (i = 0; i < keycode->pcNumMake; i++) {
+      putKeycode(keycode->pcKeyMake[i]);
+    }
+  }
+}
+
+
+static void doKeyRelease(int k) {
+  Keycode *keycode;
+  int i;
+
+  keycode = lookupKeycode(k);
+  if (keycode != NULL) {
+    for (i = 0; i < keycode->pcNumBreak; i++) {
+      putKeycode(keycode->pcKeyBreak[i]);
+    }
+  }
+}
+
+
+/**************************************************************/
+
+/* mouse and keyboard device interface */
+
+
+Word mouseRead(void) {
+  return rKeybd << 28 | bMouse << 24 | yMouse << 12 | xMouse;
+}
+
+
+Word keybdRead(void) {
+  return getKeycode();
+}
+
+
+void mouseKeybdInit(void) {
+  initKeycode();
 }
