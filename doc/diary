@@ -85,3 +85,36 @@ the boolean constant TRUE. This is illegal in Oberon-0.
 My solution: allow TRUE and FALSE in factors.
 The Oberon-0 parser is now working.
 Alas, Oberon-0 is not Oberon-07, not even remotely.
+
+01-Mar-2018
+Back to the RISC5 simulator. Memory instructions done.
+
+03-Mar-2018
+Instruction execution corrected in several places, and
+disassembler enhanced. Detailed I/O decoding added. SPI
+interface done. I snarfed the SD card protocol machinery
+from Peter de Wachter's emulator. Implemented setting the
+buttons and switches, both at program start and within
+the machine monitor. Integer multiplication implemented.
+
+04-Mar-2018
+Integer division implemented. I added the graphics module
+from the ECO32 project, as a first step towards a graphics
+screen. Surprisingly, I could make it work for Oberon with
+only a few small changes. And, as a second big surprise,
+I saw the opening screen of the Oberon system appearing on
+the graphics window, which means that the processor, main
+memory and graphics I/O is basically running.
+
+05-Mar-2018
+Don't let incorrect I/O statements crash the simulation,
+but show a note and let the program continue. Ignore I/O
+accesses to device 15; I have no clue what this device
+is supposed to do. Implement and calibrate the millisecond
+timer, and cleanup switch handling.
+
+06-Mar-2018
+Implement mouse and keyboard. The mouse was not difficult,
+but the keyboard needs mapping the X11 keycodes to sequences
+of make/break PC keycodes. I was lucky that I had already
+implemented such a map in the ECO32 project.
