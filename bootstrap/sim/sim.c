@@ -144,13 +144,18 @@ void initRS232(void) {
 /**************************************************************/
 
 /*
- * I/O device 4, 5: SPI (CD card)
+ * I/O device 4, 5: SPI (SD card, WiFi network)
  */
+
+
+/* ---------------------------------------------------------- */
+
+/* SD card */
 
 
 /*
  * NOTE: The SD card protocol machinery was shamelessly copied
- *       from Peter de Wachter's emulator. It should be changed
+ *       from Peter de Wachter's emulator. It should be enhanced
  *       to simulate an SD card more exactly.
  */
 
@@ -325,7 +330,39 @@ static void diskWrite(Word value) {
 }
 
 
-/* ---------------------------------- */
+void diskInit(char *diskName) {
+  if (diskName == NULL) {
+    diskImage = NULL;
+    return;
+  }
+  diskImage = fopen(diskName, "r+");
+  if (diskImage == NULL) {
+    error("cannot open disk file '%s'", diskName);
+  }
+  diskState = DISK_CMD;
+  diskSeekSector(0);
+  diskReadSector(diskTxBuf);
+  if (diskTxBuf[0] == 0x9B1EA38D) {
+    diskOffset = 0x80002;
+  } else {
+    diskOffset = 0;
+  }
+  diskRxIdx = 0;
+  diskTxCnt = 0;
+  diskTxIdx = 0;
+}
+
+
+/* ---------------------------------------------------------- */
+
+/* WiFi network */
+
+
+void netInit(void) {
+}
+
+
+/* ---------------------------------------------------------- */
 
 
 #define SPI_SEL_DISK	(1 << 0)
@@ -386,25 +423,9 @@ void initSPI(char *diskName) {
   /* init SPI */
   spiSelect = 0;
   /* init SD card interface */
-  if (diskName == NULL) {
-    diskImage = NULL;
-    return;
-  }
-  diskImage = fopen(diskName, "r+");
-  if (diskImage == NULL) {
-    error("cannot open disk file '%s'", diskName);
-  }
-  diskState = DISK_CMD;
-  diskSeekSector(0);
-  diskReadSector(diskTxBuf);
-  if (diskTxBuf[0] == 0x9B1EA38D) {
-    diskOffset = 0x80002;
-  } else {
-    diskOffset = 0;
-  }
-  diskRxIdx = 0;
-  diskTxCnt = 0;
-  diskTxIdx = 0;
+  diskInit(diskName);
+  /* init network interface */
+  netInit();
 }
 
 
