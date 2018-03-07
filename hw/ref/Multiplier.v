@@ -14,7 +14,7 @@ wire [32:0] w1;
 assign stall = run & ~(S == 33);
 assign w0 = P[0] ? y : 0;
 assign w1 = (S == 32) & u ? {P[63], P[63:32]} - {w0[31], w0} :
-       {P[63], P[63:32]} + {w0[31], w0};
+       u ? {P[63], P[63:32]} + {w0[31], w0} : {1'b0, P[63:32]} + {1'b0, w0};
 assign z = P;
 
 always @ (posedge(clk)) begin

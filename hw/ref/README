@@ -1,7 +1,7 @@
 1) Changes
 
-There are two changes in PROM.v (to avoid a warning from Icarus
-and adjust the path to the PROM contents file):
+a) There are two changes in PROM.v (to avoid a warning from Icarus
+Verilog and adjust the path to the PROM contents file):
 
 7,8c7,8
 < reg [31:0] mem [511: 0];
@@ -9,6 +9,8 @@ and adjust the path to the PROM contents file):
 ---
 > reg [31:0] mem [0:511];
 > initial $readmemh("prom.mem", mem);
+
+b) Correct Multiplier.v for unsigned multiplication of big numbers.
 
 
 2) Usage
