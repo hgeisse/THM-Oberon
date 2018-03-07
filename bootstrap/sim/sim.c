@@ -778,20 +778,15 @@ static Bool run;		/* CPU runs continuously if true */
 
 
 Word intMul(Word op1, Word op2, Word *hiResPtr, Bool u) {
-  Word hiRes, loRes;
   Bool neg1, neg2;
+  Word op1abs, op2abs;
+  Word hiRes, loRes;
   int i;
 
-  if (!u) {
-    neg1 = (op1 >> 31) & 1;
-    if (neg1) {
-      op1 = -op1;
-    }
-    neg2 = (op2 >> 31) & 1;
-    if (neg2) {
-      op2 = -op2;
-    }
-  }
+  neg1 = (op1 >> 31) & 1;
+  neg2 = (op2 >> 31) & 1;
+  op1abs = (!u && neg1) ? -op1 : op1;
+  op2abs = (!u && neg2) ? -op2 : op2;
   hiRes = 0;
   loRes = 0;
   for (i = 0; i < 32; i++) {
@@ -802,13 +797,13 @@ Word intMul(Word op1, Word op2, Word *hiResPtr, Bool u) {
       hiRes <<= 1;
     }
     loRes <<= 1;
-    if (op2 & 0x80000000) {
-      loRes += op1;
-      if (loRes < op1) {
+    if (op2abs & 0x80000000) {
+      loRes += op1abs;
+      if (loRes < op1abs) {
         hiRes++;
       }
     }
-    op2 <<= 1;
+    op2abs <<= 1;
   }
   if (!u && (neg1 != neg2)) {
     hiRes = ~hiRes;
@@ -826,47 +821,41 @@ Word intMul(Word op1, Word op2, Word *hiResPtr, Bool u) {
 
 
 Word intDiv(Word op1, Word op2, Word *remPtr, Bool u) {
-  Word quo, rem;
   Bool neg1, neg2;
+  Word op1abs, op2abs;
+  Word quo, rem;
   int i;
 
-  if (!u) {
-    neg1 = (op1 >> 31) & 1;
-    if (neg1) {
-      op1 = -op1;
-    }
-    neg2 = (op2 >> 31) & 1;
-    if (neg2) {
-      op2 = -op2;
-    }
-  }
+  neg1 = (op1 >> 31) & 1;
+  neg2 = (op2 >> 31) & 1;
+  op1abs = (!u && neg1) ? -op1 : op1;
+  op2abs = (!u && neg2) ? -op2 : op2;
   quo = 0;
   rem = 0;
   for (i = 0; i < 32; i++) {
-    if (op1 & 0x80000000) {
+    if (op1abs & 0x80000000) {
       rem <<= 1;
       rem++;
     } else {
       rem <<= 1;
     }
-    op1 <<= 1;
+    op1abs <<= 1;
     quo <<= 1;
-    if (rem >= op2) {
-      rem -= op2;
+    if (rem >= op2abs) {
+      rem -= op2abs;
       quo++;
     }
   }
   if (!u) {
     if (neg1 != neg2) {
       quo = -quo;
+      if (rem != 0) {
+        quo--;
+        rem -= op2abs;
+      }
     }
     if (neg1) {
-      if (neg2) {
-        quo++;
-      } else {
-        quo--;
-      }
-      rem = -rem + op2;
+      rem = -rem;
     }
   }
   *remPtr = rem;
