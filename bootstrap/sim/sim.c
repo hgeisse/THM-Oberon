@@ -3,26 +3,32 @@
  */
 
 
+#ifdef __linux__
+#define _GNU_SOURCE
+#endif
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <signal.h>
+#include <fcntl.h>
 
 #include "common.h"
 #include "graph.h"
 
 
 #define INST_PER_MSEC	25000			/* execution speed */
+#define INST_PER_CHAR	1000			/* serial line speed */
 
-#define RAM_START	0x00000000		/* byte address */
+#define RAM_BASE	0x00000000		/* byte address */
 #define RAM_SIZE	0x00100000		/* counted in bytes */
-#define GRAPH_START	0x000E7F00		/* frame buffer memory */
+#define GRAPH_BASE	0x000E7F00		/* frame buffer memory */
 #define GRAPH_SIZE	0x00018000		/* located within RAM */
-#define ROM_START	0x00FFE000		/* byte address */
+#define ROM_BASE	0x00FFE000		/* byte address */
 #define ROM_SIZE	0x00000800		/* counted in bytes */
-#define IO_START	0x00FFFFC0		/* byte address */
+#define IO_BASE		0x00FFFFC0		/* byte address */
 #define IO_SIZE		0x00000040		/* counted in bytes */
-#define ADDR_MASK	(IO_START + IO_SIZE - 1)
+#define ADDR_MASK	(IO_BASE + IO_SIZE - 1)
 
 #define SIGN_EXT_24(x)	((x) & 0x00800000 ? (x) | 0xFF000000 : (x))
 #define SIGN_EXT_20(x)	((x) & 0x00080000 ? (x) | 0xFFF00000 : (x))
@@ -51,13 +57,18 @@ void tickTimer(void) {
 }
 
 
+/*
+ * read device 0: milliseconds counter value
+ */
 Word readTimer(void) {
   return milliSeconds;
 }
 
 
+/*
+ * write dev 1: ignore
+ */
 void writeTimer(Word data) {
-  /* ignore writing to timer */
 }
 
 
@@ -81,11 +92,22 @@ void setSwitches(Word data) {
 }
 
 
+/*
+ * read dev 1: buttons and switches
+ *    { 20'bx, button[3:0], switch[7:0] }
+ *    button: press = 1
+ *    switch: up = on = 1
+ */
 Word readSwitches(void) {
   return currentSwitches;
 }
 
 
+/*
+ * write dev 1: LEDs
+ *    { 24'bx, led[7:0] }
+ *    led: 1 = on
+ */
 void writeLEDs(Word data) {
   static Word currentLEDs = 0;
   int i;
@@ -115,29 +137,99 @@ void initSWLED(Word initialSwitches) {
  */
 
 
+#define SERIAL_RX_RDY		0x01
+#define SERIAL_TX_RDY		0x02
+
+
+static FILE *serialIn;
+static FILE *serialOut;
+static Word serialRxData;
+static Word serialTxData;
+static Word serialStatus;
+
+
+void tickSerial(void) {
+  static int rxCount = 0;
+  static int txCount = 0;
+  int c;
+
+  if (rxCount++ == INST_PER_CHAR) {
+    rxCount = 0;
+    c = fgetc(serialIn);
+    if (c != EOF) {
+      serialRxData = c & 0xFF;
+      serialStatus |= SERIAL_RX_RDY;
+    }
+  }
+  if ((serialStatus & SERIAL_TX_RDY) == 0) {
+    if (txCount++ == INST_PER_CHAR) {
+      txCount = 0;
+      fputc(serialTxData & 0xFF, serialOut);
+      serialStatus |= SERIAL_TX_RDY;
+    }
+  }
+}
+
+
+/*
+ * read dev 2: receiver data
+ *     { 24'bx, rx_data[7:0] }
+ */
 Word readRS232_0(void) {
-  printf("NOTE: reading from RS232_0\n");
-  return 0;
+  serialStatus &= ~SERIAL_RX_RDY;
+  return serialRxData;
 }
 
 
+/*
+ * write dev 2: transmitter data
+ *     { 24'bx, tx_data[7:0] }
+ */
 void writeRS232_0(Word data) {
-  printf("NOTE: writing to RS232_0, data = 0x%08X\n", data);
+  serialTxData = data & 0xFF;
+  serialStatus &= ~SERIAL_TX_RDY;
 }
 
 
+/*
+ * read dev 3: status
+ *     { 30'bx, tx_rdy, rx_rdy }
+ */
 Word readRS232_1(void) {
-  printf("NOTE: reading from RS232_1\n");
-  return 0;
+  return serialStatus;
 }
 
 
+/*
+ * write dev 3: control
+ *     { 31'bx, bitrate }
+ *     bitrate: 0 = 19200 bps, 1 = 115200 bps
+ */
 void writeRS232_1(Word data) {
-  printf("NOTE: writing to RS232_1, data = 0x%08X\n", data);
+  /* ignore bitrate in simulation */
 }
 
 
 void initRS232(void) {
+  int master;
+  char slavePath[100];
+
+  serialIn = NULL;
+  serialOut = NULL;
+  master = open("/dev/ptmx", O_RDWR | O_NONBLOCK);
+  if (master < 0) {
+    error("cannot open pseudo terminal master for serial line");
+  }
+  grantpt(master);
+  unlockpt(master);
+  strcpy(slavePath, ptsname(master));
+  printf("The serial line can be accessed by opening device '%s'.\n",
+         slavePath);
+  fcntl(master, F_SETFL, O_NONBLOCK);
+  serialIn = fdopen(master, "r");
+  setvbuf(serialIn, NULL, _IONBF, 0);
+  serialOut = fdopen(master, "w");
+  setvbuf(serialOut, NULL, _IONBF, 0);
 }
 
 
@@ -374,6 +466,9 @@ static Bool debugSPI = false;
 static Word spiSelect;
 
 
+/*
+ * read dev 4: read data
+ */
 Word readSPIdata(void) {
   Word data;
 
@@ -389,6 +484,9 @@ Word readSPIdata(void) {
 }
 
 
+/*
+ * write dev 4: write data
+ */
 void writeSPIdata(Word data) {
   if (debugSPI) {
     printf("SPI: write data, data = 0x%08X\n", data);
@@ -400,6 +498,10 @@ void writeSPIdata(Word data) {
 }
 
 
+/*
+ * read dev 5: status
+ *     { 31'bx, spi_rdy }
+ */
 Word readSPIctrl(void) {
   Word data;
 
@@ -411,6 +513,10 @@ Word readSPIctrl(void) {
 }
 
 
+/*
+ * write dev 5: ctrl
+ *     { 28'bx, net_en, fast, wifi_sel, sdc_sel }
+ */
 void writeSPIctrl(Word data) {
   if (debugSPI) {
     printf("SPI: write ctrl, data = 0x%08X\n", data);
@@ -436,23 +542,35 @@ void initSPI(char *diskName) {
  */
 
 
+/*
+ * read dev 6: mouse data, keyboard status
+ *     { 3'bx, kbd_rdy, 1'bx, btn[2:0], 2'bx, ypos[9:0], 2'bx, xpos[9:0] }
+ */
 Word readMouse(void) {
   return mouseRead();
 }
 
 
+/*
+ * write dev 6: ignore
+ */
 void writeMouse(Word data) {
-  /* ignore writing to mouse */
 }
 
 
+/*
+ * read dev 7: keyboard data
+ *     { 24'bx, kbd_data[7:0] }
+ */
 Word readKeybd(void) {
   return keybdRead();
 }
 
 
+/*
+ * write dev 7: ignore
+ */
 void writeKeybd(Word data) {
-  /* ignore writing to keyboard */
 }
 
 
@@ -468,25 +586,33 @@ void initMouseKeybd(void) {
  */
 
 
+/*
+ * read dev 8: ignore, return 0
+ */
 Word readGPIO_0(void) {
-  printf("NOTE: reading from GPIO_0\n");
   return 0;
 }
 
 
+/*
+ * write dev 8: ignore
+ */
 void writeGPIO_0(Word data) {
-  printf("NOTE: writing to GPIO_0, data = 0x%08X\n", data);
 }
 
 
+/*
+ * read dev 9: ignore, return 0
+ */
 Word readGPIO_1(void) {
-  printf("NOTE: reading from GPIO_1\n");
   return 0;
 }
 
 
+/*
+ * write dev 9: ignore
+ */
 void writeGPIO_1(Word data) {
-  printf("NOTE: writing to GPIO_1, data = 0x%08X\n", data);
 }
 
 
@@ -497,25 +623,29 @@ void initGPIO(void) {
 /**************************************************************/
 
 /*
- * I/O device 15: 'Special', function is not known
+ * I/O device 15: 'special', function is not known
  */
 
 
+/*
+ * read dev 15: ignore, return 0
+ */
 Word readSpecial(void) {
-  /* ignore reading from special device */
   return 0;
 }
 
 
+/*
+ * write dev 15: ignore
+ */
 void writeSpecial(Word data) {
-  /* ignore writing to special device */
 }
 
 
 /**************************************************************/
 
 /*
- * I/O
+ * I/O : address of device n = IO_BASE + 4 * n
  */
 
 
@@ -622,14 +752,14 @@ static Word rom[ROM_SIZE >> 2];
 
 Word readWord(Word addr) {
   addr &= ADDR_MASK;
-  if (addr >= RAM_START && addr < RAM_START + RAM_SIZE) {
-    return ram[(addr - RAM_START) >> 2];
+  if (addr >= RAM_BASE && addr < RAM_BASE + RAM_SIZE) {
+    return ram[(addr - RAM_BASE) >> 2];
   }
-  if (addr >= ROM_START && addr < ROM_START + ROM_SIZE) {
-    return rom[(addr - ROM_START) >> 2];
+  if (addr >= ROM_BASE && addr < ROM_BASE + ROM_SIZE) {
+    return rom[(addr - ROM_BASE) >> 2];
   }
-  if (addr >= IO_START && addr < IO_START + IO_SIZE) {
-    return readIO((addr - IO_START) >> 2);
+  if (addr >= IO_BASE && addr < IO_BASE + IO_SIZE) {
+    return readIO((addr - IO_BASE) >> 2);
   }
   error("memory read @ 0x%08X off bounds", addr);
   /* never reached */
@@ -639,18 +769,18 @@ Word readWord(Word addr) {
 
 void writeWord(Word addr, Word data) {
   addr &= ADDR_MASK;
-  if (addr >= RAM_START && addr < RAM_START + RAM_SIZE) {
-    if (addr >= GRAPH_START && addr < GRAPH_START + GRAPH_SIZE) {
-      graphWrite((addr - GRAPH_START) >> 2, data);
+  if (addr >= RAM_BASE && addr < RAM_BASE + RAM_SIZE) {
+    if (addr >= GRAPH_BASE && addr < GRAPH_BASE + GRAPH_SIZE) {
+      graphWrite((addr - GRAPH_BASE) >> 2, data);
     }
-    ram[(addr - RAM_START) >> 2] = data;
+    ram[(addr - RAM_BASE) >> 2] = data;
     return;
   }
-  if (addr >= ROM_START && addr < ROM_START + ROM_SIZE) {
+  if (addr >= ROM_BASE && addr < ROM_BASE + ROM_SIZE) {
     error("PROM write @ 0x%08X", addr);
   }
-  if (addr >= IO_START && addr < IO_START + IO_SIZE) {
-    return writeIO((addr - IO_START) >> 2, data);
+  if (addr >= IO_BASE && addr < IO_BASE + IO_SIZE) {
+    return writeIO((addr - IO_BASE) >> 2, data);
   }
   error("memory write @ 0x%08X off bounds", addr);
 }
@@ -875,6 +1005,7 @@ static void execNextInstruction(void) {
   Word aux;
 
   tickTimer();
+  tickSerial();
   ir = readWord(pc << 2);
   pc++;
   p = (ir >> 31) & 0x01;
