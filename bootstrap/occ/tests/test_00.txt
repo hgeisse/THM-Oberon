@@ -1,5 +1,0 @@
-(* a list of all tokens *)
-* DIV MOD & + - OR = # < <= > >= . 1234 FALSE TRUE
-~ ( [ anIdentifier IF WHILE REPEAT , : := ) ] THEN
-OF DO ; END ELSE ELSIF UNTIL ARRAY RECORD CONST
-TYPE VAR PROCEDURE BEGIN MODULE
