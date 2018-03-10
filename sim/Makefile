@@ -1,17 +1,23 @@
 #
-# Makefile for RISC simulator
+# Makefile for Oberon RISC simulator
 #
 
-CC=gcc
-CFLAGS=-g -Wall
-LDFLAGS=-g -Wall
-LDLIBS=-lX11 -lpthread -lm
+BUILD = ../build
 
-SRCS=sim.c common.c graph.c
-OBJS=$(patsubst %.c,%.o,$(SRCS))
-BIN=sim
+CC = gcc
+CFLAGS = -g -Wall
+LDFLAGS = -g -Wall
+LDLIBS = -lX11 -lpthread -lm
+
+SRCS = sim.c common.c graph.c
+OBJS = $(patsubst %.c,%.o,$(SRCS))
+BIN = sim
 
 all:		$(BIN)
+
+install:	$(BIN)
+		mkdir -p $(BUILD)/bin
+		cp $(BIN) $(BUILD)/bin
 
 $(BIN):		$(OBJS)
 		$(CC) $(LDFLAGS) -o $(BIN) $(OBJS) $(LDLIBS)

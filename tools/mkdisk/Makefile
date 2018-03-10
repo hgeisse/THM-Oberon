@@ -2,18 +2,16 @@
 # Makefile for disk creator
 #
 
-BUILD = ../../../build
+BUILD = ../../build
 
 CC = gcc
 CFLAGS = -g -Wall
-LDFLAGS = -g
+LDFLAGS = -g -Wall
 LDLIBS = -lm
 
 SRCS = mkdisk.c
 OBJS = $(patsubst %.c,%.o,$(SRCS))
 BIN = mkdisk
-
-.PHONY:		all install clean
 
 all:		$(BIN)
 
@@ -27,10 +25,5 @@ $(BIN):		$(OBJS)
 %.o:		%.c
 		$(CC) $(CFLAGS) -o $@ -c $<
 
-depend.mak:
-		$(CC) -MM -MG $(CFLAGS) $(SRCS) >depend.mak
-
--include depend.mak
-
 clean:
-		rm -f *~ $(OBJS) $(BIN) depend.mak
+		rm -f *~ $(OBJS) $(BIN)
