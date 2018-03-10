@@ -230,6 +230,8 @@ void initRS232(void) {
   setvbuf(serialIn, NULL, _IONBF, 0);
   serialOut = fdopen(master, "w");
   setvbuf(serialOut, NULL, _IONBF, 0);
+  while (fgetc(serialIn) != EOF) ;
+  serialStatus = SERIAL_TX_RDY;
 }
 
 
