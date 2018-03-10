@@ -2,7 +2,7 @@
 # Makefile for serial line boot support
 #
 
-BUILD = ../build
+BUILD = ../../build
 
 CC = gcc
 CFLAGS = -g -Wall

@@ -4,7 +4,7 @@
 
 BUILD = ../build
 
-DIRS = pclink bootlink
+DIRS = bootlink pclink
 
 all:
 		for i in $(DIRS) ; do \
