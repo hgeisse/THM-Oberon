@@ -4,7 +4,7 @@
 
 BUILD = `pwd`/build
 
-DIRS = sim pclink tools
+DIRS = sim link tools
 
 all:		builddir
 		for i in $(DIRS) ; do \
