@@ -1,5 +1,5 @@
 #
-# Makefile for serial line boot support
+# Makefile for serial line link support
 #
 
 BUILD = ../../build
@@ -9,9 +9,9 @@ CFLAGS = -g -Wall
 LDFLAGS = -g -Wall
 LDLIBS = -lm
 
-SRCS = bootlink.c
+SRCS = serlink.c
 OBJS = $(patsubst %.c,%.o,$(SRCS))
-BIN = bootlink
+BIN = serlink
 
 all:		$(BIN)
 
