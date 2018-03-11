@@ -1,5 +1,5 @@
 /*
- * bootlink.c -- serial line boot support
+ * serlink.c -- serial line link support
  */
 
 
@@ -380,6 +380,13 @@ void fill(int argc, char *argv[]) {
 }
 
 
+void shfile(int argc, char *argv[]) {
+  sndInt(4);
+  sndStr(argv[1]);
+  getAndShowAnswer();
+}
+
+
 void watch(int argc, char *argv[]) {
   sndInt(7);
   getAndShowAnswer();
@@ -433,6 +440,7 @@ Cmd cmds[] = {
   { "xo2h",   2, xo2h   },
   { "mirr",   2, mirr   },
   { "fill",   2, fill   },
+  { "shfile", 2, shfile },
   { "watch",  1, watch  },
   { "shmod",  1, shmod  },
   { "shcmd",  2, shcmd  },
@@ -539,6 +547,7 @@ int main(int argc, char *argv[]) {
     printf("xo2h <filename>     transfer <filename> from Oberon to host\n");
     printf("mirr <integer>      mirror <integer> back\n");
     printf("fill <integer>      fill display with <integer>\n");
+    printf("shfile <filename>   show file <filename>\n");
     printf("watch               watch\n");
     printf("shmod               show modules\n");
     printf("shcmd <modname>     show commands for <modname>\n");

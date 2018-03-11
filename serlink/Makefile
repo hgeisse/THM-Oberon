@@ -2,7 +2,7 @@
 # Makefile for serial line link support
 #
 
-BUILD = ../../build
+BUILD = ../build
 
 CC = gcc
 CFLAGS = -g -Wall

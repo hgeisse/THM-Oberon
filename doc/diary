@@ -118,3 +118,20 @@ Implement mouse and keyboard. The mouse was not difficult,
 but the keyboard needs mapping the X11 keycodes to sequences
 of make/break PC keycodes. I was lucky that I had already
 implemented such a map in the ECO32 project.
+
+10-Mar-2018
+This morning I had an interesting idea: there is an alternative
+to equipping the Oberon kit with a disk image (and the sources)!
+It may be possible to supply only certain prelinked object files
+(and the sources, of course). It is certainly possible to create
+the object files from a running disk image, but maybe it's also
+possible to create a disk image from the object files (with the
+help of PCLink). The situation is similar to the caterpillar to
+butterfly metamorphosis. I have to try that.
+
+11-Mar-2018
+There is still one other component missing: an interactive
+program from which Oberon0 can be controlled over the serial
+line. As this program must also be able to transfer files,
+it would be programmed as an extension of PCLink, which is
+then no longer needed.
