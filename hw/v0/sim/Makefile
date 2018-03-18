@@ -3,9 +3,9 @@
 #
 
 SRCS = risc5test.v \
-       src/toplevel/risc5top.v \
+       src/toplevel/risc5.v \
        src/clk_rst/clk_rst.v \
-       src/cpu/RISC5.v \
+       src/cpu/RISC5cpu.v \
        src/cpu/PROM.v \
        src/cpu/Multiplier.v \
        src/cpu/Divider.v \

@@ -38,7 +38,7 @@ module risc5test;
   // module instantiations
   //
 
-  risc5top risc5top_1(
+  risc5 risc5_1(
     .clk_in(clk_in),
     .rst_in_n(rst_in_n)
   );

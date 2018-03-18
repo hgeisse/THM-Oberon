@@ -1,8 +1,9 @@
 `timescale 1ns / 1ps  // 9.11.2016
 `default_nettype none  // HG 18.03.2018
 // HG 18.03.2018: rst polarity changed
+// HG 18.03.2018: module renamed
 
-module RISC5(
+module RISC5cpu(
 input clk, rst, stallX,
 input [31:0] inbus, codebus,
 output [23:0] adr,

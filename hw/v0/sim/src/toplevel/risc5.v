@@ -1,5 +1,5 @@
 //
-// risc5top.v -- RISC5 toplevel description
+// risc5.v -- RISC5 toplevel description
 //
 
 
@@ -7,7 +7,7 @@
 `default_nettype none
 
 
-module risc5top(
+module risc5(
     input clk_in,
     input rst_in_n);
 
@@ -35,7 +35,7 @@ module risc5top(
     .rst(rst)
   );
 
-  RISC5 cpu(
+  RISC5cpu cpu_1(
     .clk(clk_25),
     .rst(rst),
     .stallX(stall),
