@@ -12,6 +12,10 @@ Verilog and adjust the path to the PROM contents file):
 
 b) Correct Multiplier.v for unsigned multiplication of big numbers.
 
+c) In RISC5.v set register R15 to zero initially. This is required
+for simulating the boot loader, which tests the contents of this
+register.
+
 
 2) Usage
 
