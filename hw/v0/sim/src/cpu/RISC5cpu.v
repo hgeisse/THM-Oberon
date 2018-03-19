@@ -104,7 +104,7 @@ assign B = R[irb];
 assign C0 = R[irc];
 
 // Arithmetic-logical unit (ALU)
-assign ira0 = BR ? 15 : ira;
+assign ira0 = BR ? 4'd15 : ira;
 assign C1 = q ? {{16{v}}, imm} : C0;
 assign adr = stallL ? B[23:0] + {{4{off[19]}}, off} : {pcmux, 2'b00};
 assign rd = LDR & ~stallX & ~stall1;
@@ -150,7 +150,7 @@ assign outbus = {outbusB3, outbusB2, outbusB1, outbusB0};
 
 // Control unit CU
 assign S = N ^ OV;
-assign nxpc = PC + 1;
+assign nxpc = PC + 22'h1;
 assign cond = ins[27] ^
   ((cc == 0) & N | // MI, PL
    (cc == 1) & Z | // EQ, NE

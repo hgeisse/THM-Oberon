@@ -16,7 +16,8 @@ SRCS = risc5test.v \
        src/cpu/FPDivider.v \
        src/ram/ram.v \
        src/ram/sram/sram.v \
-       src/vid/vid.v
+       src/vid/vid.v \
+       src/bio/bio.v
 
 all:		show
 

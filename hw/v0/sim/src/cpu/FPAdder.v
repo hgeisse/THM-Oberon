@@ -42,8 +42,8 @@ assign yn = (y[30:0] == 0);
 assign dx = xe - ye;
 assign dy = ye - xe;
 assign e0 = (dx[8]) ? ye : xe;
-assign sx = dy[8] ? 0 : dy;
-assign sy = dx[8] ? 0 : dx;
+assign sx = dy[8] ? 8'h0 : dy[7:0];
+assign sy = dx[8] ? 8'h0 : dx[7:0];
 assign sx0 = sx[1:0];
 assign sx1 = sx[3:2];
 assign sy0 = sy[1:0];
@@ -70,7 +70,7 @@ always @ (posedge(clk))
 	
 // add
 always @ (posedge(clk)) Sum <= {xs, xs, x3} + {ys, ys, y3};
-assign s = (Sum[26] ? -Sum : Sum) + 1;
+assign s = (Sum[26] ? -Sum : Sum) + 27'd1;
 
 // post-normalize
 assign z24 = ~s[25] & ~ s[24];
@@ -111,7 +111,7 @@ assign sc[0] = ~s[25] & s[24]
       | z6 & ~s[5] & s[4]
       | z4 & ~s[3] & s[2];
 
-assign e1 = e0 - sc + 1;
+assign e1 = e0 - sc + 9'd1;
 assign sc0 = sc[1:0];
 assign sc1 = sc[3:2];
 
@@ -122,7 +122,7 @@ assign t2 = (sc1 == 3) ? {t1[12:0], 12'b0} :
 always @ (posedge(clk)) t3 <= sc[4] ? {t2[8:0], 16'b0} : t2;
 
 assign stall = run & ~(State == 3);
-always @ (posedge(clk)) State <= run ? State + 1 : 0;
+always @ (posedge(clk)) State <= run ? State + 2'd1 : 2'd0;
 
 assign z = v ? {{7{Sum[26]}}, Sum[25:1]} :  // FLOOR
     xn ? (u|yn ? 0 : y) :   // FLT or x = y = 0

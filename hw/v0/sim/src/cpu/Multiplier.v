@@ -20,7 +20,7 @@ assign z = P;
 
 always @ (posedge(clk)) begin
   P <= (S == 0) ? {32'b0, x} : {w1[32:0], P[31:1]};
-  S <= run ? S+1 : 0;
+  S <= run ? S + 6'd1 : 6'd0;
 end
 
 endmodule

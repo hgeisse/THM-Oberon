@@ -6,7 +6,7 @@ module PROM (input clk,
   output reg [31:0] data);
   
 reg [31:0] mem [0:511];
-initial $readmemh("prom.mem", mem);
+initial $readmemh("src/prom.mem", mem);
 always @(posedge clk) data <= mem[adr];
 
 endmodule

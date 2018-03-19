@@ -8,9 +8,10 @@
 
 
 module clk_rst(clk_in, rst_in_n,
-               clk_75, clk_25, rst);
+               clk_ok, clk_75, clk_25, rst);
     input clk_in;
     input rst_in_n;
+    output clk_ok;
     output reg clk_75;
     output reg clk_25;
     output rst;
@@ -18,6 +19,8 @@ module clk_rst(clk_in, rst_in_n,
   reg rst_p_n;
   reg rst_s_n;
   reg [3:0] cnt;
+
+  assign clk_ok = 1'b1;
 
   initial begin
     clk_25 = 1'b0;
@@ -29,11 +32,11 @@ module clk_rst(clk_in, rst_in_n,
 
   always @(posedge clk_25) begin
     clk_75 = 1'b1;
-    #6.6 clk_75 = 1'b0;
-    #6.6 clk_75 = 1'b1;
-    #6.6 clk_75 = 1'b0;
-    #6.6 clk_75 = 1'b1;
-    #6.6 clk_75 = 1'b0;
+    #6.66 clk_75 = 1'b0;
+    #6.67 clk_75 = 1'b1;
+    #6.67 clk_75 = 1'b0;
+    #6.67 clk_75 = 1'b1;
+    #6.66 clk_75 = 1'b0;
   end
 
   always @(posedge clk_25) begin

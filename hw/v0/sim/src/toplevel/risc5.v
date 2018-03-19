@@ -7,14 +7,20 @@
 `default_nettype none
 
 
-module risc5(
-    input clk_in,
-    input rst_in_n);
+module risc5(clk_in,
+             rst_in_n
+            );
 
-  wire clk_75;
-  wire clk_25;
-  wire rst;
+    // clock and reset
+    input clk_in;
+    input rst_in_n;
 
+  // clk_rst
+  wire clk_ok;				// system clocks stable
+  wire pclk;				// pixel clock, 75 MHz
+  wire clk;				// system clock, 25 MHz
+  wire rst;				// system reset
+  // cpu
   wire stall;
   wire [31:0] inbus;
   wire [31:0] inbus0;
@@ -23,20 +29,28 @@ module risc5(
   wire wr;
   wire ben;
   wire [31:0] outbus;
+  // i/o
+  wire io_en;
+  wire [3:0] io_adr;
+  // bio
+  wire bio_en;
+  wire [31:0] bio_dout;
 
-  wire [3:0] iowadr;
-  wire ioenb;
+  //--------------------------------------
+  // module instances
+  //--------------------------------------
 
   clk_rst clk_rst_1(
     .clk_in(clk_in),
     .rst_in_n(rst_in_n),
-    .clk_75(clk_75),
-    .clk_25(clk_25),
+    .clk_ok(clk_ok),
+    .clk_75(pclk),
+    .clk_25(clk),
     .rst(rst)
   );
 
   RISC5cpu cpu_1(
-    .clk(clk_25),
+    .clk(clk),
     .rst(rst),
     .stallX(stall),
     .inbus(inbus[31:0]),
@@ -57,10 +71,38 @@ module risc5(
     .dout(inbus0[31:0])
   );
 
-  assign stall = 1'b0;
+  bio bio_1(
+    .clk(clk),
+    .rst(rst),
+    .en(bio_en),
+    .wr(wr),
+    .data_in(outbus[31:0]),
+    .data_out(bio_dout[31:0])
+  );
 
-  assign iowadr[3:0] = adr[5:2];
-  assign ioenb = (adr[23:6] == 18'h3FFFF);
-  assign inbus[31:0] = ~ioenb ? inbus0[31:0] : 32'h0;
+  //--------------------------------------
+  // address decoder
+  //--------------------------------------
+
+  assign io_en = (adr[23:6] == 18'h3FFFF);
+  assign io_adr = adr[5:2];
+  //assign tmr_en = io_en & (io_adr == 4'd0);
+  assign bio_en = io_en & (io_adr == 4'd1);
+  //assign _en = io_en & (io_adr == 4'd2);
+  //assign _en = io_en & (io_adr == 4'd3);
+  //assign _en = io_en & (io_adr == 4'd4);
+  //assign _en = io_en & (io_adr == 4'd5);
+  //assign _en = io_en & (io_adr == 4'd6);
+  //assign _en = io_en & (io_adr == 4'd7);
+
+  //--------------------------------------
+  // data multiplexer
+  //--------------------------------------
+
+  assign inbus[31:0] = ~io_en ? inbus0[31:0] :
+                       bio_en ? bio_dout[31:0] :
+                       32'h0;
+
+  assign stall = 1'b0;
 
 endmodule

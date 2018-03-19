@@ -23,16 +23,16 @@ assign sign = x[31]^y[31];
 assign xe = x[30:23];
 assign ye = y[30:23];
 assign e0 = {1'b0, xe} - {1'b0, ye};
-assign e1 = e0 + 126 + Q[25];
+assign e1 = e0 + 9'd126 + Q[25];
 assign stall = run & ~(S == 26);
 
 assign r0 = (S == 0) ? {2'b01, x[22:0]} : {R, 1'b0};
 assign r1 = d[24] ? r0 : d;
 assign d = r0 - {2'b01, y[22:0]};
-assign q0 = (S == 0) ? 0 : Q;
+assign q0 = (S == 0) ? 26'd0 : Q;
 
 assign z0 = Q[25] ? Q[25:1] : Q[24:0];
-assign z1 = z0 + 1;
+assign z1 = z0 + 25'd1;
 assign z = (xe == 0) ? 0 :
   (ye == 0) ? {sign, 8'b11111111, 23'b0} :  // div by 0
   (~e1[8]) ? {sign, e1[7:0], z1[23:1]} :
@@ -41,6 +41,6 @@ assign z = (xe == 0) ? 0 :
 always @ (posedge(clk)) begin
   R <= r1[23:0];
   Q <= {q0[24:0], ~d[24]};
-  S <= run ? S+1 : 0;
+  S <= run ? S + 5'd1 : 5'd0;
 end
 endmodule

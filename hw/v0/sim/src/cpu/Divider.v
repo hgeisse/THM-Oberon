@@ -24,6 +24,6 @@ assign rem = ~sign ? RQ[63:32] :
 
 always @ (posedge(clk)) begin
   RQ <= (S == 0) ? {32'b0, x0} : {(w1[31] ? w0 : w1), RQ[30:0], ~w1[31]};
-  S <= run ? S+1 : 0;
+  S <= run ? S + 6'd1 : 6'd0;
 end
 endmodule

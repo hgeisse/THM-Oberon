@@ -8,11 +8,11 @@
 
 
 module vid(clk, rst, pclk);
-  input clk;
-  input rst;
-  input pclk;
+    input clk;
+    input rst;
+    input pclk;
 
-  reg [31:0] vmem[0:24575];
+  reg [31:0] vidmem[0:24575];
 
   //
   // processor interface
