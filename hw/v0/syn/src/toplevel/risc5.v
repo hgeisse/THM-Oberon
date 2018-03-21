@@ -9,6 +9,14 @@
 
 module risc5(clk_in,
              rst_in_n,
+             vga_hsync,
+             vga_vsync,
+             vga_clk,
+             vga_sync_n,
+             vga_blank_n,
+             vga_r,
+             vga_g,
+             vga_b,
              led_g,
              led_r,
              hex7_n,
@@ -28,6 +36,15 @@ module risc5(clk_in,
     // clock and reset
     input clk_in;
     input rst_in_n;
+    // VGA display
+    output vga_hsync;
+    output vga_vsync;
+    output vga_clk;
+    output vga_sync_n;
+    output vga_blank_n;
+    output [7:0] vga_r;
+    output [7:0] vga_g;
+    output [7:0] vga_b;
     // board I/O
     output [8:0] led_g;
     output [17:0] led_r;
@@ -58,6 +75,10 @@ module risc5(clk_in,
   wire wr;
   wire ben;
   wire [31:0] outbus;
+  // ram
+  // vid
+  wire vid_en;
+  wire [19:0] vid_adr;
   // i/o
   wire io_en;
   wire [3:0] io_adr;
@@ -91,13 +112,31 @@ module risc5(clk_in,
     .outbus(outbus[31:0])
   );
 
+  vid vid1(
+    .pclk(pclk),
+    .clk(clk),
+    .rst(rst),
+    .en(vid_en),
+    .wr(wr),
+    .adr(vid_adr[16:2]),
+    .din(outbus[31:0]),
+    .hsync(vga_hsync),
+    .vsync(vga_vsync),
+    .pxclk(vga_clk),
+    .sync_n(vga_sync_n),
+    .blank_n(vga_blank_n),
+    .r(vga_r[7:0]),
+    .g(vga_g[7:0]),
+    .b(vga_b[7:0])
+  );
+
   bio bio_1(
     .clk(clk),
     .rst(rst),
     .en(bio_en),
     .wr(wr),
-    .data_in(outbus[31:0]),
-    .data_out(bio_dout[31:0]),
+    .din(outbus[31:0]),
+    .dout(bio_dout[31:0]),
     .led_g(led_g[8:0]),
     .led_r(led_r[17:0]),
     .hex7_n(hex7_n[6:0]),
@@ -117,6 +156,9 @@ module risc5(clk_in,
   //--------------------------------------
   // address decoder
   //--------------------------------------
+
+  assign vid_en = (adr[23:20] == 4'h0) & (adr[19:0] >= 20'hE7F00);
+  assign vid_adr = adr[19:0] - 20'hE7F00;
 
   assign io_en = (adr[23:6] == 18'h3FFFF);
   assign io_adr = adr[5:2];

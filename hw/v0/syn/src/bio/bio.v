@@ -8,7 +8,7 @@
 
 
 module bio(clk, rst,
-           en, wr, data_in, data_out,
+           en, wr, din, dout,
            led_g, led_r,
            hex7_n, hex6_n, hex5_n, hex4_n,
            hex3_n, hex2_n, hex1_n, hex0_n,
@@ -18,8 +18,8 @@ module bio(clk, rst,
     input rst;
     input en;
     input wr;
-    input [31:0] data_in;
-    output [31:0] data_out;
+    input [31:0] din;
+    output [31:0] dout;
     // external interface
     output reg [8:0] led_g;
     output reg [17:0] led_r;
@@ -59,7 +59,7 @@ module bio(clk, rst,
       hex0_n[6:0] <= ~7'h0;
     end else begin
       if (en & wr) begin
-        led_g[7:0] <= data_in[7:0];
+        led_g[7:0] <= din[7:0];
       end
     end
   end
@@ -75,7 +75,7 @@ module bio(clk, rst,
     sw_s[17:0] <= sw_p[17:0];
   end
 
-  assign data_out[31:0] =
+  assign dout[31:0] =
     { sw_s[17:8], 10'b0, ~key3_s_n, ~key2_s_n, ~key1_s_n, rst, sw_s[7:0] };
 
 endmodule
