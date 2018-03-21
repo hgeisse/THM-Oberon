@@ -7,76 +7,26 @@
 `default_nettype none
 
 
-module vid(clk, rst, pclk);
+module vid(pclk, clk, rst,
+           en, wr, adr, din);
+    // internal interface
+    input pclk;
     input clk;
     input rst;
-    input pclk;
+    input en;
+    input wr;
+    input [14:0] adr;
+    input [31:0] din;
 
   reg [31:0] vidmem[0:24575];
 
-  //
+  //----------------------------
   // processor interface
-  //
+  //----------------------------
 
-  //
-  // monitor interface
-  //
-
-  reg [10:0] hcount;
-  reg hblank;
-  reg hsynch;
-
-  reg [9:0] vcount;
-  reg vblank;
-  reg vsynch;
-
-  always @(posedge pclk) begin
-    if (rst) begin
-      hcount <= 11'd0;
-      hblank <= 1'b0;
-      hsynch <= 1'b0;
-    end else begin
-      if (hcount == 11'd1327) begin
-        hcount <= 11'd0;
-        hblank <= 1'b0;
-      end else begin
-        hcount <= hcount + 11'd1;
-      end
-      if (hcount == 11'd1023) begin
-        hblank <= 1'b1;
-      end
-      if (hcount == 11'd1047) begin
-        hsynch <= 1'b1;
-      end
-      if (hcount == 11'd1183) begin
-        hsynch <= 1'b0;
-      end
-    end
-  end
-
-  always @(posedge pclk) begin
-    if (rst) begin
-      vcount <= 10'd0;
-      vblank <= 1'b0;
-      vsynch <= 1'b0;
-    end else begin
-      if (hcount == 11'd1327) begin
-        if (vcount == 10'd805) begin
-          vcount <= 10'd0;
-          vblank <= 1'b0;
-        end else begin
-          vcount <= vcount + 10'd1;
-        end
-        if (vcount == 10'd767) begin
-          vblank <= 1'b1;
-        end
-        if (vcount == 10'd770) begin
-          vsynch <= 1'b1;
-        end
-        if (vcount == 10'd776) begin
-          vsynch <= 1'b0;
-        end
-      end
+  always @(posedge clk) begin
+    if (en & wr & ~(adr[14] & adr[13])) begin
+      vidmem[adr] <= din;
     end
   end
 

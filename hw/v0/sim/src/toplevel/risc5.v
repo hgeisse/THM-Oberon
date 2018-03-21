@@ -29,6 +29,10 @@ module risc5(clk_in,
   wire wr;
   wire ben;
   wire [31:0] outbus;
+  // ram
+  // vid
+  wire vid_en;
+  wire [19:0] vid_adr;
   // i/o
   wire io_en;
   wire [3:0] io_adr;
@@ -71,18 +75,31 @@ module risc5(clk_in,
     .dout(inbus0[31:0])
   );
 
+  vid vid_1(
+    .pclk(pclk),
+    .clk(clk),
+    .rst(rst),
+    .en(vid_en),
+    .wr(wr),
+    .adr(vid_adr[16:2]),
+    .din(outbus[31:0])
+  );
+
   bio bio_1(
     .clk(clk),
     .rst(rst),
     .en(bio_en),
     .wr(wr),
-    .data_in(outbus[31:0]),
-    .data_out(bio_dout[31:0])
+    .din(outbus[31:0]),
+    .dout(bio_dout[31:0])
   );
 
   //--------------------------------------
   // address decoder
   //--------------------------------------
+
+  assign vid_en = (adr[23:20] == 4'h0) & (adr[19:0] >= 20'hE7F00);
+  assign vid_adr = adr[19:0] - 20'hE7F00;
 
   assign io_en = (adr[23:6] == 18'h3FFFF);
   assign io_adr = adr[5:2];
