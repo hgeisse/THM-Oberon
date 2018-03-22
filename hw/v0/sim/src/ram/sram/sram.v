@@ -1,5 +1,6 @@
 //
 // sram.v -- 1Mx16 asynchronous static RAM
+//           (e.g., ISSI IS61WV102416BLL)
 //
 
 
