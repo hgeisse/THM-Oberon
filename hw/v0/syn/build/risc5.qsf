@@ -270,21 +270,6 @@ set_location_assignment PIN_AB28 -to sw[0]
 set_instance_assignment -name IO_STANDARD "2.5 V" -to sw[0]
 set_global_assignment -name TIMEQUEST_MULTICORNER_ANALYSIS ON
 set_global_assignment -name NUM_PARALLEL_PROCESSORS ALL
-set_global_assignment -name VERILOG_FILE ../src/vid/vid.v
-set_global_assignment -name VERILOG_FILE ../src/bio/bio.v
-set_global_assignment -name VERILOG_FILE ../src/cpu/FPDivider.v
-set_global_assignment -name VERILOG_FILE ../src/cpu/FPMultiplier.v
-set_global_assignment -name VERILOG_FILE ../src/cpu/FPAdder.v
-set_global_assignment -name VERILOG_FILE ../src/cpu/RightShifter.v
-set_global_assignment -name VERILOG_FILE ../src/cpu/LeftShifter.v
-set_global_assignment -name VERILOG_FILE ../src/cpu/Divider.v
-set_global_assignment -name VERILOG_FILE ../src/cpu/Multiplier.v
-set_global_assignment -name VERILOG_FILE ../src/cpu/PROM.v
-set_global_assignment -name VERILOG_FILE ../src/cpu/RISC5cpu.v
-set_global_assignment -name VERILOG_FILE ../src/clk_rst/clk_rst.v
-set_global_assignment -name VERILOG_FILE ../src/toplevel/risc5.v
-set_global_assignment -name SDC_FILE ../src/toplevel/risc5.sdc
-set_global_assignment -name CDF_FILE output_files/risc5.cdf
 set_location_assignment PIN_G13 -to vga_hsync
 set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to vga_hsync
 set_location_assignment PIN_C13 -to vga_vsync
@@ -343,4 +328,27 @@ set_location_assignment PIN_A10 -to vga_b[1]
 set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to vga_b[1]
 set_location_assignment PIN_B10 -to vga_b[0]
 set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to vga_b[0]
+set_global_assignment -name VERILOG_FILE ../src/ser/RS232T.v
+set_global_assignment -name VERILOG_FILE ../src/ser/RS232R.v
+set_global_assignment -name VERILOG_FILE ../src/ser/ser.v
+set_global_assignment -name VERILOG_FILE ../src/ram/ram.v
+set_global_assignment -name VERILOG_FILE ../src/vid/vid.v
+set_global_assignment -name VERILOG_FILE ../src/bio/bio.v
+set_global_assignment -name VERILOG_FILE ../src/cpu/FPDivider.v
+set_global_assignment -name VERILOG_FILE ../src/cpu/FPMultiplier.v
+set_global_assignment -name VERILOG_FILE ../src/cpu/FPAdder.v
+set_global_assignment -name VERILOG_FILE ../src/cpu/RightShifter.v
+set_global_assignment -name VERILOG_FILE ../src/cpu/LeftShifter.v
+set_global_assignment -name VERILOG_FILE ../src/cpu/Divider.v
+set_global_assignment -name VERILOG_FILE ../src/cpu/Multiplier.v
+set_global_assignment -name VERILOG_FILE ../src/cpu/PROM.v
+set_global_assignment -name VERILOG_FILE ../src/cpu/RISC5cpu.v
+set_global_assignment -name VERILOG_FILE ../src/clk_rst/clk_rst.v
+set_global_assignment -name VERILOG_FILE ../src/toplevel/risc5.v
+set_global_assignment -name SDC_FILE ../src/toplevel/risc5.sdc
+set_global_assignment -name CDF_FILE output_files/risc5.cdf
+set_location_assignment PIN_G12 -to rs232_0_rxd
+set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to rs232_0_rxd
+set_location_assignment PIN_G9 -to rs232_0_txd
+set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to rs232_0_txd
 set_instance_assignment -name PARTITION_HIERARCHY root_partition -to | -section_id Top
