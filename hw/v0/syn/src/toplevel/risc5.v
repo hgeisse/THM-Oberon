@@ -17,6 +17,8 @@ module risc5(clk_in,
              vga_r,
              vga_g,
              vga_b,
+             rs232_0_rxd,
+             rs232_0_txd,
              led_g,
              led_r,
              hex7_n,
@@ -45,6 +47,9 @@ module risc5(clk_in,
     output [7:0] vga_r;
     output [7:0] vga_g;
     output [7:0] vga_b;
+    // RS-232
+    input rs232_0_rxd;
+    output rs232_0_txd;
     // board I/O
     output [8:0] led_g;
     output [17:0] led_r;
@@ -82,6 +87,11 @@ module risc5(clk_in,
   // i/o
   wire io_en;
   wire [3:0] io_adr;
+  // ser
+  wire ser_data_en;
+  wire ser_ctrl_en;
+  wire [31:0] ser_data;
+  wire [31:0] ser_status;
   // bio
   wire bio_en;
   wire [31:0] bio_dout;
@@ -112,6 +122,15 @@ module risc5(clk_in,
     .outbus(outbus[31:0])
   );
 
+  ram ram1(
+    .adr(adr[23:0]),
+    .ben(ben),
+    .rd(rd),
+    .wr(wr),
+    .din(outbus[31:0]),
+    .dout(inbus0[31:0])
+  );
+
   vid vid1(
     .pclk(pclk),
     .clk(clk),
@@ -128,6 +147,20 @@ module risc5(clk_in,
     .r(vga_r[7:0]),
     .g(vga_g[7:0]),
     .b(vga_b[7:0])
+  );
+
+  ser ser_1(
+    .clk(clk),
+    .rst(rst),
+    .data_en(ser_data_en),
+    .ctrl_en(ser_ctrl_en),
+    .rd(rd),
+    .wr(wr),
+    .din(outbus[31:0]),
+    .dout(ser_data[31:0]),
+    .status(ser_status[31:0]),
+    .rxd(rs232_0_rxd),
+    .txd(rs232_0_txd)
   );
 
   bio bio_1(
@@ -164,8 +197,8 @@ module risc5(clk_in,
   assign io_adr = adr[5:2];
   //assign tmr_en = io_en & (io_adr == 4'd0);
   assign bio_en = io_en & (io_adr == 4'd1);
-  //assign _en = io_en & (io_adr == 4'd2);
-  //assign _en = io_en & (io_adr == 4'd3);
+  assign ser_data_en = io_en & (io_adr == 4'd2);
+  assign ser_ctrl_en = io_en & (io_adr == 4'd3);
   //assign _en = io_en & (io_adr == 4'd4);
   //assign _en = io_en & (io_adr == 4'd5);
   //assign _en = io_en & (io_adr == 4'd6);
@@ -176,7 +209,14 @@ module risc5(clk_in,
   //--------------------------------------
 
   assign inbus[31:0] = ~io_en ? inbus0[31:0] :
+                       //tmr_en ? tmr_dout[31:0] :
                        bio_en ? bio_dout[31:0] :
+                       ser_data_en ? ser_data[31:0] :
+                       ser_ctrl_en ? ser_status[31:0] :
+                       // _en ? xx[31:0] :
+                       // _en ? xx[31:0] :
+                       // _en ? xx[31:0] :
+                       // _en ? xx[31:0] :
                        32'h0;
 
   assign stall = 1'b0;
