@@ -36,6 +36,11 @@ module risc5(clk_in,
   // i/o
   wire io_en;
   wire [3:0] io_adr;
+  //ser
+  wire ser_data_en;
+  wire ser_ctrl_en;
+  wire [31:0] ser_data;
+  wire [31:0] ser_status;
   // bio
   wire bio_en;
   wire [31:0] bio_dout;
@@ -85,6 +90,18 @@ module risc5(clk_in,
     .din(outbus[31:0])
   );
 
+  ser ser_1(
+    .clk(clk),
+    .rst(rst),
+    .data_en(ser_data_en),
+    .ctrl_en(ser_ctrl_en),
+    .rd(rd),
+    .wr(wr),
+    .din(outbus[31:0]),
+    .dout(ser_data[31:0]),
+    .status(ser_status[31:0])
+  );
+
   bio bio_1(
     .clk(clk),
     .rst(rst),
@@ -105,8 +122,8 @@ module risc5(clk_in,
   assign io_adr = adr[5:2];
   //assign tmr_en = io_en & (io_adr == 4'd0);
   assign bio_en = io_en & (io_adr == 4'd1);
-  //assign _en = io_en & (io_adr == 4'd2);
-  //assign _en = io_en & (io_adr == 4'd3);
+  assign ser_data_en = io_en & (io_adr == 4'd2);
+  assign ser_ctrl_en = io_en & (io_adr == 4'd3);
   //assign _en = io_en & (io_adr == 4'd4);
   //assign _en = io_en & (io_adr == 4'd5);
   //assign _en = io_en & (io_adr == 4'd6);
@@ -117,7 +134,14 @@ module risc5(clk_in,
   //--------------------------------------
 
   assign inbus[31:0] = ~io_en ? inbus0[31:0] :
+                       //tmr_en ? tmr_dout[31:0] :
                        bio_en ? bio_dout[31:0] :
+                       ser_data_en ? ser_data[31:0] :
+                       ser_ctrl_en ? ser_status[31:0] :
+                       // _en ? xx[31:0] :
+                       // _en ? xx[31:0] :
+                       // _en ? xx[31:0] :
+                       // _en ? xx[31:0] :
                        32'h0;
 
   assign stall = 1'b0;

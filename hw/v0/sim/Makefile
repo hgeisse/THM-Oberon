@@ -17,6 +17,7 @@ SRCS = risc5test.v \
        src/ram/ram.v \
        src/ram/sram/sram.v \
        src/vid/vid.v \
+       src/ser/ser.v \
        src/bio/bio.v
 
 all:		show
