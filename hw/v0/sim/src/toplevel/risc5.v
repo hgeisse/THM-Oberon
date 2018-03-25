@@ -21,7 +21,7 @@ module risc5(clk_in,
   wire clk;				// system clock, 25 MHz
   wire rst;				// system reset
   // cpu
-  wire stall;
+  wire memwait;
   wire [31:0] inbus;
   wire [31:0] inbus0;
   wire [23:0] adr;
@@ -30,6 +30,8 @@ module risc5(clk_in,
   wire ben;
   wire [31:0] outbus;
   // ram
+  wire ram_en;
+  wire [19:0] ram_adr;
   // vid
   wire vid_en;
   wire [19:0] vid_adr;
@@ -61,7 +63,7 @@ module risc5(clk_in,
   RISC5cpu cpu_1(
     .clk(clk),
     .rst(rst),
-    .stallX(stall),
+    .memwait(memwait),
     .inbus(inbus[31:0]),
     .codebus(inbus0[31:0]),
     .adr(adr[23:0]),
@@ -72,12 +74,16 @@ module risc5(clk_in,
   );
 
   ram ram_1(
-    .adr(adr[23:0]),
+    .pclk(pclk),
+    .clk(clk),
+    .rst(rst),
+    .adr(ram_adr[19:0]),
+    .en(ram_en),
     .ben(ben),
-    .rd(rd),
     .wr(wr),
     .din(outbus[31:0]),
-    .dout(inbus0[31:0])
+    .dout(inbus0[31:0]),
+    .memwait(memwait)
   );
 
   vid vid_1(
@@ -115,6 +121,9 @@ module risc5(clk_in,
   // address decoder
   //--------------------------------------
 
+  assign ram_en = (adr[23:20] == 4'h0);
+  assign ram_adr = adr[19:0];
+
   assign vid_en = (adr[23:20] == 4'h0) & (adr[19:0] >= 20'hE7F00);
   assign vid_adr = adr[19:0] - 20'hE7F00;
 
@@ -143,7 +152,5 @@ module risc5(clk_in,
                        // _en ? xx[31:0] :
                        // _en ? xx[31:0] :
                        32'h0;
-
-  assign stall = 1'b0;
 
 endmodule
