@@ -9,6 +9,13 @@
 
 module risc5(clk_in,
              rst_in_n,
+             sram_addr,
+             sram_dq,
+             sram_ce_n,
+             sram_oe_n,
+             sram_we_n,
+             sram_ub_n,
+             sram_lb_n,
              vga_hsync,
              vga_vsync,
              vga_clk,
@@ -38,6 +45,14 @@ module risc5(clk_in,
     // clock and reset
     input clk_in;
     input rst_in_n;
+    // SRAM
+    output [19:0] sram_addr;
+    inout [15:0] sram_dq;
+    output sram_ce_n;
+    output sram_oe_n;
+    output sram_we_n;
+    output sram_ub_n;
+    output sram_lb_n;
     // VGA display
     output vga_hsync;
     output vga_vsync;
@@ -72,7 +87,7 @@ module risc5(clk_in,
   wire clk;				// system clock, 25 MHz
   wire rst;				// system reset
   // cpu
-  wire stall;
+  wire memwait;
   wire [31:0] inbus;
   wire [31:0] inbus0;
   wire [23:0] adr;
@@ -81,6 +96,8 @@ module risc5(clk_in,
   wire ben;
   wire [31:0] outbus;
   // ram
+  wire ram_en;
+  wire [19:0] ram_adr;
   // vid
   wire vid_en;
   wire [19:0] vid_adr;
@@ -112,7 +129,7 @@ module risc5(clk_in,
   RISC5cpu cpu_1(
     .clk(clk),
     .rst(rst),
-    .stallX(stall),
+    .memwait(memwait),
     .inbus(inbus[31:0]),
     .codebus(inbus0[31:0]),
     .adr(adr[23:0]),
@@ -123,12 +140,23 @@ module risc5(clk_in,
   );
 
   ram ram1(
-    .adr(adr[23:0]),
+    .pclk(pclk),
+    .clk(clk),
+    .rst(rst),
+    .adr(ram_adr[19:0]),
+    .en(ram_en),
     .ben(ben),
-    .rd(rd),
     .wr(wr),
     .din(outbus[31:0]),
-    .dout(inbus0[31:0])
+    .dout(inbus0[31:0]),
+    .memwait(memwait),
+    .sram_addr(sram_addr[19:0]),
+    .sram_data(sram_dq[15:0]),
+    .sram_ce_n(sram_ce_n),
+    .sram_oe_n(sram_oe_n),
+    .sram_we_n(sram_we_n),
+    .sram_ub_n(sram_ub_n),
+    .sram_lb_n(sram_lb_n)
   );
 
   vid vid1(
@@ -190,6 +218,9 @@ module risc5(clk_in,
   // address decoder
   //--------------------------------------
 
+  assign ram_en = (adr[23:20] == 4'h0);
+  assign ram_adr = adr[19:0];
+
   assign vid_en = (adr[23:20] == 4'h0) & (adr[19:0] >= 20'hE7F00);
   assign vid_adr = adr[19:0] - 20'hE7F00;
 
@@ -218,7 +249,5 @@ module risc5(clk_in,
                        // _en ? xx[31:0] :
                        // _en ? xx[31:0] :
                        32'h0;
-
-  assign stall = 1'b0;
 
 endmodule

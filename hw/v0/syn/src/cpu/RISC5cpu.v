@@ -4,7 +4,7 @@
 // HG 18.03.2018: module renamed
 
 module RISC5cpu(
-input clk, rst, stallX,
+input clk, rst, memwait,
 input [31:0] inbus, codebus,
 output [23:0] adr,
 output rd, wr, ben,
@@ -107,9 +107,9 @@ assign C0 = R[irc];
 assign ira0 = BR ? 4'd15 : ira;
 assign C1 = q ? {{16{v}}, imm} : C0;
 assign adr = stallL ? B[23:0] + {{4{off[19]}}, off} : {pcmux, 2'b00};
-assign rd = LDR & ~stallX & ~stall1;
-assign wr = STR & ~stallX & ~stall1;
-assign ben = p & ~q & v & ~stallX & ~stall1;  // byte enable
+assign rd = LDR & ~stall1;
+assign wr = STR & ~stall1;
+assign ben = p & ~q & v & ~stall1;  // byte enable
 
 assign aluRes =  // 21.71 ns
   ~op[3] ?
@@ -132,7 +132,7 @@ assign aluRes =  // 21.71 ns
           fsum :
           (~op[0] ? fprod : fquot)));
 
-assign regwr = ~p & ~stall | (LDR & ~stallX & ~stall1) | (BR & cond & v & ~stallX);
+assign regwr = ~p & ~stall | (LDR & ~stall1) | (BR & cond & v);
 assign a0 = ~adr[1] & ~adr[0];
 assign a1 = ~adr[1] & adr[0];
 assign a2 = adr[1] & ~adr[0];
@@ -170,21 +170,24 @@ assign sa = aluRes[31];
 assign sb = B[31];
 assign sc = C1[31];
 
-assign stall = stallL | stallM | stallD | stallX | stallFA | stallFM | stallFD;
+assign stall = stallL | stallM | stallD | stallFA | stallFM | stallFD;
 assign stallL = (LDR|STR) & ~stall1;
 
 always @ (posedge clk) begin
-  PC <= pcmux;
-  PMsel <= rst | (pcmux[21:12] == 10'h3FF);
-  IR <= stall ? IR : codebus;
-  stall1 <= stallX ? stall1 : stallL;
-  R[ira0] <= regwr ? regmux : A;
-  N <= regwr ? regmux[31] : N;
-  Z <= regwr ? (regmux == 0) : Z;
-  C <= ADD ? (~sb&sc&~sa) | (sb&sc&sa) | (sb&~sa) :
+  if (rst | ~memwait) begin
+    PC <= pcmux;
+    PMsel <= rst | (pcmux[21:12] == 10'h3FF);
+    IR <= stall ? IR : codebus;
+    stall1 <= stallL;
+    R[ira0] <= regwr ? regmux : A;
+    N <= regwr ? regmux[31] : N;
+    Z <= regwr ? (regmux == 0) : Z;
+    C <= ADD ? (~sb&sc&~sa) | (sb&sc&sa) | (sb&~sa) :
 	 SUB ? (~sb&sc&~sa) | (sb&sc&sa) | (~sb&sa) : C;
-  OV <= ADD ? (sa&~sb&~sc) | (~sa&sb&sc): 
+    OV <= ADD ? (sa&~sb&~sc) | (~sa&sb&sc):
 	 SUB ? (sa&~sb&sc) | (~sa&sb&~sc) : OV;
-  H <= MUL ? product[63:32] : DIV ? remainder : H;
-end 
-endmodule 
+    H <= MUL ? product[63:32] : DIV ? remainder : H;
+  end
+end
+
+endmodule
