@@ -51,7 +51,7 @@ initial begin
   R[15] = 32'h0;  // HG 18.03.2018: required for simulating the boot loader
 end
 
-PROM PM (.adr(pcmux[8:0]), .data(pmout), .clk(clk));
+PROM PM (.adr(pcmux[8:0]), .data(pmout), .clk(clk), .en(rst | ~memwait));
 
 Multiplier mulUnit (.clk(clk), .run(MUL), .stall(stallM),
    .u(~u), .x(B), .y(C1), .z(product));
