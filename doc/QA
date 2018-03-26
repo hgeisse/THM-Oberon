@@ -53,3 +53,7 @@ S: Confirmed
 Q: What is the exact meaning of the C flag?
 A: ?
 S: ?
+
+Q: Is it possible to load data from the PROM?
+A: No - very disappointing!
+S: Confirmed
