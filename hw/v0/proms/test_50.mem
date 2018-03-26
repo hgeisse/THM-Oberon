@@ -1,0 +1,17 @@
+//
+// test_50.mem -- a simple test program (copies switches to LEDs)
+//                it should be converted to binary
+//                and then sent via serlink to the boot loader
+//
+E7000007	// branch to start
+00000000	// reserve 7 words for boot loader
+00000000
+00000000
+00000000
+00000000
+00000000
+00000000
+5000FFC4	// copy switches to LEDs
+81000000
+A1000000
+E7FFFFFC	// all over again
