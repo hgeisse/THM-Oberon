@@ -54,8 +54,8 @@ void serialOpen(char *serialPort) {
   }
   tcgetattr(sfd, &origOptions);
   currOptions = origOptions;
-  cfsetispeed(&currOptions, B38400);
-  cfsetospeed(&currOptions, B38400);
+  cfsetispeed(&currOptions, B9600);
+  cfsetospeed(&currOptions, B9600);
   currOptions.c_cflag |= (CLOCAL | CREAD);
   currOptions.c_cflag &= ~PARENB;
   currOptions.c_cflag &= ~CSTOPB;
