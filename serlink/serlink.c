@@ -251,7 +251,7 @@ void ping(int argc, char *argv[]) {
 }
 
 
-void xh2o(int argc, char *argv[]) {
+void h2o(int argc, char *argv[]) {
   char *name;
   FILE *file;
   unsigned char b;
@@ -305,7 +305,7 @@ void xh2o(int argc, char *argv[]) {
 }
 
 
-void xo2h(int argc, char *argv[]) {
+void o2h(int argc, char *argv[]) {
   char *name;
   FILE *file;
   unsigned char b;
@@ -350,7 +350,7 @@ void xo2h(int argc, char *argv[]) {
 }
 
 
-void mirr(int argc, char *argv[]) {
+void mirror(int argc, char *argv[]) {
   int arg;
   char *endp;
 
@@ -435,18 +435,18 @@ typedef struct {
 
 
 Cmd cmds[] = {
-  { "ping",   1, ping   },
-  { "xh2o",   2, xh2o   },
-  { "xo2h",   2, xo2h   },
-  { "mirr",   2, mirr   },
-  { "fill",   2, fill   },
-  { "shfile", 2, shfile },
-  { "watch",  1, watch  },
-  { "shmod",  1, shmod  },
-  { "shcmd",  2, shcmd  },
-  { "ldboot", 2, ldboot },
-  { "clrdir", 1, clrdir },
-  { "q",      1, quit   },
+  { "ping",     1, ping     },
+  { "h2o",      2, h2o      },
+  { "o2h",      2, o2h      },
+  { "mirror",   2, mirror   },
+  { "fill",     2, fill     },
+  { "shfile",   2, shfile   },
+  { "watch",    1, watch    },
+  { "shmod",    1, shmod    },
+  { "shcmd",    2, shcmd    },
+  { "ldboot",   2, ldboot   },
+  { "clrdir",   1, clrdir   },
+  { "quit",     1, quit     },
 };
 
 
@@ -543,9 +543,9 @@ int main(int argc, char *argv[]) {
     printf("\n");
     printf("Commands:\n");
     printf("ping                request sign of life\n");
-    printf("xh2o <filename>     transfer <filename> from host to Oberon\n");
-    printf("xo2h <filename>     transfer <filename> from Oberon to host\n");
-    printf("mirr <integer>      mirror <integer> back\n");
+    printf("h2o <filename>      transfer <filename> from host to Oberon\n");
+    printf("o2h <filename>      transfer <filename> from Oberon to host\n");
+    printf("mirror <integer>    mirror <integer> back\n");
     printf("fill <integer>      fill display with <integer>\n");
     printf("shfile <filename>   show file <filename>\n");
     printf("watch               watch\n");
@@ -553,7 +553,7 @@ int main(int argc, char *argv[]) {
     printf("shcmd <modname>     show commands for <modname>\n");
     printf("ldboot <filename>   load boot area from <filename>\n");
     printf("clrdir              clear directory\n");
-    printf("q                   quit\n");
+    printf("quit                quit\n");
     printf("cmd > ");
     fflush(stdout);
     if (fgets(line, LINE_SIZE, stdin) == NULL) {
