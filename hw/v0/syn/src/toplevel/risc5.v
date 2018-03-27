@@ -26,6 +26,11 @@ module risc5(clk_in,
              vga_b,
              rs232_0_rxd,
              rs232_0_txd,
+             sdcard_ss_n,
+             sdcard_sclk,
+             sdcard_mosi,
+             sdcard_miso,
+             sdcard_wp,
              led_g,
              led_r,
              hex7_n,
@@ -65,6 +70,12 @@ module risc5(clk_in,
     // RS-232
     input rs232_0_rxd;
     output rs232_0_txd;
+    // SPI
+    output sdcard_ss_n;
+    output sdcard_sclk;
+    output sdcard_mosi;
+    input sdcard_miso;
+    input sdcard_wp;
     // board I/O
     output [8:0] led_g;
     output [17:0] led_r;
@@ -104,14 +115,22 @@ module risc5(clk_in,
   // i/o
   wire io_en;
   wire [3:0] io_adr;
+  // tmr
+  wire tmr_en;
+  wire [31:0] tmr_data;
   // ser
   wire ser_data_en;
   wire ser_ctrl_en;
   wire [31:0] ser_data;
   wire [31:0] ser_status;
+  // spi
+  wire spi_data_en;
+  wire spi_ctrl_en;
+  wire [31:0] spi_data;
+  wire [31:0] spi_status;
   // bio
   wire bio_en;
-  wire [31:0] bio_dout;
+  wire [31:0] bio_data;
 
   //--------------------------------------
   // module instances
@@ -177,6 +196,12 @@ module risc5(clk_in,
     .b(vga_b[7:0])
   );
 
+  tmr tmr_1(
+    .clk(clk),
+    .rst(rst),
+    .dout(tmr_data[31:0])
+  );
+
   ser ser_1(
     .clk(clk),
     .rst(rst),
@@ -191,13 +216,29 @@ module risc5(clk_in,
     .txd(rs232_0_txd)
   );
 
+  spi spi_1(
+    .clk(clk),
+    .rst(rst),
+    .data_en(spi_data_en),
+    .ctrl_en(spi_ctrl_en),
+    .wr(wr),
+    .din(outbus[31:0]),
+    .dout(spi_data[31:0]),
+    .status(spi_status[31:0]),
+    .ss_n(sdcard_ss_n),
+    .sclk(sdcard_sclk),
+    .mosi(sdcard_mosi),
+    .miso(sdcard_miso),
+    .wp(sdcard_wp)
+  );
+
   bio bio_1(
     .clk(clk),
     .rst(rst),
     .en(bio_en),
     .wr(wr),
     .din(outbus[31:0]),
-    .dout(bio_dout[31:0]),
+    .dout(bio_data[31:0]),
     .led_g(led_g[8:0]),
     .led_r(led_r[17:0]),
     .hex7_n(hex7_n[6:0]),
@@ -226,12 +267,12 @@ module risc5(clk_in,
 
   assign io_en = (adr[23:6] == 18'h3FFFF);
   assign io_adr = adr[5:2];
-  //assign tmr_en = io_en & (io_adr == 4'd0);
+  assign tmr_en = io_en & (io_adr == 4'd0);
   assign bio_en = io_en & (io_adr == 4'd1);
   assign ser_data_en = io_en & (io_adr == 4'd2);
   assign ser_ctrl_en = io_en & (io_adr == 4'd3);
-  //assign _en = io_en & (io_adr == 4'd4);
-  //assign _en = io_en & (io_adr == 4'd5);
+  assign spi_data_en = io_en & (io_adr == 4'd4);
+  assign spi_ctrl_en = io_en & (io_adr == 4'd5);
   //assign _en = io_en & (io_adr == 4'd6);
   //assign _en = io_en & (io_adr == 4'd7);
 
@@ -239,15 +280,16 @@ module risc5(clk_in,
   // data multiplexer
   //--------------------------------------
 
-  assign inbus[31:0] = ~io_en ? inbus0[31:0] :
-                       //tmr_en ? tmr_dout[31:0] :
-                       bio_en ? bio_dout[31:0] :
-                       ser_data_en ? ser_data[31:0] :
-                       ser_ctrl_en ? ser_status[31:0] :
-                       // _en ? xx[31:0] :
-                       // _en ? xx[31:0] :
-                       // _en ? xx[31:0] :
-                       // _en ? xx[31:0] :
-                       32'h0;
+  assign inbus[31:0] =
+    ~io_en ? inbus0[31:0] :
+    tmr_en ? tmr_data[31:0] :
+    bio_en ? bio_data[31:0] :
+    ser_data_en ? ser_data[31:0] :
+    ser_ctrl_en ? ser_status[31:0] :
+    spi_data_en ? spi_data[31:0] :
+    spi_ctrl_en ? spi_status[31:0] :
+    // _en ? xx[31:0] :
+    // _en ? xx[31:0] :
+    32'h0;
 
 endmodule
