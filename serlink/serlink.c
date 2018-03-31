@@ -97,6 +97,9 @@ int serialRcv(unsigned char *bp) {
 }
 
 
+/**************************************************************/
+
+
 unsigned char rcvByte(void) {
   unsigned char b;
 
@@ -285,6 +288,7 @@ void h2o(int argc, char *argv[]) {
         fclose(file);
         return;
       }
+      break;
     }
     sndByte(n & 0xFF);
     for (i = 0; i < n; i++) {
@@ -297,11 +301,16 @@ void h2o(int argc, char *argv[]) {
       return;
     }
     if (n < 255) {
-      printf("ACK\n");
-      fclose(file);
-      return;
+      break;
     }
   }
+  b = rcvByte();
+  if (b != ACK) {
+    printf("error: no ACK for file '%s' from Oberon system\n", name);
+  } else {
+    printf("ACK for file '%s' from Oberon system\n", name);
+  }
+  fclose(file);
 }
 
 
@@ -330,9 +339,7 @@ void o2h(int argc, char *argv[]) {
     n = rcvByte();
     if (n == 0) {
       sndByte(ACK);
-      printf("ACK\n");
-      fclose(file);
-      return;
+      break;
     }
     for (i = 0; i < n; i++) {
       buf[i] = rcvByte();
@@ -342,11 +349,11 @@ void o2h(int argc, char *argv[]) {
     }
     sndByte(ACK);
     if (n < 255) {
-      printf("ACK\n");
-      fclose(file);
-      return;
+      break;
     }
   }
+  printf("ACK for file '%s' sent to Oberon system\n", name);
+  fclose(file);
 }
 
 
