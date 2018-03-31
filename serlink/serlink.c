@@ -453,7 +453,7 @@ Cmd cmds[] = {
   { "shcmd",    2, shcmd    },
   { "ldboot",   2, ldboot   },
   { "clrdir",   1, clrdir   },
-  { "quit",     1, quit     },
+  { "q",        1, quit     },
 };
 
 
@@ -560,7 +560,7 @@ int main(int argc, char *argv[]) {
     printf("shcmd <modname>     show commands for <modname>\n");
     printf("ldboot <filename>   load boot area from <filename>\n");
     printf("clrdir              clear directory\n");
-    printf("quit                quit\n");
+    printf("q                   quit\n");
     printf("cmd > ");
     fflush(stdout);
     if (fgets(line, LINE_SIZE, stdin) == NULL) {
