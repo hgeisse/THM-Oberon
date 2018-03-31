@@ -11,8 +11,7 @@ module spi(clk, rst,
            data_en, ctrl_en, wr,
            din, dout, status,
            ss_n, sclk,
-           mosi, miso,
-           wp);
+           mosi, miso);
     // internal interface
     input clk;
     input rst;
@@ -27,7 +26,6 @@ module spi(clk, rst,
     output sclk;
     output mosi;
     input miso;
-    input wp;
 
   reg [3:0] spi_ctrl;
   wire spi_start;
@@ -60,6 +58,6 @@ module spi(clk, rst,
     .SCLK(sclk)
   );
 
-  assign status[31:0] = { 30'b0, wp, spi_rdy };
+  assign status[31:0] = { 31'b0, spi_rdy };
 
 endmodule

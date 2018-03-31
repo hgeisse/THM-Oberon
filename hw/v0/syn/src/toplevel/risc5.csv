@@ -179,7 +179,7 @@ sdcard_ss_n,Output,PIN_AC14,3,B3_N0,3.3-V LVTTL,
 sdcard_sclk,Output,PIN_AE13,3,B3_N0,3.3-V LVTTL,
 sdcard_mosi,Output,PIN_AD14,3,B3_N0,3.3-V LVTTL,
 sdcard_miso,Input,PIN_AE14,3,B3_N0,3.3-V LVTTL,
-sdcard_wp,Input,PIN_AF14,3,B3_N0,3.3-V LVTTL,
+#sdcard_wp,Input,PIN_AF14,3,B3_N0,3.3-V LVTTL,
 
 #
 # board I/O
