@@ -357,6 +357,14 @@ void o2h(int argc, char *argv[]) {
 }
 
 
+void quit(int argc, char *argv[]) {
+  run = 0;
+}
+
+
+/**************************************************************/
+
+
 void mirror(int argc, char *argv[]) {
   int arg;
   char *endp;
@@ -426,11 +434,6 @@ void clrdir(int argc, char *argv[]) {
 }
 
 
-void quit(int argc, char *argv[]) {
-  run = 0;
-}
-
-
 /**************************************************************/
 
 
@@ -442,9 +445,11 @@ typedef struct {
 
 
 Cmd cmds[] = {
-  { "ping",     1, ping     },
+  { "p",        1, ping     },
   { "h2o",      2, h2o      },
   { "o2h",      2, o2h      },
+  { "q",        1, quit     },
+  /* --------------------- */
   { "mirror",   2, mirror   },
   { "fill",     2, fill     },
   { "shfile",   2, shfile   },
@@ -453,7 +458,6 @@ Cmd cmds[] = {
   { "shcmd",    2, shcmd    },
   { "ldboot",   2, ldboot   },
   { "clrdir",   1, clrdir   },
-  { "q",        1, quit     },
 };
 
 
@@ -548,19 +552,20 @@ int main(int argc, char *argv[]) {
   run = 1;
   while (run) {
     printf("\n");
-    printf("Commands:\n");
-    printf("ping                request sign of life\n");
-    printf("h2o <filename>      transfer <filename> from host to Oberon\n");
-    printf("o2h <filename>      transfer <filename> from Oberon to host\n");
-    printf("mirror <integer>    mirror <integer> back\n");
-    printf("fill <integer>      fill display with <integer>\n");
-    printf("shfile <filename>   show file <filename>\n");
-    printf("watch               watch\n");
-    printf("shmod               show modules\n");
-    printf("shcmd <modname>     show commands for <modname>\n");
-    printf("ldboot <filename>   load boot area from <filename>\n");
-    printf("clrdir              clear directory\n");
-    printf("q                   quit\n");
+    printf("Commands (Oberon0 and PCLink1):\n");
+    printf("  p                   check if Oberon system is responding\n");
+    printf("  h2o    <filename>   transfer <filename> from host to Oberon\n");
+    printf("  o2h    <filename>   transfer <filename> from Oberon to host\n");
+    printf("  q                   quit\n");
+    printf("Commands (Oberon0 only):\n");
+    printf("  mirror <integer>    mirror <integer> back\n");
+    printf("  fill   <integer>    fill display with <integer>\n");
+    printf("  shfile <filename>   show file <filename>\n");
+    printf("  watch               watch\n");
+    printf("  shmod               show modules\n");
+    printf("  shcmd  <modname>    show commands for <modname>\n");
+    printf("  ldboot <filename>   load boot area from <filename>\n");
+    printf("  clrdir              clear directory\n");
     printf("cmd > ");
     fflush(stdout);
     if (fgets(line, LINE_SIZE, stdin) == NULL) {
