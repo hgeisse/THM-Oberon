@@ -422,8 +422,6 @@ set_location_assignment PIN_AD14 -to sdcard_mosi
 set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to sdcard_mosi
 set_location_assignment PIN_AE14 -to sdcard_miso
 set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to sdcard_miso
-set_location_assignment PIN_AF14 -to sdcard_wp
-set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to sdcard_wp
 set_global_assignment -name VERILOG_FILE ../src/spi/spi_rt.v
 set_global_assignment -name VERILOG_FILE ../src/spi/spi.v
 set_global_assignment -name VERILOG_FILE ../src/tmr/tmr.v

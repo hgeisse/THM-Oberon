@@ -30,7 +30,6 @@ module risc5(clk_in,
              sdcard_sclk,
              sdcard_mosi,
              sdcard_miso,
-             sdcard_wp,
              led_g,
              led_r,
              hex7_n,
@@ -75,7 +74,6 @@ module risc5(clk_in,
     output sdcard_sclk;
     output sdcard_mosi;
     input sdcard_miso;
-    input sdcard_wp;
     // board I/O
     output [8:0] led_g;
     output [17:0] led_r;
@@ -228,8 +226,7 @@ module risc5(clk_in,
     .ss_n(sdcard_ss_n),
     .sclk(sdcard_sclk),
     .mosi(sdcard_mosi),
-    .miso(sdcard_miso),
-    .wp(sdcard_wp)
+    .miso(sdcard_miso)
   );
 
   bio bio_1(
