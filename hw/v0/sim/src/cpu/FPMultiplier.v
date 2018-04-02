@@ -2,7 +2,7 @@
 `default_nettype none  // HG 18.03.2018
 
 module FPMultiplier(
-  input clk, run,
+  input clk, en, run,
   input [31:0] x, y,
   output stall,
   output [31:0] z);
@@ -30,7 +30,9 @@ assign z = (xe == 0) | (ye == 0) ? 0 :
    (~e1[8]) ? {sign, e1[7:0], z0[23:1]} :
    (~e1[7]) ? {sign, 8'b11111111, z0[23:1]} : 0;
 always @ (posedge(clk)) begin
+  if (en) begin
     P <= (S == 0) ? {24'b0, 1'b1, x[22:0]} : {w1, P[23:1]};
     S <= run ? S + 5'd1 : 5'd0;
+  end
 end
 endmodule

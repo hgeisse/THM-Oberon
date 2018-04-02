@@ -2,6 +2,7 @@
 `default_nettype none  // HG 18.03.2018
 // HG 18.03.2018: rst polarity changed
 // HG 18.03.2018: module renamed
+// HG 01.04.2018: stop all modules when memwait is active
 
 module RISC5cpu(
 input clk, rst, memwait,
@@ -53,23 +54,28 @@ end
 
 PROM PM (.adr(pcmux[8:0]), .data(pmout), .clk(clk), .en(rst | ~memwait));
 
-Multiplier mulUnit (.clk(clk), .run(MUL), .stall(stallM),
+Multiplier mulUnit (.clk(clk), .en(rst | ~memwait),
+   .run(MUL), .stall(stallM),
    .u(~u), .x(B), .y(C1), .z(product));
 
-Divider divUnit (.clk(clk), .run(DIV), .stall(stallD),
+Divider divUnit (.clk(clk), .en(rst | ~memwait),
+   .run(DIV), .stall(stallD),
    .u(~u), .x(B), .y(C1), .quot(quotient), .rem(remainder));
 
 LeftShifter LSUnit (.x(B), .y(lshout), .sc(C1[4:0]));
 
 RightShifter RSUnit(.x(B), .y(rshout), .sc(C1[4:0]), .md(ins[16]));
 
-FPAdder fpaddx (.clk(clk), .run(FAD|FSB), .u(u), .v(v), .stall(stallFA),
+FPAdder fpaddx (.clk(clk), .en(rst | ~memwait),
+   .run(FAD|FSB), .u(u), .v(v), .stall(stallFA),
    .x(B), .y({FSB^C0[31], C0[30:0]}), .z(fsum));
 
-FPMultiplier fpmulx (.clk(clk), .run(FML), .stall(stallFM),
+FPMultiplier fpmulx (.clk(clk), .en(rst | ~memwait),
+   .run(FML), .stall(stallFM),
    .x(B), .y(C0), .z(fprod));
 
-FPDivider fpdivx (.clk(clk), .run(FDV), .stall(stallFD),
+FPDivider fpdivx (.clk(clk), .en(rst | ~memwait),
+   .run(FDV), .stall(stallFD),
    .x(B), .y(C0), .z(fquot));
 
 assign ins = PMsel ? pmout : IR;  // decoding
