@@ -23,6 +23,27 @@
 #define ACK		((unsigned char) 0x10)
 #define NAK		((unsigned char) 0x11)
 
+#define CMD_MIRROR	0
+#define CMD_INSPECT	1
+#define CMD_FILLDSP	2
+#define CMD_SECTOR	3
+#define CMD_SHFILE	4
+#define CMD_WATCH	7
+#define CMD_SHMOD	10
+#define CMD_SHCMD	11
+#define CMD_DIR		12
+#define CMD_DEL		13
+//#define CMD_	20
+//#define CMD_	21
+//#define CMD_	22
+//#define CMD_	50
+//#define CMD_	51
+//#define CMD_	52
+//#define CMD_	53
+#define CMD_LDBOOT	100
+#define CMD_CLRDIR	101
+//#define CMD_	102
+
 
 static int sfd = -1;
 static struct termios origOptions;
@@ -192,7 +213,7 @@ void getAndShowAnswer(void) {
       case 1:
         /* integer */
         n = rcvInt();
-        printf("%d  ", n);
+        printf("%6d  ", n);
         break;
       case 2:
         /* hex */
@@ -215,7 +236,7 @@ void getAndShowAnswer(void) {
         printf("  ");
         break;
       case 5:
-        /* bit */
+        /* char */
         b = rcvByte();
         printf("%c", b);
         break;
@@ -357,6 +378,29 @@ void o2h(int argc, char *argv[]) {
 }
 
 
+void help(int argc, char *argv[]) {
+  printf("Commands (Oberon0 and PCLink1):\n");
+  printf("  p                    check if Oberon system is responding\n");
+  printf("  h2o     <filename>   transfer <filename> from host to Oberon\n");
+  printf("  o2h     <filename>   transfer <filename> from Oberon to host\n");
+  printf("  h                    help\n");
+  printf("  q                    quit\n");
+  printf("Commands (Oberon0 only):\n");
+  printf("  mirror  <integer>    mirror <integer> back\n");
+  printf("  inspect <a> <n>      show <n> words of memory at addr <a>\n");
+  printf("  filldsp <integer>    fill display with <integer>\n");
+  printf("  sector  <secno>      show disk sector <secno>\n");
+  printf("  shfile  <filename>   show file <filename>\n");
+  printf("  watch                watch\n");
+  printf("  shmod                show modules\n");
+  printf("  shcmd   <modname>    show commands for <modname>\n");
+  printf("  dir     <prefix>     show directory for <prefix>\n");
+  printf("  del     <filename>   delete <filename>\n");
+  printf("  ldboot  <filename>   load boot area from <filename>\n");
+  printf("  clrdir               clear directory\n");
+}
+
+
 void quit(int argc, char *argv[]) {
   run = 0;
 }
@@ -371,65 +415,116 @@ void mirror(int argc, char *argv[]) {
 
   arg = strtol(argv[1], &endp, 10);
   if (*endp != '\0') {
-    printf("error: cannot read integer argument\n");
+    printf("error: cannot read number to mirror\n");
     return;
   }
-  sndInt(0);
+  sndInt(CMD_MIRROR);
   sndInt(arg);
   getAndShowAnswer();
 }
 
 
-void fill(int argc, char *argv[]) {
+void inspect(int argc, char *argv[]) {
+  int a;
+  int n;
+  char *endp;
+
+  a = strtol(argv[1], &endp, 0);
+  if (*endp != '\0') {
+    printf("error: cannot read address\n");
+    return;
+  }
+  n = strtol(argv[2], &endp, 0);
+  if (*endp != '\0') {
+    printf("error: cannot read count\n");
+    return;
+  }
+  sndInt(CMD_INSPECT);
+  sndInt(a);
+  sndInt(n);
+  getAndShowAnswer();
+}
+
+
+void filldsp(int argc, char *argv[]) {
   int arg;
   char *endp;
 
   arg = strtol(argv[1], &endp, 0);
   if (*endp != '\0') {
-    printf("error: cannot read integer argument\n");
+    printf("error: cannot read filler number\n");
     return;
   }
-  sndInt(2);
+  sndInt(CMD_FILLDSP);
   sndInt(arg);
   getAndShowAnswer();
 }
 
 
+void sector(int argc, char *argv[]) {
+  int secno;
+  char *endp;
+
+  secno = strtol(argv[1], &endp, 0);
+  if (*endp != '\0') {
+    printf("error: cannot read sector number\n");
+    return;
+  }
+  sndInt(CMD_SECTOR);
+  sndInt(secno);
+  getAndShowAnswer();
+}
+
+
 void shfile(int argc, char *argv[]) {
-  sndInt(4);
+  sndInt(CMD_SHFILE);
   sndStr(argv[1]);
   getAndShowAnswer();
 }
 
 
 void watch(int argc, char *argv[]) {
-  sndInt(7);
+  sndInt(CMD_WATCH);
   getAndShowAnswer();
 }
 
 
 void shmod(int argc, char *argv[]) {
-  sndInt(10);
+  sndInt(CMD_SHMOD);
   getAndShowAnswer();
 }
 
 
 void shcmd(int argc, char *argv[]) {
-  sndInt(11);
+  sndInt(CMD_SHCMD);
+  sndStr(argv[1]);
+  getAndShowAnswer();
+}
+
+
+void dir(int argc, char *argv[]) {
+  sndInt(CMD_DIR);
+  sndStr(argv[1]);
+  getAndShowAnswer();
+}
+
+
+void del(int argc, char *argv[]) {
+  sndInt(CMD_DEL);
   sndStr(argv[1]);
   getAndShowAnswer();
 }
 
 
 void ldboot(int argc, char *argv[]) {
-  sndInt(100);
+  sndInt(CMD_LDBOOT);
   sndStr(argv[1]);
   getAndShowAnswer();
 }
 
 
 void clrdir(int argc, char *argv[]) {
-  sndInt(101);
+  sndInt(CMD_CLRDIR);
   getAndShowAnswer();
 }
 
@@ -448,14 +543,19 @@ Cmd cmds[] = {
   { "p",        1, ping     },
   { "h2o",      2, h2o      },
   { "o2h",      2, o2h      },
+  { "h",        1, help     },
   { "q",        1, quit     },
   /* --------------------- */
   { "mirror",   2, mirror   },
-  { "fill",     2, fill     },
+  { "inspect",  3, inspect  },
+  { "filldsp",  2, filldsp  },
+  { "sector",   2, sector   },
   { "shfile",   2, shfile   },
   { "watch",    1, watch    },
   { "shmod",    1, shmod    },
   { "shcmd",    2, shcmd    },
+  { "dir",      2, dir      },
+  { "del",      2, del      },
   { "ldboot",   2, ldboot   },
   { "clrdir",   1, clrdir   },
 };
@@ -549,23 +649,9 @@ int main(int argc, char *argv[]) {
     sendBootFile(bootFile, 0);
     fclose(bootFile);
   }
+  help(0, NULL);
   run = 1;
   while (run) {
-    printf("\n");
-    printf("Commands (Oberon0 and PCLink1):\n");
-    printf("  p                   check if Oberon system is responding\n");
-    printf("  h2o    <filename>   transfer <filename> from host to Oberon\n");
-    printf("  o2h    <filename>   transfer <filename> from Oberon to host\n");
-    printf("  q                   quit\n");
-    printf("Commands (Oberon0 only):\n");
-    printf("  mirror <integer>    mirror <integer> back\n");
-    printf("  fill   <integer>    fill display with <integer>\n");
-    printf("  shfile <filename>   show file <filename>\n");
-    printf("  watch               watch\n");
-    printf("  shmod               show modules\n");
-    printf("  shcmd  <modname>    show commands for <modname>\n");
-    printf("  ldboot <filename>   load boot area from <filename>\n");
-    printf("  clrdir              clear directory\n");
     printf("cmd > ");
     fflush(stdout);
     if (fgets(line, LINE_SIZE, stdin) == NULL) {
@@ -577,9 +663,8 @@ int main(int argc, char *argv[]) {
       continue;
     }
     cmd = lookupCmd(tokens[0]);
-    printf("\n");
     if (cmd == NULL) {
-      printf("error: unknown command '%s'\n", tokens[0]);
+      printf("error: unknown command '%s', try 'h' for help\n", tokens[0]);
       continue;
     }
     if (n < cmd->minArgc) {
