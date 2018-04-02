@@ -265,12 +265,12 @@ void ping(int argc, char *argv[]) {
   sndByte(REQ);
   b = rcvByte();
   if (b == ACK) {
-    printf("ACK\n");
+    printf("ACK from Oberon system\n");
   } else
   if (b == NAK) {
-    printf("NAK\n");
+    printf("NAK from Oberon system\n");
   } else {
-    printf("error: unknown answer\n");
+    printf("error: unknown answer from Oberon system\n");
   }
 }
 
@@ -327,9 +327,9 @@ void h2o(int argc, char *argv[]) {
   }
   b = rcvByte();
   if (b != ACK) {
-    printf("error: no ACK for file '%s' from Oberon system\n", name);
+    printf("error: no ACK from Oberon system (file '%s')\n", name);
   } else {
-    printf("ACK for file '%s' from Oberon system\n", name);
+    printf("ACK from Oberon system (file '%s')\n", name);
   }
   fclose(file);
 }
@@ -373,7 +373,7 @@ void o2h(int argc, char *argv[]) {
       break;
     }
   }
-  printf("ACK for file '%s' sent to Oberon system\n", name);
+  printf("ACK to Oberon system (file '%s')\n", name);
   fclose(file);
 }
 
