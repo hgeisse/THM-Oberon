@@ -3,7 +3,7 @@
 // u = 1: FLT; v = 1: FLOOR
 
 module FPAdder(
-  input clk, run, u, v,
+  input clk, en, run, u, v,
   input [31:0] x, y,
   output stall,
   output [31:0] z);
@@ -57,19 +57,29 @@ assign x1 = (sx0 == 3) ? {{3{xs}}, x0[24:3]} :
   (sx0 == 2) ? {{2{xs}}, x0[24:2]} : (sx0 == 1) ? {xs, x0[24:1]} : x0;
 assign x2 = (sx1 == 3) ? {{12{xs}}, x1[24:12]} :
   (sx1 == 2) ? {{8{xs}}, x1[24:8]} : (sx1 == 1) ? {{4{xs}}, x1[24:4]} : x1;
-always @ (posedge(clk))
-  x3 <= sxh ? {25{xs}} : (sx[4] ? {{16{xs}}, x2[24:16]} : x2);
+always @ (posedge(clk)) begin
+  if (en) begin
+    x3 <= sxh ? {25{xs}} : (sx[4] ? {{16{xs}}, x2[24:16]} : x2);
+  end
+end
 
 assign y0 = ys&~u ? -ym : ym;
 assign y1 = (sy0 == 3) ? {{3{ys}}, y0[24:3]} :
   (sy0 == 2) ? {{2{ys}}, y0[24:2]} : (sy0 == 1) ? {ys, y0[24:1]} : y0;
 assign y2 = (sy1 == 3) ? {{12{ys}}, y1[24:12]} :
   (sy1 == 2) ? {{8{ys}}, y1[24:8]} : (sy1 == 1) ? {{4{ys}}, y1[24:4]} : y1;
-always @ (posedge(clk))
-	y3 <= syh ? {25{ys}} : (sy[4] ? {{16{ys}}, y2[24:16]} : y2);
+always @ (posedge(clk)) begin
+  if (en) begin
+    y3 <= syh ? {25{ys}} : (sy[4] ? {{16{ys}}, y2[24:16]} : y2);
+  end
+end
 	
 // add
-always @ (posedge(clk)) Sum <= {xs, xs, x3} + {ys, ys, y3};
+always @ (posedge(clk)) begin
+  if (en) begin
+    Sum <= {xs, xs, x3} + {ys, ys, y3};
+  end
+end
 assign s = (Sum[26] ? -Sum : Sum) + 27'd1;
 
 // post-normalize
@@ -119,10 +129,18 @@ assign t1 = (sc0 == 3) ? {s[22:1], 3'b0} :
   (sc0 == 2) ? {s[23:1], 2'b0} : (sc0 == 1) ? {s[24:1], 1'b0} : s[25:1];
 assign t2 = (sc1 == 3) ? {t1[12:0], 12'b0} :
   (sc1 == 2) ? {t1[16:0], 8'b0} : (sc1 == 1) ? {t1[20:0], 4'b0} : t1;
-always @ (posedge(clk)) t3 <= sc[4] ? {t2[8:0], 16'b0} : t2;
+always @ (posedge(clk)) begin
+  if (en) begin
+    t3 <= sc[4] ? {t2[8:0], 16'b0} : t2;
+  end
+end
 
 assign stall = run & ~(State == 3);
-always @ (posedge(clk)) State <= run ? State + 2'd1 : 2'd0;
+always @ (posedge(clk)) begin
+  if (en) begin
+    State <= run ? State + 2'd1 : 2'd0;
+  end
+end
 
 assign z = v ? {{7{Sum[26]}}, Sum[25:1]} :  // FLOOR
     xn ? (u|yn ? 0 : y) :   // FLT or x = y = 0

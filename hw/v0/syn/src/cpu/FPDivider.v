@@ -2,7 +2,7 @@
 `default_nettype none  // HG 18.03.2018
 
 module FPDivider(
-    input clk, run,
+    input clk, en, run,
     input [31:0] x,
     input [31:0] y,
     output stall,
@@ -39,8 +39,10 @@ assign z = (xe == 0) ? 0 :
   (~e1[7]) ? {sign, 8'b11111111, z0[23:1]} : 0;  // NaN
 
 always @ (posedge(clk)) begin
-  R <= r1[23:0];
-  Q <= {q0[24:0], ~d[24]};
-  S <= run ? S + 5'd1 : 5'd0;
+  if (en) begin
+    R <= r1[23:0];
+    Q <= {q0[24:0], ~d[24]};
+    S <= run ? S + 5'd1 : 5'd0;
+  end
 end
 endmodule
