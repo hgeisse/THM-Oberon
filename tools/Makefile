@@ -4,7 +4,7 @@
 
 BUILD = ../build
 
-DIRS = convert mkdisk
+DIRS = mkdisk oberon2unix unix2oberon
 
 all:
 		for i in $(DIRS) ; do \

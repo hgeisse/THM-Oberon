@@ -2,7 +2,7 @@
 # Makefile for Oberon-to-UNIX text converter
 #
 
-BUILD = ../../../build
+BUILD = ../../build
 
 all:		oberon2unix
 
