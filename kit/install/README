@@ -2,8 +2,46 @@ This README contains instructions how to install
 the Oberon system, either on the RISC-5 simulator
 or on a real FPGA board.
 
-cp ../BootLoad/mem/BootLoad.mem .
-cp ../Boot/
-../../build/bin/mkdisk Oberon.dsk 300M
-../../build/bin/sim -s 001 -p BootLoad.mem -d Oberon.dsk
-../../build/bin/serlink -p /dev/pts/19 -b Oberon0.bin
+	cp ../BootLoad/mem/BootLoad.mem .
+
+	cp ../Boot/bin/Oberon0.bin .
+
+	cp ../InnerCore/bin/Modules.bin .
+
+	cp ../OuterCore/rsc/* .
+
+	../../build/bin/mkdisk Oberon.dsk 300M
+
+	../../build/bin/sim -s 001 -p BootLoad.mem -d Oberon.dsk
+
+Start the serial connection in a separate terminal:
+	../../build/bin/serlink -p /dev/pts/19 -b Oberon0.bin
+It will take a while to transmit Oberon0.bin to the target system.
+You will first notice the serial link's prompt in the separate
+terminal - but please wait and do not enter anything before the
+target system is ready to receive commands. This is indicated by
+a LED change to "ON   OFF  OFF  OFF  OFF  ON   OFF  OFF", which
+is shown in the simulator control window. Now Oberon0 is running
+on the target system and waits for commands from the serial link.
+
+	clrdir
+	h2o Modules.bin
+	h2o Display.rsc
+	h2o Fonts.rsc
+	h2o Input.rsc
+	h2o MenuViewers.rsc
+	h2o Oberon.rsc
+	h2o Oberon10.Scn.Fnt
+	h2o System.Tool
+	h2o System.rsc
+	h2o TextFrames.rsc
+	h2o Texts.rsc
+	h2o Viewers.rsc
+	dir *
+	ldboot Modules.bin
+
+Shut down the target system with CTRL-C in the simulator control
+window. Quit the serial link program.
+
+Now you can boot your new Oberon system:
+	../../build/bin/sim -s 000 -p BootLoad.mem -d Oberon.dsk
