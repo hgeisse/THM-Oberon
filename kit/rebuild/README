@@ -1,0 +1,5 @@
+This README contains instructions how to re-build
+all the binaries in the kit. For this task it is
+necessary to have a running Oberon system. So please
+do an install first, either on the RISC-5 simulator
+or on a real FPGA board.

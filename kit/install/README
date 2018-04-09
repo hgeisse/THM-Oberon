@@ -1,0 +1,9 @@
+This README contains instructions how to install
+the Oberon system, either on the RISC-5 simulator
+or on a real FPGA board.
+
+cp ../BootLoad/mem/BootLoad.mem .
+cp ../Boot/
+../../build/bin/mkdisk Oberon.dsk 300M
+../../build/bin/sim -s 001 -p BootLoad.mem -d Oberon.dsk
+../../build/bin/serlink -p /dev/pts/19 -b Oberon0.bin
