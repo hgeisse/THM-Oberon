@@ -13,6 +13,10 @@ Simulator
 
 	cp ../OuterCore/rsc/* .
 
+	cp ../Apps/Compiler/rsc/* .
+
+	cp ../Apps/PCLink1/rsc/* .
+
 	../../build/bin/mkdisk Oberon.dsk 300M
 
 	../../build/bin/sim -s 001 -p BootLoad.mem -d Oberon.dsk
@@ -40,6 +44,11 @@ on the target system and waits for commands from the serial link.
 	h2o TextFrames.rsc
 	h2o Texts.rsc
 	h2o Viewers.rsc
+	h2o ORB.rsc
+	h2o ORG.rsc
+	h2o ORP.rsc
+	h2o ORS.rsc
+	h2o PCLink1.rsc
 	dir *
 	ldboot Modules.bin
 
