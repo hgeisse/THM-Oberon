@@ -9,7 +9,7 @@ CFLAGS = -g -Wall
 LDFLAGS = -g -Wall
 LDLIBS = -lX11 -lpthread -lm
 
-SRCS = sim.c common.c graph.c
+SRCS = sim.c common.c fp.c graph.c
 OBJS = $(patsubst %.c,%.o,$(SRCS))
 BIN = sim
 

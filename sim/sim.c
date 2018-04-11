@@ -14,6 +14,7 @@
 #include <fcntl.h>
 
 #include "common.h"
+#include "fp.h"
 #include "graph.h"
 
 
@@ -1101,19 +1102,19 @@ static void execNextInstruction(void) {
         break;
       case 0x0C:
         /* FAD */
-        error("illegal register instruction 0x%02X", op);
+        res = fpAdd(b, c, u, v);
         break;
       case 0x0D:
         /* FSB */
-        error("illegal register instruction 0x%02X", op);
+        res = fpAdd(b, c ^ 0x80000000, u, v);
         break;
       case 0x0E:
         /* FML */
-        error("illegal register instruction 0x%02X", op);
+        res = fpMul(b, c);
         break;
       case 0x0F:
         /* FDV */
-        error("illegal register instruction 0x%02X", op);
+        res = fpDiv(b, c);
         break;
     }
     reg[ira] = res;
