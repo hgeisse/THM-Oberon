@@ -275,14 +275,12 @@ void ping(int argc, char *argv[]) {
 }
 
 
-void h2o(int argc, char *argv[]) {
-  char *name;
+void h2oSingleFile(char *name) {
   FILE *file;
   unsigned char b;
   unsigned char buf[255];
   int n, i;
 
-  name = argv[1];
   file = fopen(name, "r");
   if (file == NULL) {
     printf("error: cannot open file '%s' for read on host\n", name);
@@ -335,14 +333,21 @@ void h2o(int argc, char *argv[]) {
 }
 
 
-void o2h(int argc, char *argv[]) {
-  char *name;
+void h2o(int argc, char *argv[]) {
+  int i;
+
+  for (i = 1; i < argc; i++) {
+    h2oSingleFile(argv[i]);
+  }
+}
+
+
+void o2hSingleFile(char *name) {
   FILE *file;
   unsigned char b;
   unsigned char buf[255];
   int n, i;
 
-  name = argv[1];
   file = fopen(name, "w");
   if (file == NULL) {
     printf("error: cannot open file '%s' for write on host\n", name);
@@ -378,11 +383,20 @@ void o2h(int argc, char *argv[]) {
 }
 
 
+void o2h(int argc, char *argv[]) {
+  int i;
+
+  for (i = 1; i < argc; i++) {
+    o2hSingleFile(argv[i]);
+  }
+}
+
+
 void help(int argc, char *argv[]) {
   printf("Commands (Oberon0 and PCLink1):\n");
   printf("  p                    check if Oberon system is responding\n");
-  printf("  h2o     <filename>   transfer <filename> from host to Oberon\n");
-  printf("  o2h     <filename>   transfer <filename> from Oberon to host\n");
+  printf("  h2o     <file> ...   transfer files from host to Oberon\n");
+  printf("  o2h     <file> ...   transfer files from Oberon to host\n");
   printf("  h                    help\n");
   printf("  q                    quit\n");
   printf("Commands (Oberon0 only):\n");
@@ -390,13 +404,13 @@ void help(int argc, char *argv[]) {
   printf("  inspect <a> <n>      show <n> words of memory at addr <a>\n");
   printf("  filldsp <integer>    fill display with <integer>\n");
   printf("  sector  <secno>      show disk sector <secno>\n");
-  printf("  shfile  <filename>   show file <filename>\n");
+  printf("  shfile  <file>       show <file>\n");
   printf("  watch                watch\n");
   printf("  shmod                show modules\n");
-  printf("  shcmd   <modname>    show commands for <modname>\n");
+  printf("  shcmd   <module>     show commands for <module>\n");
   printf("  dir     <prefix>     show directory for <prefix>\n");
-  printf("  del     <filename>   delete <filename>\n");
-  printf("  ldboot  <filename>   load boot area from <filename>\n");
+  printf("  del     <file>       delete <file>\n");
+  printf("  ldboot  <file>       load boot area from <file>\n");
   printf("  clrdir               clear directory\n");
 }
 
