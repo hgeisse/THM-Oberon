@@ -591,7 +591,7 @@ Cmd *lookupCmd(char *name) {
 
 
 void usage(char *myself) {
-  printf("Usage: %s -p <serial port> [-b <boot file>]\n", myself);
+  printf("Usage: %s <serial port> [<boot file>]\n", myself);
   exit(1);
 }
 
@@ -613,8 +613,6 @@ int tokenize(char *line, char *tokens[], int maxTokens) {
 
 
 int main(int argc, char *argv[]) {
-  int i;
-  char *argp;
   char *serialPort;
   char *bootName;
   FILE *bootFile;
@@ -624,34 +622,14 @@ int main(int argc, char *argv[]) {
   int n;
   Cmd *cmd;
 
-  serialPort = NULL;
-  bootName = NULL;
-  for (i = 1; i < argc; i++) {
-    argp = argv[i];
-    if (*argp == '-') {
-      /* option */
-      if (strcmp(argp, "-p") == 0) {
-        if (i == argc - 1 || serialPort != NULL) {
-          usage(argv[0]);
-        }
-        i++;
-        serialPort = argv[i];
-      } else
-      if (strcmp(argp, "-b") == 0) {
-        if (i == argc - 1 || bootName != NULL) {
-          usage(argv[0]);
-        }
-        i++;
-        bootName = argv[i];
-      } else {
-        usage(argv[0]);
-      }
-    } else {
-      usage(argv[0]);
-    }
+  if (argc != 2 && argc != 3) {
+    usage(argv[0]);
   }
-  if (serialPort == NULL) {
-    error("no serial port specified");
+  serialPort = argv[1];
+  if (argc == 2) {
+    bootName = NULL;
+  } else {
+    bootName = argv[2];
   }
   serialOpen(serialPort);
   while (serialRcv(&b)) ;
