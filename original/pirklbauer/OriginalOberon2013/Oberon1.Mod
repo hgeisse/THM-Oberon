@@ -179,8 +179,11 @@ MODULE Oberon; (*module Oberon for a boot file containing the entire Oberon syst
         RemoveMarks(V.X, V.Y, V.W, V.H);
         Display.ReplConst(Display.black, V.X, V.Y, V.W, V.H, Display.replace)
       ELSIF (M.id = Viewers.modify) & (M.Y < V.Y) THEN
-        RemoveMarks(V.X, M.Y, V.W, V.Y - M.Y);
-        Display.ReplConst(Display.black, V.X, M.Y, V.W, V.Y - M.Y, Display.replace)
+        IF M.Y < V.Y THEN
+          RemoveMarks(V.X, M.Y, V.W, V.Y - M.Y);
+          Display.ReplConst(Display.black, V.X, M.Y, V.W, V.Y - M.Y, Display.replace)
+        ELSIF M.Y > V.Y THEN RemoveMarks(V.X, V.Y, V.W, M.Y - V.Y)
+        END
       END
     END
   END HandleFiller;

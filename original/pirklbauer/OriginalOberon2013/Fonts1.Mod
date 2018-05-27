@@ -118,7 +118,7 @@ PROCEDURE Init; (*create the default font file Oberon10.Scn.Fnt if needed*)
 BEGIN F := Files.Old("Oberon10.Scn.Fnt");
   IF F = NIL THEN F := Files.New("Oberon10.Scn.Fnt");
     IF F # NIL THEN FntSize := 8*8*32 + 7*32 + 12; (*2284*)
-      (*hexstrings created with hexdump command*)
+      (*the hexstrings below were created using the Unix hexdump command from Oberon10.Scn.Fnt*)
       FntAdr[0] := SYSTEM.ADR($
         DB 00 53 20 0C 00 00 00 0A 00 FD FF 09 00 06 00
         09 00 0A 00 1A 00 7F 00 80 00 96 00 9B 00 9C 00

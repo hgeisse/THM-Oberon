@@ -1,4 +1,4 @@
-MODULE System; (*module System for a boot file containing the entire Oberon system / Original Oberon 2013 / AP 22.12.17*)
+MODULE System; (*module System for a boot file containing the entire Oberon system / Original Oberon 2013 / AP 14.4.18*)
   IMPORT SYSTEM, Kernel, FileDir, Files, Modules,
     Input, Display, Viewers, Fonts, Texts, Oberon, MenuViewers, TextFrames, PCLink1;
 
@@ -194,7 +194,7 @@ MODULE System; (*module System for a boot file containing the entire Oberon syst
         Kernel.GetSector(adr, hp);
         Texts.Write(W, 9X); Texts.WriteClock(W, hp.date);
         Texts.WriteInt(W, hp.aleng*FileDir.SectorSize + hp.bleng - FileDir.HeaderSize, 8); (*length*)
-        (*Texts.WriteHex(W, adr)*)
+        Texts.WriteHex(W, adr)
       END ;
       Texts.WriteLn(W)
     END
@@ -369,7 +369,7 @@ MODULE System; (*module System for a boot file containing the entire Oberon syst
     VAR logV, toolV: Viewers.Viewer;
       menu, main: Display.Frame;
       d: LONGINT; X, Y: INTEGER;
-  BEGIN d := Kernel.Clock(); Texts.WriteString(W, "Oberon V5  NW 14.4.2013 / AP 22.12.17"); EndLine;
+  BEGIN d := Kernel.Clock(); Texts.WriteString(W, "Oberon V5  NW 14.4.2013 / AP 14.4.18"); EndLine;
     Oberon.AllocateSystemViewer(0, X, Y);
     menu := TextFrames.NewMenu("System.Log", LogMenu);
     main := TextFrames.NewText(Oberon.Log, 0);
@@ -451,5 +451,6 @@ BEGIN
   Oberon.OpenLog(TextFrames.Text("")); OpenViewers;
   Kernel.Install(SYSTEM.ADR(Trap), 20H); Kernel.Install(SYSTEM.ADR(Abort), 0);
 
-  IF Modules.importing # "System" THEN (*loaded by the boot loader*) PCLink1.Run; Oberon.Loop END
+  PCLink1.Run;
+  IF Modules.importing # "System" THEN (*loaded by the boot loader*) Oberon.Loop END
 END System.

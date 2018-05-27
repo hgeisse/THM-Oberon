@@ -1,4 +1,4 @@
-MODULE Oberon0; (*Oberon-0 command interpreter for Original Oberon 2013; AP 22.12.17*)
+MODULE Oberon0; (*Oberon-0 command interpreter for Original Oberon 2013; AP 4.4.18*)
   IMPORT SYSTEM, Kernel, FileDir, Files, Modules, RS232;
   CONST swi = -60; (*switches*)
     stat = -52; (*RS-232*)
@@ -63,9 +63,9 @@ MODULE Oberon0; (*Oberon-0 command interpreter for Original Oberon 2013; AP 22.1
   END Inspect;
 
   PROCEDURE FillDisplay; (*w - fill display with words w*)
-    VAR w, a: INTEGER;
-  BEGIN RS232.RecInt(w); RS232.SendStr("FillDisplay"); a := screenbase;
-    FOR a := screenbase TO screenbase + screensize BY 4 DO SYSTEM.PUT(a, w) END
+    VAR w, adr: INTEGER;
+  BEGIN RS232.RecInt(w); RS232.SendStr("FillDisplay");
+    FOR adr := screenbase TO screenbase + screensize BY 4 DO SYSTEM.PUT(adr, w) END
   END FillDisplay;
 
   PROCEDURE Sector; (*secno - show disk sector*)
@@ -144,37 +144,36 @@ MODULE Oberon0; (*Oberon-0 command interpreter for Original Oberon 2013; AP 22.1
     END
   END ShowCommands;
 
+  PROCEDURE List(name: FileDir.FileName; adr: LONGINT; VAR cont: BOOLEAN);
+    VAR i0, i, j0, j: INTEGER; hp: FileDir.FileHeader;
+  BEGIN i := 0;
+    WHILE (pat[i] > "*") & (pat[i] = name[i]) DO INC(i) END ;
+    IF (pat[i] = 0X) & (name[i] = 0X) THEN i0 := i; j0 := i
+    ELSIF pat[i] = "*" THEN
+      i0 := i; j0 := i+1;
+      WHILE name[i0] # 0X DO
+        i := i0; j := j0;
+        WHILE (name[i] # 0X) & (name[i] = pat[j]) DO INC(i); INC(j) END ;
+        IF pat[j] = 0X THEN
+          IF name[i] = 0X THEN (*match*) j0 := j ELSE INC(i0) END
+        ELSIF pat[j] = "*" THEN i0 := i; j0 := j+1
+        ELSE INC(i0)
+        END
+      END
+    END ;
+    IF (name[i0] = 0X) & (pat[j0] = 0X) THEN (*found*)
+      RS232.Line; RS232.SendStr(name);
+      IF pat[j0+1] = "!" THEN (*option*)
+        Kernel.GetSector(adr, hp); RS232.SendStr("  ");
+        RS232.SendInt(hp.aleng*FileDir.SectorSize + hp.bleng - FileDir.HeaderSize); (*length*)
+        RS232.SendStr("  "); RS232.SendHex(adr)
+      END
+    END
+  END List;
+
   PROCEDURE Directory; (*prefix - list files matching the prefix (enumerate directory)*)
     VAR i, x: INTEGER; ch: CHAR;
       pre: ARRAY 32 OF CHAR;
-
-    PROCEDURE List(name: FileDir.FileName; adr: LONGINT; VAR cont: BOOLEAN);
-      VAR i0, i, j0, j: INTEGER; hp: FileDir.FileHeader;
-    BEGIN i := 0;
-      WHILE (pat[i] > "*") & (pat[i] = name[i]) DO INC(i) END ;
-      IF (pat[i] = 0X) & (name[i] = 0X) THEN i0 := i; j0 := i
-      ELSIF pat[i] = "*" THEN
-        i0 := i; j0 := i+1;
-        WHILE name[i0] # 0X DO
-          i := i0; j := j0;
-          WHILE (name[i] # 0X) & (name[i] = pat[j]) DO INC(i); INC(j) END ;
-          IF pat[j] = 0X THEN
-            IF name[i] = 0X THEN (*match*) j0 := j ELSE INC(i0) END
-          ELSIF pat[j] = "*" THEN i0 := i; j0 := j+1
-          ELSE INC(i0)
-          END
-        END
-      END ;
-      IF (name[i0] = 0X) & (pat[j0] = 0X) THEN (*found*)
-        RS232.Line; RS232.SendStr(name);
-        IF pat[j0+1] = "!" THEN (*option*)
-          Kernel.GetSector(adr, hp); RS232.SendStr("  ");
-          RS232.SendInt(hp.aleng*FileDir.SectorSize + hp.bleng - FileDir.HeaderSize); (*length*)
-          RS232.SendStr("  "); RS232.SendHex(adr)
-        END
-      END
-    END List;
-
   BEGIN RS232.Rec(x); ch := CHR(x);
     WHILE ch = " " DO RS232.Rec(x); ch := CHR(x) END ; (*spaces*)
     i := 0;
@@ -299,12 +298,39 @@ MODULE Oberon0; (*Oberon-0 command interpreter for Original Oberon 2013; AP 22.1
       u: FileDir.DirEntry; a: FileDir.DirPage;
   BEGIN RS232.SendStr("ClearDirectory");
     a.mark := FileDir.DirMark; a.m := 0; a.p0 := 0; u.adr := 0; u.p := 0;
-    i := 0;
-    REPEAT u.name[i] := 0X; INC(i) UNTIL i = FileDir.FnLength;
-    i := 0;
-    REPEAT a.e[i] := u; INC(i) UNTIL i = FileDir.DirPgSize;
+    FOR i := 0 TO FileDir.FnLength-1 DO u.name[i] := 0X END ;
+    FOR i := 0 TO FileDir.DirPgSize-1 DO a.e[i] := u END ;
     Kernel.PutSector(FileDir.DirRootAdr, a)
   END ClearDirectory;
+
+  PROCEDURE ReadCode(VAR R: Files.Rider; VAR code: ARRAY OF LONGINT; VAR size, start, nofimps, res: INTEGER);
+    VAR n, data: INTEGER; ch: CHAR; b: BYTE;               (*size in words, start in bytes*)
+      name: ARRAY 32 OF CHAR;
+  BEGIN Files.ReadString(R, name); Files.ReadInt(R, data); (*key*)
+    Files.ReadByte(R, b); (*version*) Files.ReadInt(R, data); (*size*)
+    Files.ReadString(R, name); (*imports*) nofimps := 0;
+    WHILE name[0] # 0X DO INC(nofimps); Files.ReadInt(R, data); (*key*) Files.ReadString(R, name) END ;
+    Files.ReadInt(R, n);
+    WHILE n > 0 DO Files.ReadInt(R, data); DEC(n, 4) END ; (*type descriptors*)
+    Files.ReadInt(R, n); (*variable space*)
+    Files.ReadInt(R, n);
+    WHILE n > 0 DO Files.Read(R, ch); DEC(n) END ; (*strings*)
+    Files.ReadInt(R, size);
+    IF size > LEN(code) THEN (*program too long*) res := 2
+    ELSE n := 0;
+      WHILE n < size DO Files.ReadInt(R, data); code[n] := data; INC(n) END ; (*code*)
+      Files.ReadString(R, name);
+      WHILE name[0] # 0X DO Files.ReadInt(R, data); Files.ReadString(R, name) END ; (*commands*)
+      Files.ReadInt(R, n);
+      WHILE n > 0 DO Files.ReadInt(R, data); DEC(n) END ; (*entries*)
+      Files.ReadInt(R, data);
+      WHILE data >= 0 DO Files.ReadInt(R, data) END ; (*pointer references*)
+      Files.ReadInt(R, data); (*fixorgP*) Files.ReadInt(R, data); (*fixorgD*)
+      Files.ReadInt(R, data); (*fixorgT*) Files.ReadInt(R, start); (*entry*)
+      Files.Read(R, ch);
+      IF ch # "O" THEN (*corrupted file*) res := 1 ELSE res := 0 END
+    END
+  END ReadCode;
 
   PROCEDURE Execute; (*filename - execute standalone program  M.rsc*)
     TYPE Command = PROCEDURE;
@@ -313,36 +339,6 @@ MODULE Oberon0; (*Oberon-0 command interpreter for Original Oberon 2013; AP 22.1
       name: ARRAY 32 OF CHAR;
       body: Command;
       F: Files.File; R: Files.Rider;
-
-    PROCEDURE ReadCode(VAR R: Files.Rider; VAR code: ARRAY OF LONGINT; VAR size, start, nofimps, res: INTEGER);
-      VAR n, data: INTEGER; ch: CHAR; b: BYTE;               (*size in words, start in bytes*)
-        name: ARRAY 32 OF CHAR;
-    BEGIN Files.ReadString(R, name); Files.ReadInt(R, data); (*key*)
-      Files.ReadByte(R, b); (*version*) Files.ReadInt(R, data); (*size*)
-      Files.ReadString(R, name); (*imports*) nofimps := 0;
-      WHILE ~R.eof & (name[0] # 0X) DO INC(nofimps); Files.ReadInt(R, data); (*key*) Files.ReadString(R, name) END ;
-      Files.ReadInt(R, n);
-      WHILE ~R.eof & (n > 0) DO Files.ReadInt(R, data); DEC(n, 4) END ; (*type descriptors*)
-      Files.ReadInt(R, n); (*variable space*)
-      Files.ReadInt(R, n);
-      WHILE ~R.eof & (n > 0) DO Files.Read(R, ch); DEC(n) END ; (*strings*)
-      Files.ReadInt(R, size);
-      IF size > LEN(code) THEN (*program too long*) res := 2
-      ELSE n := 0;
-        WHILE ~R.eof & (n < size) DO Files.ReadInt(R, data); code[n] := data; INC(n) END ; (*code*)
-        Files.ReadString(R, name);
-        WHILE ~R.eof & (name[0] # 0X) DO Files.ReadInt(R, data); Files.ReadString(R, name) END ; (*commands*)
-        Files.ReadInt(R, n);
-        WHILE ~R.eof & (n > 0) DO Files.ReadInt(R, data); DEC(n) END ; (*entries*)
-        Files.ReadInt(R, data);
-        WHILE ~R.eof & (data >= 0) DO Files.ReadInt(R, data) END ; (*pointer references*)
-        Files.ReadInt(R, data); (*fixorgP*) Files.ReadInt(R, data); (*fixorgD*)
-        Files.ReadInt(R, data); (*fixorgT*) Files.ReadInt(R, start); (*entry*)
-        Files.Read(R, ch);
-        IF ch # "O" THEN (*corrupted file*) res := 1 ELSE res := 0 END
-      END
-    END ReadCode;
-
   BEGIN RS232.RecStr(name); RS232.SendStr("Execute "); RS232.SendStr(name);
     F := Files.Old(name);
     IF F # NIL THEN Files.Set(R, F, 0);
