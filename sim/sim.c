@@ -18,6 +18,8 @@
 #include "graph.h"
 
 
+#define SERDEV_FILE	"serial.dev"		/* serial dev file */
+
 #define INST_PER_MSEC	25000			/* execution speed */
 #define INST_PER_CHAR	15000			/* serial line speed */
 
@@ -214,6 +216,7 @@ void writeRS232_1(Word data) {
 void initRS232(void) {
   int master;
   char slavePath[100];
+  FILE *serdevFile;
 
   serialIn = NULL;
   serialOut = NULL;
@@ -226,6 +229,13 @@ void initRS232(void) {
   strcpy(slavePath, ptsname(master));
   printf("The serial line can be accessed by opening device '%s'.\n",
          slavePath);
+  serdevFile = fopen(SERDEV_FILE, "w");
+  if (serdevFile == NULL) {
+    error("cannot open file for writing serial device path");
+  }
+  fprintf(serdevFile, "%s\n", slavePath);
+  fclose(serdevFile);
+  printf("This path was also written to file '%s'.\n", SERDEV_FILE);
   fcntl(master, F_SETFL, O_NONBLOCK);
   serialIn = fdopen(master, "r");
   setvbuf(serialIn, NULL, _IONBF, 0);
