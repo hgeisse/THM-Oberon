@@ -12,6 +12,8 @@
 #include <termios.h>
 
 
+#define SERDEV_FILE	"serial.dev"
+
 #define BLOCK_SIZE	512
 
 #define LINE_SIZE	200
@@ -591,7 +593,7 @@ Cmd *lookupCmd(char *name) {
 
 
 void usage(char *myself) {
-  printf("Usage: %s <serial port> [<boot file>]\n", myself);
+  printf("Usage: %s [<boot file>]\n", myself);
   exit(1);
 }
 
@@ -613,7 +615,8 @@ int tokenize(char *line, char *tokens[], int maxTokens) {
 
 
 int main(int argc, char *argv[]) {
-  char *serialPort;
+  FILE *serdevFile;
+  char serialPort[LINE_SIZE];
   char *bootName;
   FILE *bootFile;
   unsigned char b;
@@ -622,14 +625,28 @@ int main(int argc, char *argv[]) {
   int n;
   Cmd *cmd;
 
-  if (argc != 2 && argc != 3) {
+  if (argc != 1 && argc != 2) {
     usage(argv[0]);
   }
-  serialPort = argv[1];
-  if (argc == 2) {
+  serdevFile = fopen(SERDEV_FILE, "r");
+  if (serdevFile == NULL) {
+    error("cannot open file '%s' for reading the\npath to "
+          "the serial device. Please create this file.",
+          SERDEV_FILE);
+  }
+  if (fgets(serialPort, LINE_SIZE, serdevFile) == NULL) {
+    error("cannot read file '%s' (should contain a valid path).",
+          SERDEV_FILE);
+  }
+  fclose(serdevFile);
+  n = strlen(serialPort) - 1;
+  if (serialPort[n] == '\n') {
+    serialPort[n] = '\0';
+  }
+  if (argc == 1) {
     bootName = NULL;
   } else {
-    bootName = argv[2];
+    bootName = argv[1];
   }
   serialOpen(serialPort);
   while (serialRcv(&b)) ;
