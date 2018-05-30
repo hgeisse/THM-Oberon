@@ -47,6 +47,13 @@
 //#define CMD_	102
 
 
+typedef struct {
+  char *name;
+  int minArgc;
+  void (*func)(int argc, char *argv[]);
+} Cmd;
+
+
 static int sfd = -1;
 static struct termios origOptions;
 static struct termios currOptions;
@@ -55,6 +62,10 @@ static int run;
 
 
 void serialClose(void);
+Cmd *lookupCmd(char *name);
+
+
+/**************************************************************/
 
 
 void error(char *fmt, ...) {
@@ -68,6 +79,25 @@ void error(char *fmt, ...) {
   serialClose();
   exit(1);
 }
+
+
+int tokenize(char *line, char *tokens[], int maxTokens) {
+  int n;
+  char *p;
+
+  n = 0;
+  p = strtok(line, " \t\n\r");
+  while (p != NULL) {
+    if (n < maxTokens) {
+      tokens[n++] = p;
+    }
+    p = strtok(NULL, " \t\n\r");
+  }
+  return n;
+}
+
+
+/**************************************************************/
 
 
 void serialOpen(char *serialPort) {
@@ -394,11 +424,50 @@ void o2h(int argc, char *argv[]) {
 }
 
 
+void xscript(int argc, char *argv[]) {
+  FILE *script;
+  int lnum;
+  char line[LINE_SIZE];
+  char *tokens[MAX_TOKENS];
+  int n;
+  Cmd *cmd;
+
+  script = fopen(argv[1], "r");
+  if (script == NULL) {
+    printf("error: cannot open script file '%s'\n", argv[1]);
+    return;
+  }
+  lnum = 0;
+  while (run && fgets(line, LINE_SIZE, script) != NULL) {
+    lnum++;
+    printf("line %d: %s", lnum, line);
+    n = tokenize(line, tokens, MAX_TOKENS);
+    if (n == 0) {
+      continue;
+    }
+    cmd = lookupCmd(tokens[0]);
+    if (cmd == NULL) {
+      printf("error in script: unknown command '%s'\n",
+             tokens[0]);
+      continue;
+    }
+    if (n < cmd->minArgc) {
+      printf("error in script: too few arguments for command '%s'\n",
+             tokens[0]);
+      continue;
+    }
+    (*cmd->func)(n, tokens);
+  }
+  fclose(script);
+}
+
+
 void help(int argc, char *argv[]) {
   printf("Commands (Oberon0 and PCLink1):\n");
   printf("  p                    check if Oberon system is responding\n");
   printf("  h2o     <file> ...   transfer files from host to Oberon\n");
   printf("  o2h     <file> ...   transfer files from Oberon to host\n");
+  printf("  @       <file>       execute commands from script file\n");
   printf("  h                    help\n");
   printf("  q                    quit\n");
   printf("Commands (Oberon0 only):\n");
@@ -548,17 +617,11 @@ void clrdir(int argc, char *argv[]) {
 /**************************************************************/
 
 
-typedef struct {
-  char *name;
-  int minArgc;
-  void (*func)(int argc, char *argv[]);
-} Cmd;
-
-
 Cmd cmds[] = {
   { "p",        1, ping     },
   { "h2o",      2, h2o      },
   { "o2h",      2, o2h      },
+  { "@",        2, xscript  },
   { "h",        1, help     },
   { "q",        1, quit     },
   /* --------------------- */
@@ -595,22 +658,6 @@ Cmd *lookupCmd(char *name) {
 void usage(char *myself) {
   printf("Usage: %s [<boot file>]\n", myself);
   exit(1);
-}
-
-
-int tokenize(char *line, char *tokens[], int maxTokens) {
-  int n;
-  char *p;
-
-  n = 0;
-  p = strtok(line, " \t\n\r");
-  while (p != NULL) {
-    if (n < maxTokens) {
-      tokens[n++] = p;
-    }
-    p = strtok(NULL, " \t\n\r");
-  }
-  return n;
 }
 
 
@@ -655,7 +702,11 @@ int main(int argc, char *argv[]) {
     if (bootFile == NULL) {
       error("cannot open boot file '%s'", bootName);
     }
+    printf("Sending boot file, please wait...\n");
     sendBootFile(bootFile, 0);
+    printf("Sending boot file done.\n");
+    printf("NOTE: Please wait for LEDs indicating reception:\n");
+    printf("      ON   OFF  OFF  OFF  OFF  ON   OFF  OFF\n");
     fclose(bootFile);
   }
   help(0, NULL);
