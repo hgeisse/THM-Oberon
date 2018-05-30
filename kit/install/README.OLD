@@ -7,7 +7,7 @@ Simulator
 
 	cp ../BootLoad/mem/BootLoad.mem .
 
-	cp ../Boot/bin/Oberon0.bin .
+	cp ../Oberon0/bin/Oberon0.bin .
 
 	cp ../InnerCore/bin/Modules.bin .
 
@@ -22,7 +22,7 @@ Simulator
 	../../build/bin/sim -s 001 -p BootLoad.mem -d Oberon.dsk
 
 Start the serial connection in a separate terminal:
-	../../build/bin/serlink -p /dev/pts/19 -b Oberon0.bin
+	../../build/bin/serlink /dev/pts/19 Oberon0.bin
 It will take a while to transmit Oberon0.bin to the target system.
 You will first notice the serial link's prompt in the separate
 terminal - but please wait and do not enter anything before the
@@ -33,22 +33,14 @@ on the target system and waits for commands from the serial link.
 
 	clrdir
 	h2o Modules.bin
-	h2o Display.rsc
-	h2o Fonts.rsc
-	h2o Input.rsc
-	h2o MenuViewers.rsc
-	h2o Oberon.rsc
-	h2o Oberon10.Scn.Fnt
-	h2o System.Tool
-	h2o System.rsc
-	h2o TextFrames.rsc
-	h2o Texts.rsc
-	h2o Viewers.rsc
-	h2o ORB.rsc
-	h2o ORG.rsc
-	h2o ORP.rsc
-	h2o ORS.rsc
-	h2o PCLink1.rsc
+	h2o Display.rsc Display.smb Fonts.rsc Fonts.smb
+	h2o Input.rsc Input.smb MenuViewers.rsc MenuViewers.smb
+	h2o Oberon.rsc Oberon.smb Oberon10.Scn.Fnt System.Tool
+	h2o System.rsc System.smb TextFrames.rsc TextFrames.smb
+	h2o Texts.rsc Texts.smb Viewers.rsc Viewers.smb
+	h2o ORB.rsc ORB.smb ORG.rsc ORG.smb
+	h2o ORP.rsc ORP.smb ORS.rsc ORS.smb
+	h2o PCLink1.rsc PCLink1.smb
 	dir *
 	ldboot Modules.bin
 
@@ -71,7 +63,7 @@ Load the RISC-5 configuration into the FPGA.
 Set SW-0 to "on". Reset the processor.
 The LEDs should show "on off off off off off off on".
 Start the serial connection in a separate terminal:
-	../../build/bin/serlink -p /dev/ttyUSB0 -b Oberon0.bin
+	../../build/bin/serlink /dev/ttyUSB0 Oberon0.bin
 It will take a while to transmit Oberon0.bin to the target system.
 You will first notice the serial link's prompt in the separate
 terminal - but please wait and do not enter anything before the

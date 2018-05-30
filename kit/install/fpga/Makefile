@@ -2,7 +2,7 @@
 # Makefile
 #
 
-BUILD=../../build
+BUILD=../../../build
 
 all:
 
