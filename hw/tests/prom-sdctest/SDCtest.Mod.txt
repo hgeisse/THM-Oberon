@@ -132,13 +132,18 @@ MODULE* SDCtest;
 BEGIN
   SYSTEM.LDREG(SP, stackTop);
   InitSPI;
-  FOR i := 1 TO 1000 DO
-    WriteSector(122 + 13 * i);
-  END;
-  FOR i := 1 TO 1000 DO
-    ReadSector(122 + 13 * i);
-  END;
-  REPEAT UNTIL SYSTEM.BIT(serStat, 1);
-  SYSTEM.PUT(serData, 0FFH);
-  REPEAT UNTIL FALSE
+  REPEAT
+    REPEAT
+      REPEAT UNTIL SYSTEM.BIT(serStat, 0);
+      SYSTEM.GET(serData, i)
+    UNTIL i = 0F5H;
+    FOR i := 1 TO 1000 DO
+      WriteSector(122 + 13 * i)
+    END;
+    FOR i := 1 TO 1000 DO
+      ReadSector(122 + 13 * i)
+    END;
+    REPEAT UNTIL SYSTEM.BIT(serStat, 1);
+    SYSTEM.PUT(serData, 0FAH)
+  UNTIL FALSE
 END SDCtest.

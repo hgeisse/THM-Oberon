@@ -12,7 +12,6 @@
 #include <termios.h>
 
 
-#define NUM_PASSES	8
 #define NUM_TRIES	10
 
 #define SYN		0x16
@@ -96,7 +95,7 @@ int serialRcv(unsigned char *bp) {
 
 int main(int argc, char *argv[]) {
   char *serialPort;
-  int i;
+  int run;
   unsigned char b;
 
   if (argc != 2) {
@@ -105,7 +104,10 @@ int main(int argc, char *argv[]) {
   }
   serialPort = argv[1];
   serialOpen(serialPort);
-  for (i = 0; i < NUM_PASSES * 4; i++) {
+  printf("test started\n");
+  while (!serialSnd(0xF5)) ;
+  run = 1;
+  while (run) {
     while (!serialRcv(&b)) ;
     switch (b) {
       case 0x00:
@@ -132,11 +134,15 @@ int main(int argc, char *argv[]) {
       case 0x83:
         printf("write words, read words: failed\n");
         break;
+      case 0xFA:
+        run = 0;
+        break;
       default:
         printf("error: illegal return code\n");
         break;
     }
   }
+  printf("test finished\n");
   if (sfd != 0) {
     serialClose();
     sfd = 0;

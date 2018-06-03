@@ -105,6 +105,8 @@ int main(int argc, char *argv[]) {
   }
   serialPort = argv[1];
   serialOpen(serialPort);
+  printf("test started\n");
+  while (!serialSnd(0xF5)) ;
   run = 1;
   i = 0;
   while (run) {
@@ -116,7 +118,7 @@ int main(int argc, char *argv[]) {
       case 0x80:
         printf("?");
         break;
-      case 0xFF:
+      case 0xFA:
         run = 0;
         break;
       default:
