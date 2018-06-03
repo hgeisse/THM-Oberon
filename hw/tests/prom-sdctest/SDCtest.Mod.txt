@@ -1,0 +1,144 @@
+MODULE* SDCtest;
+
+  IMPORT
+    SYSTEM;
+
+  CONST
+    SP = 14;
+    stackTop = 0D0000H;
+    serStat = -52;
+    serData = -56;
+    spiCtrl = -44;
+    spiData = -48;
+    CARD0 = 1;
+    SPIFAST = 4;
+
+  VAR
+    i: INTEGER;
+    error: BOOLEAN;
+
+  PROCEDURE SPIIdle(n: INTEGER); (*send n FFs slowly with no card selected*)
+  BEGIN SYSTEM.PUT(spiCtrl, 0);
+    WHILE n > 0 DO DEC(n); SYSTEM.PUT(spiData, -1);
+      REPEAT UNTIL SYSTEM.BIT(spiCtrl, 0)
+    END
+  END SPIIdle;
+
+  PROCEDURE SPI(n: INTEGER); (*send&rcv byte slowly with card selected*)
+  BEGIN SYSTEM.PUT(spiCtrl, CARD0); SYSTEM.PUT(spiData, n);
+    REPEAT UNTIL SYSTEM.BIT(spiCtrl, 0)
+  END SPI;
+
+  PROCEDURE SPICmd(n, arg: INTEGER);
+    VAR i, data, crc: INTEGER;
+  BEGIN (*send cmd*)
+    REPEAT SPIIdle(1); SYSTEM.GET(spiData, data) UNTIL data = 255; (*flush while unselected*)
+    REPEAT SPI(255); SYSTEM.GET(spiData, data) UNTIL data = 255; (*flush while selected*)
+    IF n = 8 THEN crc := 135 ELSIF n = 0 THEN crc := 149 ELSE crc := 255 END;
+    SPI(n MOD 64 + 64); (*send command*)
+    FOR i := 24 TO 0 BY -8 DO SPI(ROR(arg, i)) END; (*send arg*)
+    SPI(crc); i := 32;
+    REPEAT SPI(255); SYSTEM.GET(spiData, data); DEC(i) UNTIL (data < 80H) OR (i = 0)
+  END SPICmd;
+
+  PROCEDURE InitSPI;
+    VAR res, data: INTEGER;
+  BEGIN SPIIdle(9); (*first, idle for at least 80 clks*)
+    SPICmd(0, 0); (*CMD0 when card selected, sets MMC SPI mode*)
+    SPICmd(8, 1AAH); SPI(-1); SPI(-1); SPI(-1); (*CMD8 for SD cards*)
+    REPEAT (*until card becomes ready*)
+      (*ACMD41, optionally with high-capacity (HCS) bit set, starts init*)
+      SPICmd(55, 0); (*APP cmd follows*)
+      SPICmd(41, LSL(1(*HCS*), 30));
+      SYSTEM.GET(spiData, res);
+      SPI(-1); SPI(-1); SPI(-1); (*flush response*)
+      SPIIdle(10000)
+    UNTIL res = 0;
+    (*CMD16 set block size as a precaution (should default)*)
+    SPICmd(16, 512); SPIIdle(1)
+  END InitSPI;
+
+  PROCEDURE SDShift(VAR n: INTEGER);
+    VAR data: INTEGER;
+  BEGIN SPICmd(58, 0);  (*CMD58 get card capacity bit*)
+    SYSTEM.GET(spiData, data); SPI(-1);
+    IF (data # 0) OR ~SYSTEM.BIT(spiData, 6) THEN n := n * 512 END ;  (*non-SDHC card*)
+    SPI(-1); SPI(-1); SPIIdle(1)  (*flush response*)
+  END SDShift;
+
+  PROCEDURE ReadSD(src, dst: INTEGER);
+    VAR i, data: INTEGER;
+  BEGIN SDShift(src); SPICmd(17, src); (*CMD17 read one block*)
+    i := 0; (*wait for start data marker*)
+    REPEAT SPI(-1); SYSTEM.GET(spiData, data); INC(i) UNTIL data = 254;
+    SYSTEM.PUT(spiCtrl, SPIFAST + CARD0);
+    FOR i := 0 TO 508 BY 4 DO
+      SYSTEM.PUT(spiData, -1);
+      REPEAT UNTIL SYSTEM.BIT(spiCtrl, 0);
+      SYSTEM.GET(spiData, data); SYSTEM.PUT(dst, data); INC(dst, 4)
+    END;
+    SPI(255); SPI(255); SPIIdle(1) (*may be a checksum; deselect card*)
+  END ReadSD;
+
+  PROCEDURE WriteSD(dst, src: INTEGER);
+    VAR i, data: INTEGER;
+  BEGIN SDShift(dst); SPICmd(24, dst); (*CMD24 write one block*)
+    SPI(254); (*write start data marker*)
+    SYSTEM.PUT(spiCtrl, SPIFAST + CARD0);
+    FOR i := 0 TO 508 BY 4 DO
+      SYSTEM.GET(src, data); INC(src, 4); SYSTEM.PUT(spiData, data);
+      REPEAT UNTIL SYSTEM.BIT(spiCtrl, 0)
+    END;
+    SPI(255); SPI(255); (*dummy checksum*) i := 0;
+    REPEAT SPI(-1); SYSTEM.GET(spiData, data); INC(i);
+    UNTIL (data MOD 32 = 5) OR (i = 10000);
+    SPIIdle(1) (*deselect card*)
+  END WriteSD;
+
+  PROCEDURE ReadSector(sector: INTEGER);
+    VAR dataStart: BYTE;
+        buffer: ARRAY 512 OF BYTE;
+        i: INTEGER;
+  BEGIN
+    ReadSD(sector, SYSTEM.ADR(buffer));
+    dataStart := sector MOD 256;
+    error := FALSE;
+    FOR i := 0 TO 511 DO
+      IF buffer[i] # (dataStart + i) MOD 256 THEN
+        error := TRUE;
+      END
+    END;
+    IF error THEN
+      REPEAT UNTIL SYSTEM.BIT(serStat, 1);
+      SYSTEM.PUT(serData, 80H)
+    ELSE
+      REPEAT UNTIL SYSTEM.BIT(serStat, 1);
+      SYSTEM.PUT(serData, 00H)
+    END
+  END ReadSector;
+
+  PROCEDURE WriteSector(sector: INTEGER);
+    VAR dataStart: BYTE;
+        buffer: ARRAY 512 OF BYTE;
+        i: INTEGER;
+  BEGIN
+    dataStart := sector MOD 256;
+    FOR i := 0 TO 511 DO
+      buffer[i] := (dataStart + i) MOD 256;
+    END;
+    WriteSD(sector, SYSTEM.ADR(buffer))
+  END WriteSector;
+
+BEGIN
+  SYSTEM.LDREG(SP, stackTop);
+  InitSPI;
+  FOR i := 1 TO 1000 DO
+    WriteSector(122 + 13 * i);
+  END;
+  FOR i := 1 TO 1000 DO
+    ReadSector(122 + 13 * i);
+  END;
+  REPEAT UNTIL SYSTEM.BIT(serStat, 1);
+  SYSTEM.PUT(serData, 0FFH);
+  REPEAT UNTIL FALSE
+END SDCtest.
