@@ -1,4 +1,4 @@
-MODULE* Echo;
+MODULE* Sertest;
 
   IMPORT
     SYSTEM;
@@ -6,6 +6,8 @@ MODULE* Echo;
   CONST
     SP = 14;
     stackTop = 80000H;
+    SB = 13;
+    globVars = 1000H;
     serStat = -52;
     serData = -56;
 
@@ -14,14 +16,15 @@ MODULE* Echo;
 
 BEGIN
   SYSTEM.LDREG(SP, stackTop);
+  SYSTEM.LDREG(SB, globVars);
   REPEAT
     REPEAT UNTIL SYSTEM.BIT(serStat, 0);
     SYSTEM.GET(serData, x);
     x := x + 5CH;
     IF x > 255 THEN
       x := x - 256
-    END ;
+    END;
     REPEAT UNTIL SYSTEM.BIT(serStat, 1);
     SYSTEM.PUT(serData, x)
   UNTIL FALSE
-END Echo.
+END Sertest.
