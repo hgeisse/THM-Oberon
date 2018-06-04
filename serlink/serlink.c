@@ -709,7 +709,6 @@ int main(int argc, char *argv[]) {
     printf("      ON   OFF  OFF  OFF  OFF  ON   OFF  OFF\n");
     fclose(bootFile);
   }
-  help(0, NULL);
   run = 1;
   while (run) {
     printf("cmd > ");
