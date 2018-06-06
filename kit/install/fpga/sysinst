@@ -1,0 +1,28 @@
+clrdir
+
+h2o Modules.bin
+ldboot Modules.bin
+
+h2o Input.rsc
+h2o Display.rsc
+h2o Viewers.rsc
+h2o Fonts.rsc
+h2o Texts.rsc
+h2o Oberon.rsc
+h2o MenuViewers.rsc
+h2o TextFrames.rsc
+h2o System.rsc
+h2o System.Tool
+h2o Oberon10.Scn.Fnt
+
+h2o ORP.rsc
+h2o ORG.rsc
+h2o ORB.rsc
+h2o ORS.rsc
+h2o ORTool.rsc
+
+h2o Edit.rsc
+
+h2o PCLink1.rsc
+
+h2o Boot.rsc
