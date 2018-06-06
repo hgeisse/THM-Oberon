@@ -15,11 +15,17 @@ MODULE Oberon0; (*Oberon-0 command interpreter for Original Oberon 2013; AP 4.4.
     VAR x, n, n0: INTEGER;
       name: ARRAY 32 OF CHAR;
       F: Files.File; R: Files.Rider;
-  BEGIN RS232.RecStr(name); RS232.Send(ACK);
-    F := Files.New(name); Files.Set(R, F, 0);
+      buffer: ARRAY BlkLen OF CHAR;
+  BEGIN RS232.RecStr(name);
+    F := Files.New(name);
+    Files.Set(R, F, 0);
+    RS232.Send(ACK);
     REPEAT (*receive packet*)
-      RS232.Rec(n); n0 := n;
-      WHILE n > 0 DO RS232.Rec(x); Files.Write(R, CHR(x)); DEC(n) END ;
+      RS232.Rec(n);
+      n0 := n;
+      WHILE n > 0 DO DEC(n); RS232.Rec(x); buffer[n] := CHR(x) END ;
+      n := n0;
+      WHILE n > 0 DO DEC(n); Files.Write(R, buffer[n]) END ;
       RS232.Send(ACK)
     UNTIL n0 < BlkLen;
     Files.Register(F); RS232.Send(ACK)
