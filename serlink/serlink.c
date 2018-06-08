@@ -483,6 +483,7 @@ void help(int argc, char *argv[]) {
   printf("  del     <file>       delete <file>\n");
   printf("  ldboot  <file>       load boot area from <file>\n");
   printf("  clrdir               clear directory\n");
+  printf("  exec    <file>       execute standalone program <file>\n");
 }
 
 
