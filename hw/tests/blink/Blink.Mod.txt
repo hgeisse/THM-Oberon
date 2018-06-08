@@ -1,0 +1,31 @@
+MODULE* Blink;
+
+  IMPORT
+    SYSTEM;
+
+  CONST
+    SP = 14;
+    stackTop = 80000H;
+    SB = 13;
+    globVars = 1000H;
+    leds = -60;
+    timer = -64;
+
+  VAR
+    x: INTEGER;
+    y: INTEGER;
+
+BEGIN
+  SYSTEM.LDREG(SP, stackTop);
+  SYSTEM.LDREG(SB, globVars);
+  REPEAT
+    SYSTEM.PUT(leds, 00H);
+    SYSTEM.GET(timer, x);
+    x := x + 500;
+    REPEAT SYSTEM.GET(timer, y) UNTIL y >= x;
+    SYSTEM.PUT(leds, 10H);
+    SYSTEM.GET(timer, x);
+    x := x + 500;
+    REPEAT SYSTEM.GET(timer, y) UNTIL y >= x
+  UNTIL FALSE
+END Blink.
