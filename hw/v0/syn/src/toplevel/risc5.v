@@ -24,6 +24,10 @@ module risc5(clk_in,
              vga_r,
              vga_g,
              vga_b,
+             ps2_0_clk,
+             ps2_0_data,
+             ps2_1_clk,
+             ps2_1_data,
              rs232_0_rxd,
              rs232_0_txd,
              sdcard_ss_n,
@@ -66,6 +70,12 @@ module risc5(clk_in,
     output [7:0] vga_r;
     output [7:0] vga_g;
     output [7:0] vga_b;
+    // keyboard
+    input ps2_0_clk;
+    input ps2_0_data;
+    // mouse
+    inout ps2_1_clk;
+    inout ps2_1_data;
     // RS-232
     input rs232_0_rxd;
     output rs232_0_txd;
@@ -116,6 +126,11 @@ module risc5(clk_in,
   // tmr
   wire tmr_en;
   wire [31:0] tmr_data;
+  // kbd_ms
+  wire kbd_en;
+  wire [31:0] kbd_dout;
+  wire ms_en;
+  wire [31:0] ms_dout;
   // ser
   wire ser_data_en;
   wire ser_ctrl_en;
@@ -200,6 +215,18 @@ module risc5(clk_in,
     .dout(tmr_data[31:0])
   );
 
+  kbd_ms kbd_ms_1(
+    .clk(clk),
+    .rst(rst),
+    .kbd_done(kbd_en & rd),
+    .kbd_dout(kbd_dout[31:0]),
+    .ms_dout(ms_dout[31:0]),
+    .kbd_clk(ps2_0_clk),
+    .kbd_data(ps2_0_data),
+    .ms_clk(ps2_1_clk),
+    .ms_data(ps2_1_data)
+  );
+
   ser ser_1(
     .clk(clk),
     .rst(rst),
@@ -270,8 +297,8 @@ module risc5(clk_in,
   assign ser_ctrl_en = io_en & (io_adr == 4'd3);
   assign spi_data_en = io_en & (io_adr == 4'd4);
   assign spi_ctrl_en = io_en & (io_adr == 4'd5);
-  //assign _en = io_en & (io_adr == 4'd6);
-  //assign _en = io_en & (io_adr == 4'd7);
+  assign ms_en = io_en & (io_adr == 4'd6);
+  assign kbd_en = io_en & (io_adr == 4'd7);
 
   //--------------------------------------
   // data multiplexer
@@ -285,8 +312,8 @@ module risc5(clk_in,
     ser_ctrl_en ? ser_status[31:0] :
     spi_data_en ? spi_data[31:0] :
     spi_ctrl_en ? spi_status[31:0] :
-    // _en ? xx[31:0] :
-    // _en ? xx[31:0] :
+    ms_en ? ms_dout[31:0] :
+    kbd_en ? kbd_dout[31:0] :
     32'h0;
 
 endmodule
