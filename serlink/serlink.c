@@ -44,7 +44,7 @@
 //#define CMD_	53
 #define CMD_LDBOOT	100
 #define CMD_CLRDIR	101
-//#define CMD_	102
+#define CMD_EXEC	102
 
 
 typedef struct {
@@ -614,6 +614,13 @@ void clrdir(int argc, char *argv[]) {
 }
 
 
+void exec(int argc, char *argv[]) {
+  sndInt(CMD_EXEC);
+  sndStr(argv[1]);
+  getAndShowAnswer();
+}
+
+
 /**************************************************************/
 
 
@@ -637,6 +644,7 @@ Cmd cmds[] = {
   { "del",      2, del      },
   { "ldboot",   2, ldboot   },
   { "clrdir",   1, clrdir   },
+  { "exec",     2, exec     },
 };
 
 
