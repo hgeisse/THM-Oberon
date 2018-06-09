@@ -1,0 +1,19 @@
+addr  I/O   function
+--------------------
+
+ -04   15
+ -08   14
+ -12   13
+ -16   12
+ -20   11
+ -24   10
+ -28    9   general purpose I/O direction
+ -32    8   general purpose I/O data
+ -36    7   keyboard data
+ -40    6   mouse data
+ -44    5   SPI status/ctrl
+ -48    4   SPI data
+ -52    3   serial status/ctrl
+ -56    2   serial data
+ -60    1   switches, LEDs
+ -64    0   millisecond timer
