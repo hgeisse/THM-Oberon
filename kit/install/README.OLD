@@ -19,7 +19,7 @@ Simulator
 
 	../../build/bin/mkdisk Oberon.dsk 300M
 
-	../../build/bin/sim -s 001 -p BootLoad.mem -d Oberon.dsk
+	../../build/bin/sim -s 003 -p BootLoad.mem -d Oberon.dsk
 
 Start the serial connection in a separate terminal:
 	../../build/bin/serlink /dev/pts/19 Oberon0.bin

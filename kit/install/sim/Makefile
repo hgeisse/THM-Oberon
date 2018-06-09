@@ -14,7 +14,7 @@ all:
 		@echo "    (in separate windows)"
 
 install:	Oberon.dsk BootLoad.mem
-		$(BUILD)/bin/sim -d Oberon.dsk -p BootLoad.mem -s 001
+		$(BUILD)/bin/sim -d Oberon.dsk -p BootLoad.mem -s 003
 
 install-link:	Oberon0.bin InnerCore OuterCore Compiler Editor PCLink1 Boot
 		$(BUILD)/bin/serlink Oberon0.bin
