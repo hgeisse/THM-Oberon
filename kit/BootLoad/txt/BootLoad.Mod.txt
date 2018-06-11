@@ -188,16 +188,14 @@ BEGIN
     LED(80H);
     InitSPI;
     IF SYSTEM.BIT(swi, 1) THEN
+      (* loading from serial line requested *)
       LED(81H);
       LoadFromLine
     ELSE
+      (* loading from disk requested *)
       LED(82H);
       LoadFromDisk
     END;
-  ELSIF SYSTEM.BIT(swi, 1) THEN
-    (* warm start, but loading from serial line requested *)
-    LED(81H);
-    LoadFromLine
   END;
   SYSTEM.PUT(12, MemLim);
   SYSTEM.PUT(24, stackOrg);
