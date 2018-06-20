@@ -21,4 +21,50 @@ module ser(clk, rst,
     output [31:0] dout;
     output [31:0] status;
 
+  reg bitrate;
+
+  wire done_rx;
+  wire rdy_rx;
+  wire [7:0] data_rx;
+
+  wire start_tx;
+  wire rdy_tx;
+  wire [7:0] data_tx;
+
+  always @(posedge clk) begin
+    if (rst) begin
+      bitrate <= 1'b0;
+    end else begin
+      if (ctrl_en & wr) begin
+        bitrate <= din[0];
+      end
+    end
+  end
+
+  assign done_rx = data_en & rd;
+
+  RS232R rcvr(
+    .clk(clk),
+    .rst(rst),
+    .fsel(bitrate),
+    .done(done_rx),
+    .rdy(rdy_rx),
+    .data(data_rx[7:0])
+  );
+
+  assign start_tx = data_en & wr;
+  assign data_tx[7:0] = din[7:0];
+
+  RS232T xmtr(
+    .clk(clk),
+    .rst(rst),
+    .fsel(bitrate),
+    .start(start_tx),
+    .rdy(rdy_tx),
+    .data(data_tx[7:0])
+  );
+
+  assign dout[31:0] = { 24'b0, data_rx };
+  assign status[31:0] = { 30'b0, rdy_tx, rdy_rx };
+
 endmodule

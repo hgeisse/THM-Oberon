@@ -27,7 +27,6 @@ module bio(clk, rst,
   reg [6:0] hex2_n;
   reg [6:0] hex1_n;
   reg [6:0] hex0_n;
-
   reg key3_n;
   reg key2_n;
   reg key1_n;
@@ -65,7 +64,7 @@ module bio(clk, rst,
     #0      key3_n = 1'b1;
             key2_n = 1'b1;
             key1_n = 1'b1;
-            sw[17:0] = 18'h0;
+            sw[17:0] = 18'h00003;
   end
 
   always @(posedge clk) begin

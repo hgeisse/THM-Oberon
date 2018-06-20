@@ -19,14 +19,24 @@ module vid(pclk, clk, rst,
     input [31:0] din;
 
   reg [31:0] vidmem[0:24575];
+  wire [14:0] rev_adr;
 
   //----------------------------
   // processor interface
   //----------------------------
 
+  // the vertical address runs backwards
+  // i.e., compute 767 - vert. address
+  // (but keep the horizontal address)
+
+  assign rev_adr[14] = ~(adr[14] ^ adr[13]);
+  assign rev_adr[13] = adr[13];
+  assign rev_adr[12:5] = ~adr[12:5];
+  assign rev_adr[4:0] = adr[4:0];
+
   always @(posedge clk) begin
-    if (en & wr & ~(adr[14] & adr[13])) begin
-      vidmem[adr] <= din;
+    if (en & wr & ~(rev_adr[14] & rev_adr[13])) begin
+      vidmem[rev_adr] <= din;
     end
   end
 

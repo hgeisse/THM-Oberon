@@ -48,10 +48,6 @@ wire ADD, SUB, MUL, DIV;
 wire FAD, FSB, FML, FDV;
 wire LDR, STR, BR;
 
-initial begin
-  R[15] = 32'h0;  // HG 18.03.2018: required for simulating the boot loader
-end
-
 PROM PM (.adr(pcmux[8:0]), .data(pmout), .clk(clk), .en(rst | ~memwait));
 
 Multiplier mulUnit (.clk(clk), .en(rst | ~memwait),

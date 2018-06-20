@@ -24,17 +24,18 @@ module ram(pclk, clk, rst,
     output [31:0] dout;	// data from RAM to CPU
     output memwait;	// word accesses need 2 clock cycles
 
-  reg second_cycle;
-  wire adr1;
   wire [19:0] sram_addr;
   wire [15:0] sram_data;
-  reg [15:0] sram_hold;
-  reg [1:0] wr_state;
   wire sram_ce_n;
   wire sram_oe_n;
   wire sram_we_n;
   wire sram_ub_n;
   wire sram_lb_n;
+
+  reg second_cycle;
+  wire adr1;
+  reg [15:0] sram_hold;
+  reg [1:0] wr_state;
 
   //
   // generate memory wait signal
@@ -119,7 +120,7 @@ module ram(pclk, clk, rst,
   assign sram_lb_n = ben & adr[0];
 
   //
-  // create an instance of the SRAM proper
+  // create an instance of the SRAM chip simulation
   //
 
   sram sram_1(

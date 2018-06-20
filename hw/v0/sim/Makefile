@@ -19,6 +19,8 @@ SRCS = risc5test.v \
        src/vid/vid.v \
        src/tmr/tmr.v \
        src/ser/ser.v \
+       src/ser/RS232R.v \
+       src/ser/RS232T.v \
        src/bio/bio.v
 
 all:		show
