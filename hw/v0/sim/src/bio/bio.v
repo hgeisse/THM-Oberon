@@ -64,7 +64,9 @@ module bio(clk, rst,
     #0      key3_n = 1'b1;
             key2_n = 1'b1;
             key1_n = 1'b1;
-            sw[17:0] = 18'h00003;
+            sw[17:2] = 16'h0000;
+            sw[1] = 1'b1;		// boot from serial line
+            sw[0] = 1'b1;		// enforce cold boot
   end
 
   always @(posedge clk) begin

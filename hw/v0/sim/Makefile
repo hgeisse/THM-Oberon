@@ -33,4 +33,4 @@ show:		risc5test
 		gtkwave dump.vcd risc5test.cfg
 
 clean:
-		rm -f *~ risc5test dump.vcd
+		rm -f *~ risc5test dump.vcd serial.out

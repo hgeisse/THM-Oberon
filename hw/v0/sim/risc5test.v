@@ -23,7 +23,7 @@ module risc5test;
                 clk_in = 1;
                 rst_in_n = 0;
     #145        rst_in_n = 1;
-    #10000      $finish;
+    #300000     $finish;
   end
 
   //

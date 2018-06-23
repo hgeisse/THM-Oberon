@@ -1,43 +1,62 @@
-`timescale 1ns / 1ps  // NW 4.5.09 / 15.11.10
-`default_nettype none  // HG 22.03.2018
-// HG 22.03.2018: rst polarity changed
+//
+// RS232R.v -- serial receiver
+//
 
-// RS232 receiver for 9600 or 115200 bps, 8 bit data
-// clock is 25 MHz
+
+`timescale 1ns / 1ps
+`default_nettype none
+
 
 module RS232R(
     input clk,
     input rst,
     input fsel,
-    input done,   // "byte has been read"
-    output rdy,
-    output [7:0] data);
+    input done,
+    output reg rdy,
+    output reg [7:0] data);
 
-wire RxD;
+  integer serial_in;
+  integer status;
+  reg [31:0] counter;
+  reg [7:0] data_hold;
 
-wire endtick, midtick, endbit;
-wire [11:0] limit;
-reg run, stat;
-reg Q0, Q1;  // synchronizer and edge detector
-reg [11:0] tick;
-reg [3:0] bitcnt;
-reg [7:0] shreg;
+  initial begin
+    serial_in = $fopen("serial.in", "r");
+    status = $fscanf(serial_in, "%h", counter[31:0]);
+    if (status == 1) begin
+      status = $fscanf(serial_in, "%h", data_hold[7:0]);
+    end
+    if (status != 1) begin
+      counter[31:0] = 32'hFFFFFFFF;
+    end
+  end
 
-assign limit = fsel ? 12'd217 : 12'd2604;
-assign endtick = tick == limit;
-assign midtick = tick == {1'b0, limit[11:1]};  // limit/2
-assign endbit = bitcnt == 8;
-assign data = shreg;
-assign rdy = stat;
-
-always @ (posedge clk) begin
-  Q0 <= RxD; Q1 <= Q0;
-  run <= (Q1 & ~Q0) | ~(rst | endtick & endbit) & run;
-  tick <= (run & ~endtick) ? tick + 12'd1 : 12'd0;
-  bitcnt <= (endtick & ~endbit) ? bitcnt + 4'd1 :
-    (endtick & endbit) ? 4'd0 : bitcnt;
-  shreg <= midtick ? {Q1, shreg[7:1]} : shreg;
-  stat <= (endtick & endbit) | ~(rst | done) & stat;
-end
+  always @(posedge clk) begin
+    if (rst) begin
+      rdy <= 1'b0;
+    end else begin
+      if (counter[31:0] == 32'd0) begin
+        if (done) begin
+          status = $fscanf(serial_in, "%h", counter[31:0]);
+          if (status == 1) begin
+            status = $fscanf(serial_in, "%h", data_hold[7:0]);
+          end
+          if (status != 1) begin
+            counter[31:0] = 32'hFFFFFFFF;
+          end
+          rdy <= 1'b0;
+        end
+      end else begin
+        if (counter[31:0] == 32'd1) begin
+          data[7:0] <= data_hold[7:0];
+          rdy <= 1'b1;
+        end
+        // counter == 32'hFFFFFFFF means infinity
+        if (counter[31:0] != 32'hFFFFFFFF) begin
+          counter[31:0] <= counter[31:0] - 32'd1;
+        end
+      end
+    end
+  end
 
 endmodule
