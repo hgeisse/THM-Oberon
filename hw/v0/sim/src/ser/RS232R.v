@@ -22,11 +22,17 @@ module RS232R(
 
   initial begin
     serial_in = $fopen("serial.in", "r");
-    status = $fscanf(serial_in, "%h", counter[31:0]);
-    if (status == 1) begin
-      status = $fscanf(serial_in, "%h", data_hold[7:0]);
-    end
-    if (status != 1) begin
+    if (serial_in != 0) begin
+      status = $fscanf(serial_in, "%h", counter[31:0]);
+      if (status == 1) begin
+        status = $fscanf(serial_in, "%h", data_hold[7:0]);
+      end
+      if (status != 1) begin
+        // cannot read serial.in
+        counter[31:0] = 32'hFFFFFFFF;
+      end
+    end else begin
+      // cannot open serial.in
       counter[31:0] = 32'hFFFFFFFF;
     end
   end
@@ -42,6 +48,7 @@ module RS232R(
             status = $fscanf(serial_in, "%h", data_hold[7:0]);
           end
           if (status != 1) begin
+            // cannot read serial.in
             counter[31:0] = 32'hFFFFFFFF;
           end
           rdy <= 1'b0;
