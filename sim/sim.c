@@ -659,6 +659,7 @@ void writeSpecial(Word data) {
 
 /*
  * I/O : address of device n = IO_BASE + 4 * n
+ *       this can be expressed in decimal as -4 * (16 - n)
  */
 
 
