@@ -26,4 +26,4 @@ $(BIN):		$(OBJS)
 		$(CC) $(CFLAGS) -o $@ -c $<
 
 clean:
-		rm -f *~ $(OBJS) $(BIN)
+		rm -f *~ $(OBJS) $(BIN) serial.dev
