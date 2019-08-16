@@ -8,10 +8,10 @@ KIT=../..
 all:
 		@echo "For installing the system use:"
 		@echo "    'make install' and 'make install-link'"
-		@echo "    (in separate windows)"
+		@echo "    (in separate windows, in this order)"
 		@echo "For running an installed system use:"
 		@echo "    'make run' and 'make run-link'"
-		@echo "    (in separate windows)"
+		@echo "    (in separate windows, in this order)"
 
 install:	Oberon.dsk BootLoad.mem
 		$(BUILD)/bin/sim -d Oberon.dsk -p BootLoad.mem -s 003
