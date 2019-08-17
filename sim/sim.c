@@ -636,28 +636,6 @@ void initGPIO(void) {
 /**************************************************************/
 
 /*
- * I/O device 15: 'special', function is not known
- */
-
-
-/*
- * read dev 15: ignore, return 0
- */
-Word readSpecial(void) {
-  return 0;
-}
-
-
-/*
- * write dev 15: ignore
- */
-void writeSpecial(Word data) {
-}
-
-
-/**************************************************************/
-
-/*
  * I/O : address of device n = IO_BASE + 4 * n
  *       this can be expressed in decimal as -4 * (16 - n)
  */
@@ -696,9 +674,6 @@ Word readIO(int dev) {
       break;
     case 9:
       data = readGPIO_1();
-      break;
-    case 15:
-      data = readSpecial();
       break;
     default:
       printf("NOTE: reading from unknown I/O device %d\n",
@@ -741,9 +716,6 @@ void writeIO(int dev, Word data) {
       break;
     case 9:
       writeGPIO_1(data);
-      break;
-    case 15:
-      writeSpecial(data);
       break;
     default:
       printf("NOTE: writing to unknown I/O device %d, data = 0x%08X\n",
