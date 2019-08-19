@@ -4,7 +4,7 @@
 
 BUILD = ../build
 
-DIRS = mkdisk oberon2unix unix2oberon mem2bin
+DIRS = mkdisk dos2oberon oberon2dos oberon2unix unix2oberon mem2bin
 
 all:
 		for i in $(DIRS) ; do \
