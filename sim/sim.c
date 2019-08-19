@@ -112,7 +112,7 @@ Word readSwitches(void) {
  *    led: 1 = on
  */
 void writeLEDs(Word data) {
-  static Word currentLEDs = 0;
+  static Word currentLEDs = -1;
   int i;
 
   data &= 0x000000FF;
@@ -831,12 +831,12 @@ void memInit(char *promName) {
   char *endp;
 
   if (promName == NULL) {
-    /* no prom file to load */
+    /* no PROM file to load */
     return;
   }
   promFile = fopen(promName, "r");
   if (promFile == NULL) {
-    error("cannot open prom file '%s'", promName);
+    error("cannot open PROM file '%s'", promName);
   }
   addr = 0;
   lineno = 0;
@@ -866,10 +866,10 @@ void memInit(char *promName) {
         *(p + 1) == '/') {
       continue;
     }
-    error("garbage at end of line %d in prom file '%s'",
+    error("garbage at end of line %d in PROM file '%s'",
           lineno, promName);
   }
-  printf("0x%08X words loaded from prom file '%s'\n",
+  printf("0x%08X words loaded from PROM file '%s'\n",
          addr, promName);
   fclose(promFile);
 }
@@ -1984,7 +1984,7 @@ Bool execCommand(char *line) {
 static void usage(char *myself) {
   printf("Usage: %s\n", myself);
   printf("    [-i]                set interactive mode\n");
-  printf("    [-p <prom>]         set prom image file name\n");
+  printf("    [-p <PROM>]         set PROM image file name\n");
   printf("    [-d <disk>]         set disk image file name\n");
   printf("    [-s <3 nibbles>]    set initial buttons(1)/switches(2)\n");
   exit(1);
@@ -2044,7 +2044,7 @@ int main(int argc, char *argv[]) {
   signal(SIGINT, sigIntHandler);
   printf("RISC Simulator started\n");
   if (promName == NULL && !interactive) {
-    printf("No program to load was specified, ");
+    printf("No PROM file was specified, ");
     printf("so interactive mode is assumed.\n");
     interactive = true;
   }
