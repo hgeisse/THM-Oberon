@@ -711,7 +711,7 @@ int main(int argc, char *argv[]) {
     if (bootFile == NULL) {
       error("cannot open boot file '%s'", bootName);
     }
-    printf("Sending boot file, please wait...\n");
+    printf("Sending boot file '%s', please wait...\n", bootName);
     sendBootFile(bootFile, 0);
     printf("Sending boot file done.\n");
     printf("NOTE: Please wait for LEDs indicating reception:\n");
