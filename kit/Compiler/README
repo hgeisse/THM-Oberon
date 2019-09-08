@@ -1,0 +1,11 @@
+
+Dependency of compiler modules:
+
+Module   depends on   Module(s)
+-------------------------------
+ORS                   none
+ORB                   ORS
+ORG                   ORB, ORS
+ORP                   ORG, ORB, ORS
+ORTool                ORB
+
