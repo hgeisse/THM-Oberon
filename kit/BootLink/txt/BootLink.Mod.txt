@@ -1,9 +1,9 @@
-MODULE Boot;  (*Oberon boot linker/loader for RISC; AP 4.4.18 Original Oberon 2013*)
+MODULE BootLink;  (*Oberon boot linker/loader for RISC; AP 4.4.18 Original Oberon 2013*)
   IMPORT SYSTEM, Kernel, Files, Modules, Texts, Oberon;
   CONST versionkey = 1X; versionkey0 = 0X; MT = 12; DescSize = 80;
     MemLim = 0E7EF0H; stackOrg = 80000H; maxCode = 8000; CR = 0DX;
 
-  TYPE (*copied from Modules to allow module Boot to be used as a cross linker/loader on other versions of the Oberon system*)
+  TYPE (*copied from Modules to allow module BootLink to be used as a cross linker/loader on other versions of the Oberon system*)
     Module* = POINTER TO ModDesc;
     Command* = PROCEDURE;
     ModuleName* = ARRAY 32 OF CHAR;
@@ -225,7 +225,7 @@ MODULE Boot;  (*Oberon boot linker/loader for RISC; AP 4.4.18 Original Oberon 20
         ELSIF res = 7 THEN Texts.WriteString(W, " insufficient space")
         END
       END
-    ELSE Texts.WriteString(W, "Usage: Boot.Link module")
+    ELSE Texts.WriteString(W, "Usage: BootLink.Link module")
     END ;
     Texts.WriteLn(W); Texts.Append(Oberon.Log, W.buf)
   END Link;
@@ -250,7 +250,7 @@ MODULE Boot;  (*Oberon boot linker/loader for RISC; AP 4.4.18 Original Oberon 20
         END
       ELSE Texts.WriteString(W, " not found")
       END
-    ELSE Texts.WriteString(W, "Usage: Boot.Load M.bin")
+    ELSE Texts.WriteString(W, "Usage: BootLink.Load M.bin")
     END ;
     Texts.WriteLn(W); Texts.Append(Oberon.Log, W.buf)
   END Load;
@@ -330,7 +330,7 @@ MODULE Boot;  (*Oberon boot linker/loader for RISC; AP 4.4.18 Original Oberon 20
         END
       END
     END ;
-    IF res = -1 THEN Texts.WriteString(W, "Usage: Boot.WriteFile M.rsc outputsize outputfile") END ;
+    IF res = -1 THEN Texts.WriteString(W, "Usage: BootLink.WriteFile M.rsc outputsize outputfile") END ;
     Texts.WriteLn(W); Texts.Append(Oberon.Log, W.buf)
   END WriteFile;
 
@@ -363,7 +363,7 @@ MODULE Boot;  (*Oberon boot linker/loader for RISC; AP 4.4.18 Original Oberon 20
         END
       END
     END ;
-    IF res = -1 THEN Texts.WriteString(W, "Usage: Boot.WriteCode M.rsc M.code") END ;
+    IF res = -1 THEN Texts.WriteString(W, "Usage: BootLink.WriteCode M.rsc M.code") END ;
     Texts.WriteLn(W); Texts.Append(Oberon.Log, W.buf)
   END WriteCode;
 
@@ -413,10 +413,10 @@ MODULE Boot;  (*Oberon boot linker/loader for RISC; AP 4.4.18 Original Oberon 20
         END
       END
     END ;
-    IF res = -1 THEN Texts.WriteString(W, "Usage: Boot.WriteStream M.bin M.stream blocksize destaddr") END ;
+    IF res = -1 THEN Texts.WriteString(W, "Usage: BootLink.WriteStream M.bin M.stream blocksize destaddr") END ;
     Texts.WriteLn(W); Texts.Append(Oberon.Log, W.buf)
   END WriteStream;
 
 BEGIN Texts.OpenWriter(W); Texts.WriteString(W, "OR Boot linker/loader  AP 4.4.18"); Texts.WriteLn(W);
   Texts.Append(Oberon.Log, W.buf); limit := Kernel.heapOrg; DEC(limit, 8000H)
-END Boot.
+END BootLink.
