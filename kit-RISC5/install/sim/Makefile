@@ -23,7 +23,7 @@ all:
 install:	Oberon.dsk BootLoad.mem
 		$(BUILD)/bin/sim -d Oberon.dsk -p BootLoad.mem -s 003
 
-install-link:	Oberon0.bin InnerCore OuterCore Compiler Editor PCLink1 BootLink
+install-link:	Oberon0 InnerCore OuterCore Compiler Editor PCLink1 BootLink
 		$(BUILD)/bin/serlink Oberon0.bin
 
 run:		Oberon.dsk BootLoad.mem
@@ -38,8 +38,9 @@ Oberon.dsk:
 BootLoad.mem:
 		cp $(KIT)/BootLoad/mem/BootLoad.mem .
 
-Oberon0.bin:
+Oberon0:
 		cp $(KIT)/Oberon0/bin/Oberon0.bin .
+		cp $(KIT)/Oberon0/rsc/* .
 
 InnerCore:
 		cp $(KIT)/InnerCore/bin/Modules.bin .

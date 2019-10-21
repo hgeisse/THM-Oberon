@@ -3,8 +3,9 @@ clrdir
 h2o Modules.bin
 ldboot Modules.bin
 
-h2o Files.smb
 h2o Kernel.smb
+h2o FileDir.smb
+h2o Files.smb
 h2o Modules.smb
 
 h2o Input.rsc
@@ -45,3 +46,8 @@ h2o PCLink1.rsc
 
 h2o BootLink.rsc
 h2o BootLink.smb
+
+h2o RS232.rsc
+h2o RS232.smb
+h2o Oberon0.rsc
+h2o Oberon0.smb
