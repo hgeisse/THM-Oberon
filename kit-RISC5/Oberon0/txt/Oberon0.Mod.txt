@@ -8,6 +8,7 @@ MODULE Oberon0; (*Oberon-0 command interpreter for Original Oberon 2013; AP 4.4.
     maxCode = 8000;
 
   VAR pat: ARRAY 32 OF CHAR;
+    stoprc: BOOLEAN;
 
   (*------------ send and receive files ------------*)
 
@@ -361,6 +362,12 @@ MODULE Oberon0; (*Oberon-0 command interpreter for Original Oberon 2013; AP 4.4.
     END
   END Execute;
 
+  PROCEDURE StopRC; (* stop remote control *)
+  BEGIN
+    RS232.SendStr("StopRC");
+    stoprc := TRUE;
+  END StopRC;
+
   (*------------ Oberon-0 command interpreter ------------*)
 
   PROCEDURE Task*;
@@ -394,12 +401,19 @@ MODULE Oberon0; (*Oberon-0 command interpreter for Original Oberon 2013; AP 4.4.
         ELSIF code = 100 THEN LoadBootArea (*filename*)
         ELSIF code = 101 THEN ClearDirectory
         ELSIF code = 102 THEN Execute (*filename*)
+        ELSIF code = 127 THEN StopRC
         ELSE end := FALSE
         END ;
         IF end THEN RS232.End END
       END
     END
   END Task;
+
+  PROCEDURE RemoteControl*;
+  BEGIN
+    stoprc := FALSE;
+    REPEAT Task UNTIL stoprc;
+  END RemoteControl;
 
   PROCEDURE Loop*;
   BEGIN REPEAT Task UNTIL FALSE
