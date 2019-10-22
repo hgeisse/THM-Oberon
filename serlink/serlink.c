@@ -35,9 +35,9 @@
 #define CMD_SHCMD	11
 #define CMD_DIR		12
 #define CMD_DEL		13
-//#define CMD_	20
-//#define CMD_	21
-//#define CMD_	22
+#define CMD_LOAD	20
+#define CMD_UNLOAD	21
+#define CMD_CALL	22
 //#define CMD_	50
 //#define CMD_	51
 //#define CMD_	52
@@ -45,6 +45,7 @@
 #define CMD_LDBOOT	100
 #define CMD_CLRDIR	101
 #define CMD_EXEC	102
+#define CMD_STOPRC	127
 
 
 typedef struct {
@@ -481,9 +482,13 @@ void help(int argc, char *argv[]) {
   printf("  shcmd   <module>     show commands for <module>\n");
   printf("  dir     <prefix>     show directory for <prefix>\n");
   printf("  del     <file>       delete <file>\n");
+  printf("  load    <module>     load <module>\n");
+  printf("  unload  <module>     unload <module>\n");
+  printf("  call    <name>       call command <name>\n");
   printf("  ldboot  <file>       load boot area from <file>\n");
   printf("  clrdir               clear directory\n");
   printf("  exec    <file>       execute standalone program <file>\n");
+  printf("  stoprc               stop remote control\n");
 }
 
 
@@ -602,6 +607,27 @@ void del(int argc, char *argv[]) {
 }
 
 
+void load(int argc, char *argv[]) {
+  sndInt(CMD_LOAD);
+  sndStr(argv[1]);
+  getAndShowAnswer();
+}
+
+
+void unload(int argc, char *argv[]) {
+  sndInt(CMD_UNLOAD);
+  sndStr(argv[1]);
+  getAndShowAnswer();
+}
+
+
+void call(int argc, char *argv[]) {
+  sndInt(CMD_CALL);
+  sndStr(argv[1]);
+  getAndShowAnswer();
+}
+
+
 void ldboot(int argc, char *argv[]) {
   sndInt(CMD_LDBOOT);
   sndStr(argv[1]);
@@ -618,6 +644,12 @@ void clrdir(int argc, char *argv[]) {
 void exec(int argc, char *argv[]) {
   sndInt(CMD_EXEC);
   sndStr(argv[1]);
+  getAndShowAnswer();
+}
+
+
+void stoprc(int argc, char *argv[]) {
+  sndInt(CMD_STOPRC);
   getAndShowAnswer();
 }
 
@@ -643,9 +675,13 @@ Cmd cmds[] = {
   { "shcmd",    2, shcmd    },
   { "dir",      2, dir      },
   { "del",      2, del      },
+  { "load",     2, load     },
+  { "unload",   2, unload   },
+  { "call",     2, call     },
   { "ldboot",   2, ldboot   },
   { "clrdir",   1, clrdir   },
   { "exec",     2, exec     },
+  { "stoprc",   1, stoprc   },
 };
 
 
