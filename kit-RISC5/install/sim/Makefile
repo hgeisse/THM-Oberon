@@ -4,6 +4,7 @@
 
 BUILD=../../../build
 KIT=../..
+D2O=$(BUILD)/bin/dos2oberon
 
 all:
 		@echo "For installing the system:"
@@ -48,6 +49,7 @@ InnerCore:
 
 OuterCore:
 		cp $(KIT)/OuterCore/rsc/* .
+		$(D2O) $(KIT)/OuterCore/txt/System.Tool.txt System.Tool
 
 Compiler:
 		cp $(KIT)/Compiler/rsc/* .

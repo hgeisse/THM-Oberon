@@ -13,12 +13,14 @@ System.CopyFiles ~
 System.RenameFiles ~
 System.DeleteFiles ~
 
-System.ShowModules  System.ShowCommands ^ 
+System.ShowModules  System.ShowCommands ^
 
-PCLink1.Run
+PCLink1.Run PCLink1.Stop
+Oberon0.RemoteControl
+
 Hilbert.Draw  Sierpinski.Draw  Blink.Run  Stars.Open
 
 Tools.Inspect 0
 Tools.Sector 1
-Tools.ShowFile 
+Tools.ShowFile
 Tools.Recall  Tools.Clear
