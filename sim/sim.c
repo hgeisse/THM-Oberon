@@ -43,6 +43,16 @@
 /**************************************************************/
 
 /*
+ * debugging switches
+ */
+
+
+static Bool debugKeycode = false;
+
+
+/**************************************************************/
+
+/*
  * I/O device 0: timer
  */
 
@@ -576,7 +586,13 @@ void writeMouse(Word data) {
  *     { 24'bx, kbd_data[7:0] }
  */
 Word readKeybd(void) {
-  return keybdRead();
+  Word data;
+
+  data = keybdRead();
+  if (debugKeycode) {
+    printf("DEBUG: kbd data = 0x%08X\n", data);
+  }
+  return data;
 }
 
 
