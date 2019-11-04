@@ -38,6 +38,7 @@
 #define CMD_LOAD	20
 #define CMD_UNLOAD	21
 #define CMD_CALL	22
+#define CMD_CALLN	23
 //#define CMD_	50
 //#define CMD_	51
 //#define CMD_	52
@@ -485,6 +486,7 @@ void help(int argc, char *argv[]) {
   printf("  load    <module>     load <module>\n");
   printf("  unload  <module>     unload <module>\n");
   printf("  call    <name>       call command <name>\n");
+  printf("  calln   <name> ...   call command <name>, possibly with args\n");
   printf("  ldboot  <file>       load boot area from <file>\n");
   printf("  clrdir               clear directory\n");
   printf("  exec    <file>       execute standalone program <file>\n");
@@ -628,6 +630,19 @@ void call(int argc, char *argv[]) {
 }
 
 
+void calln(int argc, char *argv[]) {
+  int i;
+
+  sndInt(CMD_CALLN);
+  sndStr(argv[1]);
+  sndInt(argc - 2);
+  for (i = 2; i < argc; i++) {
+    sndStr(argv[i]);
+  }
+  getAndShowAnswer();
+}
+
+
 void ldboot(int argc, char *argv[]) {
   sndInt(CMD_LDBOOT);
   sndStr(argv[1]);
@@ -678,6 +693,7 @@ Cmd cmds[] = {
   { "load",     2, load     },
   { "unload",   2, unload   },
   { "call",     2, call     },
+  { "calln",    2, calln    },
   { "ldboot",   2, ldboot   },
   { "clrdir",   1, clrdir   },
   { "exec",     2, exec     },
