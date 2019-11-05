@@ -447,6 +447,9 @@ void xscript(int argc, char *argv[]) {
     if (n == 0) {
       continue;
     }
+    if (*tokens[0] == '#') {
+      continue;
+    }
     cmd = lookupCmd(tokens[0]);
     if (cmd == NULL) {
       printf("error in script: unknown command '%s'\n",
