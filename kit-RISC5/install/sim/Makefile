@@ -30,6 +30,9 @@ install-link:	Oberon0 InnerCore OuterCore Compiler Editor PCLink1 BootLink
 run:		Oberon.dsk BootLoad.mem
 		$(BUILD)/bin/sim -d Oberon.dsk -p BootLoad.mem -s 000
 
+debug:		Oberon.dsk BootLoad.mem
+		$(BUILD)/bin/sim -i -d Oberon.dsk -p BootLoad.mem -s 000
+
 run-link:
 		$(BUILD)/bin/serlink
 
