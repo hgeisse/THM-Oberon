@@ -19,11 +19,13 @@
 #define LINE_SIZE	200
 #define MAX_TOKENS	20
 
+#define ACK		((unsigned char) 0x10)
+#define NAK		((unsigned char) 0x11)
+
 #define REQ		((unsigned char) 0x20)
 #define REC		((unsigned char) 0x21)
 #define SND		((unsigned char) 0x22)
-#define ACK		((unsigned char) 0x10)
-#define NAK		((unsigned char) 0x11)
+#define CAL		((unsigned char) 0x23)
 
 #define CMD_MIRROR	0
 #define CMD_INSPECT	1
@@ -38,7 +40,6 @@
 #define CMD_LOAD	20
 #define CMD_UNLOAD	21
 #define CMD_CALL	22
-#define CMD_CALLN	23
 //#define CMD_	50
 //#define CMD_	51
 //#define CMD_	52
@@ -425,6 +426,19 @@ void o2h(int argc, char *argv[]) {
 }
 
 
+void calln(int argc, char *argv[]) {
+  int i;
+
+  sndByte(CAL);
+  sndStr(argv[1]);
+  sndByte(argc - 2);
+  for (i = 2; i < argc; i++) {
+    sndStr(argv[i]);
+  }
+  getAndShowAnswer();
+}
+
+
 void xscript(int argc, char *argv[]) {
   FILE *script;
   int lnum;
@@ -631,19 +645,6 @@ void unload(int argc, char *argv[]) {
 void call(int argc, char *argv[]) {
   sndInt(CMD_CALL);
   sndStr(argv[1]);
-  getAndShowAnswer();
-}
-
-
-void calln(int argc, char *argv[]) {
-  int i;
-
-  sndInt(CMD_CALLN);
-  sndStr(argv[1]);
-  sndInt(argc - 2);
-  for (i = 2; i < argc; i++) {
-    sndStr(argv[i]);
-  }
   getAndShowAnswer();
 }
 
