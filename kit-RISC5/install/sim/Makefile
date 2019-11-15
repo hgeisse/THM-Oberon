@@ -17,14 +17,14 @@ all:
 		@echo "For running an installed system:"
 		@echo "    Type 'make run'. If you want to transfer files"
 		@echo "    between the host and the Oberon system, start"
-		@echo "    PCLink1.Run by clicking the middle button of the"
+		@echo "    PCLink2.Run by clicking the middle button of the"
 		@echo "    mouse on this command. Then type 'make run-link'"
 		@echo "    in a separate window."
 
 install:	Oberon.dsk BootLoad.mem
 		$(BUILD)/bin/sim -d Oberon.dsk -p BootLoad.mem -s 003
 
-install-link:	Oberon0 InnerCore OuterCore Compiler Editor PCLink1 BootLink
+install-link:	Oberon0 InnerCore OuterCore Compiler Editor PCLink2 BootLink
 		$(BUILD)/bin/serlink Oberon0.bin
 
 run:		Oberon.dsk BootLoad.mem
@@ -60,8 +60,8 @@ Compiler:
 Editor:
 		cp $(KIT)/Editor/rsc/* .
 
-PCLink1:
-		cp $(KIT)/PCLink1/rsc/* .
+PCLink2:
+		cp $(KIT)/PCLink2/rsc/* .
 
 BootLink:
 		cp $(KIT)/BootLink/rsc/* .
