@@ -1,8 +1,7 @@
 MODULE Oberon0;
-(* Oberon-0 command interpreter for Original Oberon 2013
-     AP 4.4.18
-     HG 05.11.19 *)
-  IMPORT SYSTEM, Kernel, FileDir, Files, Modules, RS232, Texts, TextFrames, Oberon;
+(* Oberon-0 command interpreter for Original Oberon 2013,
+   AP 4.4.18 / HG 14.11.19 *)
+  IMPORT SYSTEM, Kernel, FileDir, Files, Modules, RS232;
   CONST swi = -60; (*switches*)
     stat = -52; (*RS-232*)
     BlkLen = 255; (*packet size for Send and Receive*)
@@ -11,7 +10,6 @@ MODULE Oberon0;
     maxCode = 8000;
 
   VAR pat: ARRAY 32 OF CHAR;
-    stoprc: BOOLEAN;
 
   (*------------ send and receive files ------------*)
 
@@ -248,65 +246,6 @@ MODULE Oberon0;
     END
   END Call;
 
-  PROCEDURE Calln; (*name ... - call command with args*)
-    VAR
-      name: ARRAY 32 OF CHAR;
-      argc, k: INTEGER;
-      argv: ARRAY 10 OF ARRAY 100 OF CHAR;
-      T: Texts.Text;
-      F: TextFrames.Frame;
-      W: Texts.Writer;
-      res: INTEGER;
-  BEGIN
-    RS232.RecStr(name);
-    RS232.RecInt(argc);
-    k := 0;
-    WHILE k < argc DO
-      RS232.RecStr(argv[k]);
-      INC(k);
-    END;
-    T := TextFrames.Text("");
-    F := TextFrames.NewText(T, 0);
-    Texts.OpenWriter(W);
-    RS232.SendStr("Calln ");
-    RS232.SendStr(name);
-    RS232.SendStr(" ");
-    k := 0;
-    WHILE k < argc DO
-      Texts.WriteString(W, argv[k]);
-      Texts.WriteString(W, " ");
-      RS232.SendStr(argv[k]);
-      RS232.SendStr(" ");
-      INC(k);
-    END;
-    Texts.WriteLn(W);
-    Texts.Append(T, W.buf);
-    Oberon.SetPar(F, T, 0);
-    Oberon.Call(name, res);
-    IF res > 0 THEN
-      RS232.SendStr(" error: ");
-      IF res = 1 THEN
-        RS232.SendStr(" module not found")
-      ELSIF res = 2 THEN
-        RS232.SendStr(" bad version")
-      ELSIF res = 3 THEN
-        RS232.SendStr(" imports ");
-        RS232.SendStr(Modules.imported);
-        RS232.SendStr(" with bad key")
-      ELSIF res = 4 THEN
-        RS232.SendStr(" corrupted obj file")
-      ELSIF res = 5 THEN
-        RS232.SendStr(" command not found")
-      ELSIF res = 7 THEN
-        RS232.SendStr(" insufficient space")
-      ELSE
-        RS232.SendStr(" <unknown error code>")
-      END
-    ELSE
-      RS232.SendStr(" done")
-    END
-  END Calln;
-
   PROCEDURE WriteMemory; (*adr, n, list of n values (words) - write memory*)
     VAR m, n, adr: INTEGER;
   BEGIN RS232.RecInt(adr); RS232.RecInt(n);
@@ -423,12 +362,6 @@ MODULE Oberon0;
     END
   END Execute;
 
-  PROCEDURE StopRC; (* stop remote control *)
-  BEGIN
-    RS232.SendStr("StopRC");
-    stoprc := TRUE;
-  END StopRC;
-
   (*------------ Oberon-0 command interpreter ------------*)
 
   PROCEDURE Task*;
@@ -455,7 +388,6 @@ MODULE Oberon0;
         ELSIF code = 20 THEN Load (*modname*)
         ELSIF code = 21 THEN Unload (*modname*)
         ELSIF code = 22 THEN Call (*name*)
-        ELSIF code = 23 THEN Calln (*name, n, list of n strings*)
         ELSIF code = 50 THEN WriteMemory (*adr, n, list of n values*)
         ELSIF code = 51 THEN ClearMemory (*adr, n*)
         ELSIF code = 52 THEN WriteSector (*secno, n, list of n values*)
@@ -463,19 +395,12 @@ MODULE Oberon0;
         ELSIF code = 100 THEN LoadBootArea (*filename*)
         ELSIF code = 101 THEN ClearDirectory
         ELSIF code = 102 THEN Execute (*filename*)
-        ELSIF code = 127 THEN StopRC
         ELSE end := FALSE
         END ;
         IF end THEN RS232.End END
       END
     END
   END Task;
-
-  PROCEDURE RemoteControl*;
-  BEGIN
-    stoprc := FALSE;
-    REPEAT Task UNTIL stoprc;
-  END RemoteControl;
 
   PROCEDURE Loop*;
   BEGIN REPEAT Task UNTIL FALSE
