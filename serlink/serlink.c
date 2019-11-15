@@ -46,7 +46,6 @@
 #define CMD_LDBOOT	100
 #define CMD_CLRDIR	101
 #define CMD_EXEC	102
-#define CMD_STOPRC	127
 
 
 typedef struct {
@@ -468,14 +467,19 @@ void xscript(int argc, char *argv[]) {
 
 
 void help(int argc, char *argv[]) {
-  printf("Commands (Oberon0 and PCLink1):\n");
-  printf("  p                    check if Oberon system is responding\n");
-  printf("  h2o     <file> ...   transfer files from host to Oberon\n");
-  printf("  o2h     <file> ...   transfer files from Oberon to host\n");
+  printf("Local commands:\n");
   printf("  @       <file>       execute commands from script file\n");
   printf("  h                    help\n");
   printf("  q                    quit\n");
-  printf("Commands (Oberon0 only):\n");
+  printf("Remote commands (if talking to PCLink2):\n");
+  printf("  p                    check if Oberon system is responding\n");
+  printf("  h2o     <file> ...   transfer files from host to Oberon\n");
+  printf("  o2h     <file> ...   transfer files from Oberon to host\n");
+  printf("  calln   <name> ...   call command <name>, possibly with args\n");
+  printf("Remote commands (if talking to Oberon0):\n");
+  printf("  p                    check if Oberon system is responding\n");
+  printf("  h2o     <file> ...   transfer files from host to Oberon\n");
+  printf("  o2h     <file> ...   transfer files from Oberon to host\n");
   printf("  mirror  <integer>    mirror <integer> back\n");
   printf("  inspect <a> <n>      show <n> words of memory at addr <a>\n");
   printf("  filldsp <integer>    fill display with <integer>\n");
@@ -489,11 +493,9 @@ void help(int argc, char *argv[]) {
   printf("  load    <module>     load <module>\n");
   printf("  unload  <module>     unload <module>\n");
   printf("  call    <name>       call command <name>\n");
-  printf("  calln   <name> ...   call command <name>, possibly with args\n");
   printf("  ldboot  <file>       load boot area from <file>\n");
   printf("  clrdir               clear directory\n");
   printf("  exec    <file>       execute standalone program <file>\n");
-  printf("  stoprc               stop remote control\n");
 }
 
 
@@ -666,12 +668,6 @@ void exec(int argc, char *argv[]) {
 }
 
 
-void stoprc(int argc, char *argv[]) {
-  sndInt(CMD_STOPRC);
-  getAndShowAnswer();
-}
-
-
 /**************************************************************/
 
 
@@ -700,7 +696,6 @@ Cmd cmds[] = {
   { "ldboot",   2, ldboot   },
   { "clrdir",   1, clrdir   },
   { "exec",     2, exec     },
-  { "stoprc",   1, stoprc   },
 };
 
 
