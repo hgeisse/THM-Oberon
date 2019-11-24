@@ -220,9 +220,10 @@ void sndStr(char *s) {
 /**************************************************************/
 
 
-void sendBootFile(FILE *bootFile, unsigned int addr) {
+int sendBootFile(FILE *bootFile, unsigned int addr) {
   unsigned char buf[BLOCK_SIZE];
   int n, i;
+  unsigned char b;
 
   while (1) {
     n = fread(buf, 1, BLOCK_SIZE, bootFile);
@@ -243,6 +244,8 @@ void sendBootFile(FILE *bootFile, unsigned int addr) {
     }
   }
   sndInt(0);
+  b = rcvByte();
+  return b == ACK;
 }
 
 
@@ -815,10 +818,11 @@ int main(int argc, char *argv[]) {
       error("cannot open boot file '%s'", bootName);
     }
     printf("Sending boot file '%s', please wait...\n", bootName);
-    sendBootFile(bootFile, 0);
-    printf("Sending boot file done.\n");
-    printf("NOTE: Please wait for LEDs indicating reception:\n");
-    printf("      ON   OFF  OFF  OFF  OFF  ON   OFF  OFF\n");
+    if (sendBootFile(bootFile, 0)) {
+      printf("Sending boot file succeeded.\n");
+    } else {
+      printf("Sending boot file failed.\n");
+    }
     fclose(bootFile);
   }
   run = 1;

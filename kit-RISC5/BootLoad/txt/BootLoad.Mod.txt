@@ -1,16 +1,19 @@
 MODULE* BootLoad;
   (* NW 20.10.2013
      PR 04.02.2014: boot from SDHC disk or serial line
-     HG 09.06.2018: re-definition of switches *)
+     HG 09.06.2018: re-definition of switches
+     HG 24.11.2019: send ACK at end of load from serial line *)
   IMPORT SYSTEM;
   (* sw1: boot from serial line/not SDHC disk
      sw0: enforce cold boot *)
-  CONST MT = 12; SP = 14; LNK = 15;
+  CONST
+    MT = 12; SP = 14; LNK = 15;
     MTOrg = 20H; MemLim = 0E7EF0H; stackOrg = 80000H;
     swi = -60; led = -60; rsData = -56; rsCtrl = -52;
     spiData = -48; spiCtrl = -44;
     CARD0 = 1; SPIFAST = 4;
     FSoffset = 80000H;  (* block offset *)
+    ACK = 10H;
 
 (* ---------- line ------------ *)
 
@@ -28,6 +31,12 @@ MODULE* BootLoad;
     x := z
   END RecInt;
 
+  PROCEDURE SndByte(x: BYTE);
+  BEGIN
+    REPEAT UNTIL SYSTEM.BIT(rsCtrl, 1);
+    SYSTEM.PUT(rsData, x)
+  END SndByte;
+
   PROCEDURE LoadFromLine;
     VAR len, adr, dat: INTEGER;
   BEGIN
@@ -41,7 +50,8 @@ MODULE* BootLoad;
         len := len - 4
       UNTIL len = 0;
       RecInt(len)
-    END
+    END;
+    SndByte(ACK)
   END LoadFromLine;
 
 (* ---------- disk ------------ *)
