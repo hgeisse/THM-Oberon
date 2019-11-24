@@ -180,6 +180,21 @@ int rcvInt(void) {
 }
 
 
+char *rcvStr(void) {
+  static char buf[100];
+  int i;
+  unsigned char b;
+
+  i = 0;
+  do {
+    while (!serialRcv(&b)) ;
+    buf[i] = b;
+    i++;
+  } while (b != '\0');
+  return buf;
+}
+
+
 void sndByte(unsigned char b) {
   while (!serialSnd(b)) ;
 }
@@ -321,6 +336,12 @@ void h2oSingleFile(char *name) {
     return;
   }
   sndByte(REC);
+  b = rcvByte();
+  if (b != ACK) {
+    printf("error: no ACK from Oberon system for REC request\n");
+    fclose(file);
+    return;
+  }
   sndStr(name);
   b = rcvByte();
   if (b != ACK) {
@@ -357,13 +378,14 @@ void h2oSingleFile(char *name) {
       break;
     }
   }
+  fclose(file);
+  sndByte(REQ);
   b = rcvByte();
   if (b != ACK) {
     printf("error: no ACK from Oberon system (file '%s')\n", name);
   } else {
     printf("ACK from Oberon system (file '%s')\n", name);
   }
-  fclose(file);
 }
 
 
@@ -388,6 +410,12 @@ void o2hSingleFile(char *name) {
     return;
   }
   sndByte(SND);
+  b = rcvByte();
+  if (b != ACK) {
+    printf("error: no ACK from Oberon system for SND request\n");
+    fclose(file);
+    return;
+  }
   sndStr(name);
   b = rcvByte();
   if (b != ACK) {
@@ -412,8 +440,14 @@ void o2hSingleFile(char *name) {
       break;
     }
   }
-  printf("ACK to Oberon system (file '%s')\n", name);
   fclose(file);
+  sndByte(REQ);
+  b = rcvByte();
+  if (b != ACK) {
+    printf("error: no ACK from Oberon system (file '%s')\n", name);
+  } else {
+    printf("ACK from Oberon system (file '%s')\n", name);
+  }
 }
 
 
@@ -427,15 +461,33 @@ void o2h(int argc, char *argv[]) {
 
 
 void calln(int argc, char *argv[]) {
+  unsigned char b;
   int i;
+  char *res;
 
   sndByte(CAL);
+  b = rcvByte();
+  if (b != ACK) {
+    printf("error: no ACK from Oberon system for CAL request\n");
+    return;
+  }
   sndStr(argv[1]);
+  b = rcvByte();
+  if (b != ACK) {
+    printf("error: no ACK for command '%s' from Oberon system\n", argv[1]);
+    return;
+  }
   sndByte(argc - 2);
   for (i = 2; i < argc; i++) {
     sndStr(argv[i]);
+    b = rcvByte();
+    if (b != ACK) {
+      printf("error: no ACK for argument '%s' from Oberon system\n", argv[i]);
+      return;
+    }
   }
-  getAndShowAnswer();
+  res = rcvStr();
+  printf("result = '%s'\n", res);
 }
 
 
