@@ -15,8 +15,7 @@ System.DeleteFiles ~
 
 System.ShowModules  System.ShowCommands ^
 
-PCLink1.Run PCLink1.Stop
-Oberon0.RemoteControl
+PCLink2.Run PCLink2.Stop
 
 Hilbert.Draw  Sierpinski.Draw  Blink.Run  Stars.Open
 
