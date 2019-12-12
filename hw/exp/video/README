@@ -1,0 +1,7 @@
+Explore the construction of a 3-stage video pipeline
+with a word-oriented video memory. The stages are:
+  0: timing generator
+  1: video memory access
+  2: shift register
+Show how to generate the memory address and the
+blanking signals correctly.
