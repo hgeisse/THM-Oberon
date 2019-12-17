@@ -91,7 +91,8 @@ MODULE BootLink;  (*Oberon boot linker/loader for RISC; AP 4.4.18 Original Obero
       END ;
       IF res = 0 THEN (*read file*)
         INC(p, DescSize); (*allocate descriptor*)
-        mod.name := name; mod.key := key; mod.refcnt := 0;
+        i := -1; REPEAT INC(i); mod.name[i] := name[i] UNTIL name[i] = 0X;
+        mod.key := key; mod.refcnt := 0;
         mod.data := p;  (*data*)
         SYSTEM.PUT(mod.num * 4 + MTOrg, p);  (*module table entry*)
         Files.ReadInt(R, n);
