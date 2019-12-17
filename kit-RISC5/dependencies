@@ -1,0 +1,46 @@
+
+Dependencies of modules (dependencies on SYSTEM not listed):
+
+Group
+  Module depends on	Module(s)
+------------------------------------------------------------------------
+BootLink
+  BootLink		Kernel, Files, Modules, Texts, Oberon
+BootLoad
+  BootLoad		<none>
+Compiler
+  ORS			Texts, Oberon
+  ORB			Files, ORS
+  ORG			Files, ORS, ORB
+  ORP			Texts, Oberon, ORS, ORB, ORG
+  ORTool		Files, Texts, Oberon, ORB
+Dummy
+  Dummy			<none>
+Editor
+  Edit			Files, Fonts, Texts, Display, Viewers,
+			Oberon, MenuViewers, TextFrames
+InnerCore
+  FileDir		Kernel
+  Files			Kernel, FileDir
+  Kernel		<none>
+  Modules		Files
+Oberon0
+  Oberon0		Kernel, FileDir, Files, Modules, RS232
+  RS232			<none>
+OuterCore
+  Display		<none>
+  Fonts			Files
+  Input			<none>
+  MenuViewers		Input, Display, Viewers, Oberon
+  Oberon		Kernel, Files, Modules, Input, Display,
+			Viewers, Fonts, Texts
+  System		Kernel, FileDir, Files, Modules, Input,
+			Display, Viewers, Fonts, Texts, Oberon,
+			MenuViewers, TextFrames
+  TextFrames		Modules, Input, Display, Viewers, Fonts,
+			Texts, Oberon, MenuViewers
+  Texts			Files, Fonts
+  Viewers		Display
+PCLink2
+  PCLink2		Files, Texts, TextFrames, Oberon
+
