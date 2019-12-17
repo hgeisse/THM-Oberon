@@ -3,26 +3,57 @@ clrdir
 h2o Modules.bin
 ldboot Modules.bin
 
+h2o Kernel.rsc
+h2o Kernel.smb
+h2o FileDir.rsc
+h2o FileDir.smb
+h2o Files.rsc
+h2o Files.smb
+h2o Modules.rsc
+h2o Modules.smb
+
 h2o Input.rsc
+h2o Input.smb
 h2o Display.rsc
+h2o Display.smb
 h2o Viewers.rsc
+h2o Viewers.smb
 h2o Fonts.rsc
+h2o Fonts.smb
 h2o Texts.rsc
+h2o Texts.smb
 h2o Oberon.rsc
+h2o Oberon.smb
 h2o MenuViewers.rsc
+h2o MenuViewers.smb
 h2o TextFrames.rsc
+h2o TextFrames.smb
 h2o System.rsc
+h2o System.smb
 h2o System.Tool
 h2o Oberon10.Scn.Fnt
 
-h2o ORP.rsc
-h2o ORG.rsc
-h2o ORB.rsc
 h2o ORS.rsc
+h2o ORS.smb
+h2o ORB.rsc
+h2o ORB.smb
+h2o ORG.rsc
+h2o ORG.smb
+h2o ORP.rsc
+h2o ORP.smb
 h2o ORTool.rsc
+h2o ORTool.smb
 
 h2o Edit.rsc
+h2o Edit.smb
 
-h2o PCLink1.rsc
+h2o PCLink2.rsc
+h2o PCLink2.smb
 
-h2o Boot.rsc
+h2o BootLink.rsc
+h2o BootLink.smb
+
+h2o RS232.rsc
+h2o RS232.smb
+h2o Oberon0.rsc
+h2o Oberon0.smb
