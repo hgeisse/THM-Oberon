@@ -19,7 +19,7 @@ all:
 		@echo "    between the host and the Oberon system, start"
 		@echo "    PCLink2.Run by clicking the middle button of the"
 		@echo "    mouse on this command. Then type 'make run-link'"
-		@echo "    in a separate window."
+		@echo "    in a separate window of the Linux system."
 
 install:	Oberon.dsk BootLoad.mem
 		$(BUILD)/bin/sim -d Oberon.dsk -p BootLoad.mem -s 003
@@ -52,6 +52,7 @@ InnerCore:
 
 OuterCore:
 		cp $(KIT)/OuterCore/rsc/* .
+		cp $(KIT)/OuterCore/fnt/* .
 		$(D2O) $(KIT)/OuterCore/txt/System.Tool.txt System.Tool
 
 Compiler:
