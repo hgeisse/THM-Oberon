@@ -1,5 +1,5 @@
 /*
- * common.h -- common definitions and functions
+ * common.c -- common definitions and functions
  */
 
 
