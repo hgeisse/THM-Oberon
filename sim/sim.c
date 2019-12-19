@@ -752,6 +752,9 @@ static Word ram[RAM_SIZE >> 2];
 static Word rom[ROM_SIZE >> 2];
 
 
+Word cpuGetPC(void);
+
+
 Word readWord(Word addr) {
   addr &= ADDR_MASK;
   if (addr >= RAM_BASE && addr < RAM_BASE + RAM_SIZE) {
@@ -763,7 +766,7 @@ Word readWord(Word addr) {
   if (addr >= IO_BASE && addr < IO_BASE + IO_SIZE) {
     return readIO((addr - IO_BASE) >> 2);
   }
-  error("memory read @ 0x%08X off bounds", addr);
+  error("memory read @ 0x%08X off bounds, PC = 0x%08X", addr, cpuGetPC());
   /* never reached */
   return 0;
 }
@@ -779,12 +782,12 @@ void writeWord(Word addr, Word data) {
     return;
   }
   if (addr >= ROM_BASE && addr < ROM_BASE + ROM_SIZE) {
-    error("PROM write @ 0x%08X", addr);
+    error("PROM write @ 0x%08X, PC = 0x%08X", addr, cpuGetPC());
   }
   if (addr >= IO_BASE && addr < IO_BASE + IO_SIZE) {
     return writeIO((addr - IO_BASE) >> 2, data);
   }
-  error("memory write @ 0x%08X off bounds", addr);
+  error("memory write @ 0x%08X off bounds, PC = 0x%08X", addr, cpuGetPC());
 }
 
 
