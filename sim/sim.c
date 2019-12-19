@@ -766,7 +766,8 @@ Word readWord(Word addr) {
   if (addr >= IO_BASE && addr < IO_BASE + IO_SIZE) {
     return readIO((addr - IO_BASE) >> 2);
   }
-  error("memory read @ 0x%08X off bounds, PC = 0x%08X", addr, cpuGetPC());
+  error("memory read @ 0x%08X off bounds, PC = 0x%08X",
+        addr, cpuGetPC() - 4);
   /* never reached */
   return 0;
 }
@@ -782,12 +783,14 @@ void writeWord(Word addr, Word data) {
     return;
   }
   if (addr >= ROM_BASE && addr < ROM_BASE + ROM_SIZE) {
-    error("PROM write @ 0x%08X, PC = 0x%08X", addr, cpuGetPC());
+    error("PROM write @ 0x%08X, PC = 0x%08X",
+          addr, cpuGetPC() - 4);
   }
   if (addr >= IO_BASE && addr < IO_BASE + IO_SIZE) {
     return writeIO((addr - IO_BASE) >> 2, data);
   }
-  error("memory write @ 0x%08X off bounds, PC = 0x%08X", addr, cpuGetPC());
+  error("memory write @ 0x%08X off bounds, PC = 0x%08X",
+        addr, cpuGetPC() - 4);
 }
 
 
