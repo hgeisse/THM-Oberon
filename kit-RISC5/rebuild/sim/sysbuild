@@ -164,6 +164,8 @@ o2h BootLink.smb
 h2o BootLoad.Mod
 calln ORP.Compile BootLoad.Mod
 o2h BootLoad.rsc
+calln BootLink.WriteFile BootLoad.rsc 512 BootLoad.prm
+o2h BootLoad.prm
 #
 # Oberon0
 #

@@ -93,8 +93,8 @@ epilogue:
 		mkdir -p $(NEW)/BootLoad/rsc
 		mv BootLoad.rsc $(NEW)/BootLoad/rsc
 		mkdir -p $(NEW)/BootLoad/mem
-		$(O2U) BootLoad.mem $(NEW)/BootLoad/mem/BootLoad.mem
-		rm BootLoad.mem
+		$(O2U) BootLoad.prm $(NEW)/BootLoad/mem/BootLoad.mem
+		rm BootLoad.prm
 		#
 		mkdir -p $(NEW)/Compiler/rsc
 		mv ORB.rsc ORB.smb $(NEW)/Compiler/rsc
