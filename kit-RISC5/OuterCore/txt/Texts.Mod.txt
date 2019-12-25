@@ -1,4 +1,4 @@
-MODULE Texts; (*JG 21.11.90 / NW 11.7.90 / 24.12.95 / 22.11.10 / 20.3.2017*)
+MODULE Texts; (*JG 21.11.90 / NW 11.7.90 / 24.12.95 / 22.11.10 / 18.11.2014 / 10.1.2019*)
   IMPORT Files, Fonts;
 
   CONST (*scanner symbol classes*)
@@ -9,10 +9,10 @@ MODULE Texts; (*JG 21.11.90 / NW 11.7.90 / 24.12.95 / 22.11.10 / 20.3.2017*)
     Real* = 4;          (*real number x*)
     Char* = 6;          (*special character c*)
 
-    (* TextBlock = TextTag "1" offset run {run} "0" len {AsciiCode}.
+    (* TextBlock = TextTag offset run {run} "0" len {AsciiCode}.
       run = fnt [name] col voff len. *)
 
-    TAB = 9X; CR = 0DX; maxD = 9;
+    TAB = 9X; CR = 0DX;
     TextTag = 0F1X;
     replace* = 0; insert* = 1; delete* = 2; unmark* = 3;  (*op-codes*)
 
@@ -33,7 +33,7 @@ MODULE Texts; (*JG 21.11.90 / NW 11.7.90 / 24.12.95 / 22.11.10 / 20.3.2017*)
       notify*: Notifier;
       trailer: Piece;
       pce: Piece;  (*cache*)
-      org: LONGINT; (*cache*)
+      org: LONGINT (*cache*)
     END;
 
     Reader* = RECORD
@@ -240,7 +240,8 @@ MODULE Texts; (*JG 21.11.90 / NW 11.7.90 / 24.12.95 / 22.11.10 / 20.3.2017*)
     END;
     T.len := T.len + B.len; end := pos + B.len;
     B.last := B.header; B.last.next := NIL; B.len := 0;
-    T.changed := TRUE; T.notify(T, insert, pos, end)
+    T.changed := TRUE;
+    IF T.notify # NIL THEN  T.notify(T, insert, pos, end) END
   END Insert;
 
   PROCEDURE Append* (T: Text; B: Buffer);
@@ -261,7 +262,8 @@ MODULE Texts; (*JG 21.11.90 / NW 11.7.90 / 24.12.95 / 22.11.10 / 20.3.2017*)
     B.last.next := NIL; B.len := end - beg;
     per.prev := pbr.prev; pbr.prev.next := per;
     T.len := T.len - B.len;
-    T.changed := TRUE; T.notify(T, delete, beg, end)
+    T.changed := TRUE;
+    IF T.notify # NIL THEN T.notify(T, delete, beg, end) END
   END Delete;
 
   PROCEDURE ChangeLooks* (T: Text; beg, end: LONGINT; sel: SET; fnt: Fonts.Font; col, voff: INTEGER);
@@ -277,7 +279,8 @@ MODULE Texts; (*JG 21.11.90 / NW 11.7.90 / 24.12.95 / 22.11.10 / 20.3.2017*)
       IF 2 IN sel THEN p.voff := voff END;
       p := p.next
     UNTIL p = pe;
-    T.changed := TRUE; T.notify(T, replace, beg, end)
+    T.changed := TRUE;
+    IF T.notify # NIL THEN T.notify(T, replace, beg, end) END
   END ChangeLooks;
 
   PROCEDURE Attributes*(T: Text; pos: LONGINT; VAR fnt: Fonts.Font; VAR col, voff: INTEGER);
@@ -300,7 +303,6 @@ MODULE Texts; (*JG 21.11.90 / NW 11.7.90 / 24.12.95 / 22.11.10 / 20.3.2017*)
     INC(R.off);
     IF R.off = R.ref.len THEN
       IF R.ref.f = TrailerFile THEN R.eot := TRUE END;
-      R.org := R.org + R.off; R.off := 0;
       R.ref := R.ref.next; R.org := R.org + R.off; R.off := 0;
       Files.Set(R.rider, R.ref.f, R.ref.off)
     END
@@ -332,13 +334,12 @@ MODULE Texts; (*JG 21.11.90 / NW 11.7.90 / 24.12.95 / 22.11.10 / 20.3.2017*)
 
   PROCEDURE Scan* (VAR S: Scanner);
     CONST maxExp = 38; maxM = 16777216; (*2^24*)
-    VAR ch, term: CHAR;
+    VAR ch: CHAR;
       neg, negE, hex: BOOLEAN;
       i, j, h, d, e, n, s: INTEGER;
-      k: LONGINT;
       x: REAL;
   BEGIN ch := S.nextCh; i := 0;
-    WHILE ~S.eot & (ch <= " ") DO
+    WHILE (ch = " ") OR (ch = TAB) OR (ch = CR) DO
       IF ch = CR THEN INC(S.line) END ;
       Read(S, ch)
     END ;
@@ -467,7 +468,7 @@ MODULE Texts; (*JG 21.11.90 / NW 11.7.90 / 24.12.95 / 22.11.10 / 20.3.2017*)
   END WriteHex;
 
  PROCEDURE WriteReal* (VAR W: Writer; x: REAL; n: INTEGER);
-    VAR e, i, m: INTEGER;
+    VAR e, i, k, m: INTEGER;
       d: ARRAY 16 OF CHAR;
   BEGIN e := ASR(ORD(x), 23) MOD 100H;  (*binary exponent*)
     IF e = 0 THEN
@@ -480,9 +481,13 @@ MODULE Texts; (*JG 21.11.90 / NW 11.7.90 / 24.12.95 / 22.11.10 / 20.3.2017*)
       IF x < 0.0 THEN Write(W, "-"); x := -x ELSE Write(W, " ") END ;
       e := (e - 127) * 77 DIV 256 - 6;  (*decimal exponent*)
       IF e >= 0 THEN x := x / Ten(e) ELSE x := Ten(-e) * x END ;
-      m := FLOOR(x + 0.5); i := 0;
+      m := FLOOR(x + 0.5);
       IF m >= 10000000 THEN INC(e); m := m DIV 10 END ;
-      REPEAT d[i] := CHR(m MOD 10 + 30H); m := m DIV 10; INC(i) UNTIL m = 0;
+      i := 0; k := 13-n;
+      REPEAT
+         IF i = k THEN INC(m, 5) END ;    (*rounding*)
+       d[i] := CHR(m MOD 10 + 30H); m := m DIV 10; INC(i)
+      UNTIL m = 0;
       DEC(i); Write(W, d[i]); Write(W, ".");
       IF i < n-7 THEN n := 0 ELSE n := 14 - n END ;
       WHILE i > n DO DEC(i); Write(W, d[i]) END ;
