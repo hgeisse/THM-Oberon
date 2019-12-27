@@ -20,8 +20,8 @@
 
 #define SERDEV_FILE	"serial.dev"		/* serial dev file */
 
-#define INST_PER_MSEC	25000			/* execution speed */
-#define INST_PER_CHAR	15000			/* serial line speed */
+#define INST_PER_MSEC	19250			/* execution speed */
+#define INST_PER_CHAR	11550			/* serial line speed */
 
 #define RAM_BASE	0x00000000		/* byte address */
 #define RAM_SIZE	0x00100000		/* counted in bytes */
