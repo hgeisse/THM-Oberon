@@ -85,6 +85,10 @@ prologue:
 		mkdir -p $(NEW)/PCLink2/txt
 		cp $(KIT)/PCLink2/txt/* $(NEW)/PCLink2/txt
 		$(D2O) $(NEW)/PCLink2/txt/PCLink2.Mod.txt PCLink2.Mod
+		#
+		mkdir -p $(NEW)/Tools/txt
+		cp $(KIT)/Tools/txt/* $(NEW)/Tools/txt
+		$(D2O) $(NEW)/Tools/txt/Tools.Mod.txt Tools.Mod
 
 epilogue:
 		mkdir -p $(NEW)/BootLink/rsc
@@ -136,6 +140,9 @@ epilogue:
 		#
 		mkdir -p $(NEW)/PCLink2/rsc
 		mv PCLink2.rsc PCLink2.smb $(NEW)/PCLink2/rsc
+		#
+		mkdir -p $(NEW)/Tools/rsc
+		mv Tools.rsc Tools.smb $(NEW)/Tools/rsc
 
 check:
 		diff -r $(NEW)/BootLink $(KIT)/BootLink
@@ -147,6 +154,7 @@ check:
 		diff -r $(NEW)/Oberon0 $(KIT)/Oberon0
 		diff -r $(NEW)/OuterCore $(KIT)/OuterCore
 		diff -r $(NEW)/PCLink2 $(KIT)/PCLink2
+		diff -r $(NEW)/Tools $(KIT)/Tools
 
 Oberon.dsk:
 		cp $(INSTALL)/Oberon.dsk .

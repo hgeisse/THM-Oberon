@@ -6,6 +6,8 @@ BUILD=../../../build
 KIT=../..
 D2O=$(BUILD)/bin/dos2oberon
 
+PROGS=Oberon0 InnerCore OuterCore Compiler Editor PCLink2 BootLink Tools
+
 all:
 		@echo "For installing the system:"
 		@echo "    Type 'make install' and 'make install-link' (in"
@@ -24,7 +26,7 @@ all:
 install:	Oberon.dsk BootLoad.mem
 		$(BUILD)/bin/sim -d Oberon.dsk -p BootLoad.mem -s 003
 
-install-link:	Oberon0 InnerCore OuterCore Compiler Editor PCLink2 BootLink
+install-link:	$(PROGS)
 		$(BUILD)/bin/serlink Oberon0.bin
 
 run:		Oberon.dsk BootLoad.mem
@@ -66,6 +68,9 @@ PCLink2:
 
 BootLink:
 		cp $(KIT)/BootLink/rsc/* .
+
+Tools:
+		cp $(KIT)/Tools/rsc/* .
 
 clean:
 		rm -f *~

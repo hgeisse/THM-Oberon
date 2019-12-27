@@ -84,6 +84,9 @@ calln System.DeleteFiles TextFrames.smb
 calln System.DeleteFiles Texts.Mod
 calln System.DeleteFiles Texts.rsc
 calln System.DeleteFiles Texts.smb
+calln System.DeleteFiles Tools.Mod
+calln System.DeleteFiles Tools.rsc
+calln System.DeleteFiles Tools.smb
 calln System.DeleteFiles Viewers.Mod
 calln System.DeleteFiles Viewers.rsc
 calln System.DeleteFiles Viewers.smb
@@ -216,6 +219,13 @@ h2o ORTool.Mod
 calln ORP.Compile ORTool.Mod
 o2h ORTool.rsc
 o2h ORTool.smb
+#
+# Tools
+#
+h2o Tools.Mod
+calln ORP.Compile Tools.Mod
+o2h Tools.rsc
+o2h Tools.smb
 #
 # Dummy
 #

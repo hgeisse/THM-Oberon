@@ -57,3 +57,6 @@ h2o RS232.rsc
 h2o RS232.smb
 h2o Oberon0.rsc
 h2o Oberon0.smb
+
+h2o Tools.rsc
+h2o Tools.smb

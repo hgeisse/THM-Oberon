@@ -43,4 +43,7 @@ OuterCore
   Viewers		Display
 PCLink2
   PCLink2		Files, Texts, TextFrames, Oberon
+Tools
+  Tools			Kernel, Files, Modules, Input, Texts,
+			Viewers, MenuViewers, TextFrames, Oberon
 

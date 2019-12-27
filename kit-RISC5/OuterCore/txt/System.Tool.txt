@@ -19,7 +19,8 @@ PCLink2.Run PCLink2.Stop
 
 Hilbert.Draw  Sierpinski.Draw  Blink.Run  Stars.Open
 
-Tools.Inspect 0
+Tools.Inspect 0 8
 Tools.Sector 1
 Tools.ShowFile
-Tools.Recall  Tools.Clear
+Tools.Convert
+Tools.Recall  Tools.Clear  Tools.Id
