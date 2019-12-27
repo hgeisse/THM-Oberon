@@ -32,6 +32,10 @@ rebuild-link:
 		$(MAKE) epilogue
 
 prologue:
+		mkdir -p $(NEW)/Apps/txt
+		cp $(KIT)/Apps/txt/* $(NEW)/Apps/txt
+		$(D2O) $(NEW)/Apps/txt/Blink.Mod.txt Blink.Mod
+		#
 		mkdir -p $(NEW)/BootLink/txt
 		cp $(KIT)/BootLink/txt/* $(NEW)/BootLink/txt
 		$(D2O) $(NEW)/BootLink/txt/BootLink.Mod.txt BootLink.Mod
@@ -91,6 +95,9 @@ prologue:
 		$(D2O) $(NEW)/Tools/txt/Tools.Mod.txt Tools.Mod
 
 epilogue:
+		mkdir -p $(NEW)/Apps/rsc
+		mv Blink.rsc Blink.smb $(NEW)/Apps/rsc
+		#
 		mkdir -p $(NEW)/BootLink/rsc
 		mv BootLink.rsc BootLink.smb $(NEW)/BootLink/rsc
 		#
@@ -145,6 +152,7 @@ epilogue:
 		mv Tools.rsc Tools.smb $(NEW)/Tools/rsc
 
 check:
+		diff -r $(NEW)/Apps $(KIT)/Apps
 		diff -r $(NEW)/BootLink $(KIT)/BootLink
 		diff -r $(NEW)/BootLoad $(KIT)/BootLoad
 		diff -r $(NEW)/Compiler $(KIT)/Compiler

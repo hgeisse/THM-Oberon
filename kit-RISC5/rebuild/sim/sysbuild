@@ -11,6 +11,9 @@ calln BootLink.Link Dummy
 # get rid of all old files
 #-----------------------------------------------
 #
+calln System.DeleteFiles Blink.Mod
+calln System.DeleteFiles Blink.rsc
+calln System.DeleteFiles Blink.smb
 calln System.DeleteFiles BootLink.Mod
 calln System.DeleteFiles BootLink.rsc
 calln System.DeleteFiles BootLink.smb
@@ -226,6 +229,13 @@ h2o Tools.Mod
 calln ORP.Compile Tools.Mod
 o2h Tools.rsc
 o2h Tools.smb
+#
+# Apps
+#
+h2o Blink.Mod
+calln ORP.Compile Blink.Mod
+o2h Blink.rsc
+o2h Blink.smb
 #
 # Dummy
 #

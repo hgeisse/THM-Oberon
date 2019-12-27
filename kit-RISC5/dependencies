@@ -4,6 +4,8 @@ Dependencies of modules (dependencies on SYSTEM not listed):
 Group
   Module depends on	Module(s)
 ------------------------------------------------------------------------
+Apps
+  Blink			Oberon
 BootLink
   BootLink		Kernel, Files, Modules, Texts, Oberon
 BootLoad

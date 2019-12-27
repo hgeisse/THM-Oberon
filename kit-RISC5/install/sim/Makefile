@@ -6,7 +6,8 @@ BUILD=../../../build
 KIT=../..
 D2O=$(BUILD)/bin/dos2oberon
 
-PROGS=Oberon0 InnerCore OuterCore Compiler Editor PCLink2 BootLink Tools
+PROGS=Oberon0 InnerCore OuterCore Compiler Editor PCLink2 BootLink \
+      Tools Apps
 
 all:
 		@echo "For installing the system:"
@@ -71,6 +72,9 @@ BootLink:
 
 Tools:
 		cp $(KIT)/Tools/rsc/* .
+
+Apps:
+		cp $(KIT)/Apps/rsc/* .
 
 clean:
 		rm -f *~
