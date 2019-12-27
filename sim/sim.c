@@ -904,6 +904,11 @@ void memInit(char *promName) {
  */
 
 
+#define CPU_MANUFACTURER	0x4847
+#define CPU_VERSION		0x53
+#define CPU_ID			((CPU_MANUFACTURER << 8) | CPU_VERSION)
+
+
 static Word pc;			/* program counter, as word index */
 static Word reg[16];		/* general purpose registers */
 static Word H;			/* special register for mul/div */
@@ -1050,7 +1055,7 @@ static void execNextInstruction(void) {
                     (Z << 30) |
                     (C << 29) |
                     (V << 28) |
-                    0x00000050;
+                    CPU_ID;
             }
           }
         }
@@ -1327,7 +1332,7 @@ static void disasmF0(Word instr) {
         /* v = 0: get H register */
         sprintf(instrBuffer, "%-7s R%d,H", regOps[op], a);
       } else {
-        /* v = 1: get flag values */
+        /* v = 1: get flag values and CPU ID */
         sprintf(instrBuffer, "%-7s R%d,F", regOps[op], a);
       }
     }
