@@ -35,6 +35,7 @@ prologue:
 		mkdir -p $(NEW)/Apps/txt
 		cp $(KIT)/Apps/txt/* $(NEW)/Apps/txt
 		$(D2O) $(NEW)/Apps/txt/Blink.Mod.txt Blink.Mod
+		$(D2O) $(NEW)/Apps/txt/TestInt.Mod.txt TestInt.Mod
 		#
 		mkdir -p $(NEW)/BootLink/txt
 		cp $(KIT)/BootLink/txt/* $(NEW)/BootLink/txt
@@ -97,6 +98,7 @@ prologue:
 epilogue:
 		mkdir -p $(NEW)/Apps/rsc
 		mv Blink.rsc Blink.smb $(NEW)/Apps/rsc
+		mv TestInt.rsc TestInt.smb $(NEW)/Apps/rsc
 		#
 		mkdir -p $(NEW)/BootLink/rsc
 		mv BootLink.rsc BootLink.smb $(NEW)/BootLink/rsc

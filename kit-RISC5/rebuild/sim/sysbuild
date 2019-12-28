@@ -14,6 +14,9 @@ calln BootLink.Link Dummy
 calln System.DeleteFiles Blink.Mod
 calln System.DeleteFiles Blink.rsc
 calln System.DeleteFiles Blink.smb
+calln System.DeleteFiles TestInt.Mod
+calln System.DeleteFiles TestInt.rsc
+calln System.DeleteFiles TestInt.smb
 calln System.DeleteFiles BootLink.Mod
 calln System.DeleteFiles BootLink.rsc
 calln System.DeleteFiles BootLink.smb
@@ -236,6 +239,10 @@ h2o Blink.Mod
 calln ORP.Compile Blink.Mod
 o2h Blink.rsc
 o2h Blink.smb
+h2o TestInt.Mod
+calln ORP.Compile TestInt.Mod
+o2h TestInt.rsc
+o2h TestInt.smb
 #
 # Dummy
 #

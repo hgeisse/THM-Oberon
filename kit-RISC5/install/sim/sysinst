@@ -63,3 +63,5 @@ h2o Tools.smb
 
 h2o Blink.rsc
 h2o Blink.smb
+h2o TestInt.rsc
+h2o TestInt.smb

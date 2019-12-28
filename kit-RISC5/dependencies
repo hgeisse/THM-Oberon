@@ -6,6 +6,7 @@ Group
 ------------------------------------------------------------------------
 Apps
   Blink			Oberon
+  TestInt		<none>
 BootLink
   BootLink		Kernel, Files, Modules, Texts, Oberon
 BootLoad
