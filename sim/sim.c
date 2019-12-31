@@ -20,8 +20,8 @@
 
 #define SERDEV_FILE	"serial.dev"		/* serial dev file */
 
-#define INST_PER_MSEC	19250			/* execution speed */
-#define INST_PER_CHAR	11550			/* serial line speed */
+#define INST_PER_MSEC	17000			/* execution speed */
+#define INST_PER_CHAR	10000			/* serial line speed */
 
 #define RAM_BASE	0x00000000		/* byte address */
 #define RAM_SIZE	0x00100000		/* counted in bytes */
@@ -60,12 +60,16 @@ static Bool debugKeycode = false;
 static Word milliSeconds;
 
 
+void cpuIRQ(void);
+
+
 void tickTimer(void) {
   static int count = 0;
 
   if (count++ == INST_PER_MSEC) {
     count = 0;
     milliSeconds++;
+    cpuIRQ();
   }
 }
 
@@ -912,7 +916,10 @@ void memInit(char *promName) {
 static Word pc;			/* program counter, as word index */
 static Word reg[16];		/* general purpose registers */
 static Word H;			/* special register for mul/div */
-static Bool N, Z, C, V;		/* flags */
+static Bool N, Z, C, V, I;	/* flags */
+static Bool irqPending;		/* IRQ pending if true */
+static Bool inIntrMode;		/* in interrupt mode if true */
+static Word spc;		/* { 1'N, 1'Z, 1'C, 1'V, 6'0, 22'pc } */
 
 static Bool breakSet;		/* breakpoint set if true */
 static Word breakAddr;		/* if breakSet, this is where */
@@ -920,7 +927,7 @@ static Word breakAddr;		/* if breakSet, this is where */
 static Bool run;		/* CPU runs continuously if true */
 
 
-Word intMul(Word op1, Word op2, Word *hiResPtr, Bool u) {
+static Word intMul(Word op1, Word op2, Word *hiResPtr, Bool u) {
   Bool neg1, neg2;
   Word op1abs, op2abs;
   Word hiRes, loRes;
@@ -963,7 +970,7 @@ Word intMul(Word op1, Word op2, Word *hiResPtr, Bool u) {
 }
 
 
-Word intDiv(Word op1, Word op2, Word *remPtr, Bool u) {
+static Word intDiv(Word op1, Word op2, Word *remPtr, Bool u) {
   Bool neg1, neg2;
   Word op1abs, op2abs;
   Word quo, rem;
@@ -1017,8 +1024,6 @@ static void execNextInstruction(void) {
   Bool cond;
   Word aux;
 
-  tickTimer();
-  tickSerial();
   ir = readWord(pc << 2);
   pc++;
   p = (ir >> 31) & 0x01;
@@ -1055,6 +1060,7 @@ static void execNextInstruction(void) {
                     (Z << 30) |
                     (C << 29) |
                     (V << 28) |
+                    (I << 27) |
                     CPU_ID;
             }
           }
@@ -1189,23 +1195,79 @@ static void execNextInstruction(void) {
           cond ^= true;
           break;
       }
-      if (cond) {
-        /* take the branch */
-        aux = pc;
-        if (u == 0) {
-          /* branch target is in register */
-          pc = c >> 2;
+      if (u == 0) {
+        /* branch target is in register */
+        if (v == 0) {
+          /* branch or interrupt handling */
+          switch ((ir >> 4) & 3) {
+            case 0:
+              /* branch */
+              if (cond) {
+                pc = c >> 2;
+              }
+              break;
+            case 1:
+              /* return from interrupt */
+              N = (spc >> 25) & 1;
+              Z = (spc >> 24) & 1;
+              C = (spc >> 23) & 1;
+              V = (spc >> 22) & 1;
+              pc = spc & 0x003FFFFF;
+              inIntrMode = false;
+              break;
+            case 2:
+              /* interrupt disable/enable */
+              I = ir & 1;
+              break;
+            case 3:
+              /* undefined */
+              error("undefined instruction 0x%08X, PC = 0x%08X",
+                    ir, (pc - 1) << 2);
+              break;
+          }
         } else {
-          /* branch target is pc + 1 + offset */
-          pc += imm;
+          /* call */
+          if (cond) {
+            aux = pc;
+            pc = c >> 2;
+            reg[15] = aux << 2;
+          }
         }
-        if (v) {
-          /* set link register */
-          reg[15] = aux << 2;
+      } else {
+        /* branch target is pc + 1 + offset */
+        if (v == 0) {
+          /* branch */
+          if (cond) {
+            pc += imm;
+          }
+        } else {
+          /* call */
+          if (cond) {
+            aux = pc;
+            pc += imm;
+            reg[15] = aux << 2;
+          }
         }
       }
     }
   }
+}
+
+
+static void handleInterrupts(void) {
+  /* check for interrupt and whether it's getting through */
+  if (!irqPending || !I || inIntrMode) {
+    return;
+  }
+  /* interrupt acknowledge */
+  irqPending = false;
+  spc = (N << 25) |
+        (Z << 24) |
+        (C << 23) |
+        (V << 22) |
+        pc;
+  pc = 1;
+  inIntrMode = true;
 }
 
 
@@ -1230,15 +1292,20 @@ void cpuSetReg(int regno, Word value) {
 
 
 Byte cpuGetFlags(void) {
-  return (N << 3) | (Z << 2) | (C << 1) | (V << 0);
+  return (N << 4) |
+         (Z << 3) |
+         (C << 2) |
+         (V << 1) |
+         (I << 0);
 }
 
 
 void cpuSetFlags(Byte value) {
-  N = (value >> 3) & 1;
-  Z = (value >> 2) & 1;
-  C = (value >> 1) & 1;
-  V = (value >> 0) & 1;
+  N = (value >> 4) & 1;
+  Z = (value >> 3) & 1;
+  C = (value >> 2) & 1;
+  V = (value >> 1) & 1;
+  I = (value >> 0) & 1;
 }
 
 
@@ -1264,14 +1331,20 @@ void cpuResetBreak(void) {
 
 
 void cpuStep(void) {
+  tickTimer();
+  tickSerial();
   execNextInstruction();
+  handleInterrupts();
 }
 
 
 void cpuRun(void) {
   run = true;
   while (run) {
+    tickTimer();
+    tickSerial();
     execNextInstruction();
+    handleInterrupts();
     if (breakSet && pc == breakAddr) {
       run = false;
     }
@@ -1284,6 +1357,26 @@ void cpuHalt(void) {
 }
 
 
+void cpuIRQ(void) {
+  irqPending = true;
+}
+
+
+Bool cpuGetIRQ(void) {
+  return irqPending;
+}
+
+
+Bool cpuGetIMD(void) {
+  return inIntrMode;
+}
+
+
+Word cpuGetSPC(void) {
+  return spc;
+}
+
+
 void cpuInit(Word initialPC) {
   int i;
 
@@ -1291,7 +1384,10 @@ void cpuInit(Word initialPC) {
   for (i = 0; i < 16; i++) {
     reg[i] = 0;
   }
-  N = Z = C = V = false;
+  N = Z = C = V = I = false;
+  irqPending = false;
+  inIntrMode = false;
+  spc = 0;
   breakSet = false;
 }
 
@@ -1437,8 +1533,29 @@ static void disasmF3(Word instr, Word locus) {
     /* u = 0: branch target is in register */
     c = instr & 0x0F;
     if (((instr >> 28) & 1) == 0) {
-      /* v = 0: branch */
-      sprintf(instrBuffer, "B%-6s R%d", cond, c);
+      /* v = 0: branch or interrupt handling */
+      switch ((instr >> 4) & 3) {
+        case 0:
+          /* branch */
+          sprintf(instrBuffer, "B%-6s R%d", cond, c);
+          break;
+        case 1:
+          /* return from interrupt */
+          sprintf(instrBuffer, "RTI");
+          break;
+        case 2:
+          /* interrupt disable/enable */
+          if ((instr & 1) == 0) {
+            sprintf(instrBuffer, "DI");
+          } else {
+            sprintf(instrBuffer, "EI");
+          }
+          break;
+        case 3:
+          /* undefined */
+          sprintf(instrBuffer, "<undefined>");
+          break;
+      }
     } else {
       /* v = 1: call */
       sprintf(instrBuffer, "C%-6s R%d", cond, c);
@@ -1543,11 +1660,27 @@ static void showFlags(void) {
   Byte flags;
 
   flags = cpuGetFlags();
-  printf("Flags: N Z C V = %c %c %c %c\n",
+  printf("Flg  N Z C V I\n");
+  printf("     %c %c %c %c %c\n",
+         '0' + ((flags >> 4) & 1),
          '0' + ((flags >> 3) & 1),
          '0' + ((flags >> 2) & 1),
          '0' + ((flags >> 1) & 1),
          '0' + ((flags >> 0) & 1));
+}
+
+
+static void showIntrs(void) {
+  Bool irq;
+  Bool imd;
+  Word spc;
+
+  irq = cpuGetIRQ();
+  imd = cpuGetIMD();
+  spc = cpuGetSPC();
+  printf("Int  IRQ   IMD    SPC\n");
+  printf("     %c     %c      %08X\n",
+         irq ? '1' : '0', imd ? '1' : '0', spc);
 }
 
 
@@ -1801,6 +1934,7 @@ static void doRegister(char *tokens[], int n) {
       printf("\n");
     }
     showFlags();
+    showIntrs();
     showBreak();
     showPC();
   } else if (n == 2) {
