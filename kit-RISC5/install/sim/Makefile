@@ -7,7 +7,7 @@ KIT=../..
 D2O=$(BUILD)/bin/dos2oberon
 
 MODGRPS=Oberon0 InnerCore OuterCore Compiler Editor PCLink2 BootLink \
-        Tools Apps
+        Tools Math Apps
 
 all:
 		@echo "For installing the system:"
@@ -72,6 +72,9 @@ BootLink:
 
 Tools:
 		cp $(KIT)/Tools/rsc/* .
+
+Math:
+		cp $(KIT)/Math/rsc/* .
 
 Apps:
 		cp $(KIT)/Apps/rsc/* .

@@ -68,6 +68,10 @@ prologue:
 		$(D2O) $(NEW)/InnerCore/txt/Kernel.Mod.txt Kernel.Mod
 		$(D2O) $(NEW)/InnerCore/txt/Modules.Mod.txt Modules.Mod
 		#
+		mkdir -p $(NEW)/Math/txt
+		cp $(KIT)/Math/txt/* $(NEW)/Math/txt
+		$(D2O) $(NEW)/Math/txt/Math.Mod.txt Math.Mod
+		#
 		mkdir -p $(NEW)/Oberon0/txt
 		cp $(KIT)/Oberon0/txt/* $(NEW)/Oberon0/txt
 		$(D2O) $(NEW)/Oberon0/txt/Oberon0.Mod.txt Oberon0.Mod
@@ -130,6 +134,9 @@ epilogue:
 		mkdir -p $(NEW)/InnerCore/bin
 		mv Modules.bin $(NEW)/InnerCore/bin
 		#
+		mkdir -p $(NEW)/Math/rsc
+		mv Math.rsc Math.smb $(NEW)/Math/rsc
+		#
 		mkdir -p $(NEW)/Oberon0/rsc
 		mv Oberon0.rsc Oberon0.smb $(NEW)/Oberon0/rsc
 		mv RS232.rsc RS232.smb $(NEW)/Oberon0/rsc
@@ -161,6 +168,7 @@ check:
 		diff -r $(NEW)/Dummy $(KIT)/Dummy
 		diff -r $(NEW)/Editor $(KIT)/Editor
 		diff -r $(NEW)/InnerCore $(KIT)/InnerCore
+		diff -r $(NEW)/Math $(KIT)/Math
 		diff -r $(NEW)/Oberon0 $(KIT)/Oberon0
 		diff -r $(NEW)/OuterCore $(KIT)/OuterCore
 		diff -r $(NEW)/PCLink2 $(KIT)/PCLink2

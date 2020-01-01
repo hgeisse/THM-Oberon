@@ -45,6 +45,9 @@ calln System.DeleteFiles Input.smb
 calln System.DeleteFiles Kernel.Mod
 calln System.DeleteFiles Kernel.rsc
 calln System.DeleteFiles Kernel.smb
+calln System.DeleteFiles Math.Mod
+calln System.DeleteFiles Math.rsc
+calln System.DeleteFiles Math.smb
 calln System.DeleteFiles MenuViewers.Mod
 calln System.DeleteFiles MenuViewers.rsc
 calln System.DeleteFiles MenuViewers.smb
@@ -232,6 +235,13 @@ h2o Tools.Mod
 calln ORP.Compile Tools.Mod
 o2h Tools.rsc
 o2h Tools.smb
+#
+# Math
+#
+h2o Math.Mod
+calln ORP.Compile Math.Mod
+o2h Math.rsc
+o2h Math.smb
 #
 # Apps
 #

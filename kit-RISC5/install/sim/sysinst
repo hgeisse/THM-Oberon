@@ -61,6 +61,9 @@ h2o Oberon0.smb
 h2o Tools.rsc
 h2o Tools.smb
 
+h2o Math.rsc
+h2o Math.smb
+
 h2o Blink.rsc
 h2o Blink.smb
 h2o TestInt.rsc

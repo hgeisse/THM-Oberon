@@ -27,6 +27,8 @@ InnerCore
   Files			Kernel, FileDir
   Kernel		<none>
   Modules		Files
+Math
+  Math			<none>
 Oberon0
   Oberon0		Kernel, FileDir, Files, Modules, RS232
   RS232			<none>
