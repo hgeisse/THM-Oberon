@@ -6,6 +6,12 @@ Group
 ------------------------------------------------------------------------
 Apps
   Blink			Oberon
+  Hilbert		Display, Viewers, Texts, Oberon,
+			MenuViewers, TextFrames
+  Sierpinski		Display, Viewers, Oberon, MenuViewers,
+			TextFrames
+  Stars			Display, Viewers, Texts, Oberon,
+			MenuViewers, TextFrames
   TestInt		<none>
 BootLink
   BootLink		Kernel, Files, Modules, Texts, Oberon

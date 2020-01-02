@@ -14,6 +14,15 @@ calln BootLink.Link Dummy
 calln System.DeleteFiles Blink.Mod
 calln System.DeleteFiles Blink.rsc
 calln System.DeleteFiles Blink.smb
+calln System.DeleteFiles Hilbert.Mod
+calln System.DeleteFiles Hilbert.rsc
+calln System.DeleteFiles Hilbert.smb
+calln System.DeleteFiles Sierpinski.Mod
+calln System.DeleteFiles Sierpinski.rsc
+calln System.DeleteFiles Sierpinski.smb
+calln System.DeleteFiles Stars.Mod
+calln System.DeleteFiles Stars.rsc
+calln System.DeleteFiles Stars.smb
 calln System.DeleteFiles TestInt.Mod
 calln System.DeleteFiles TestInt.rsc
 calln System.DeleteFiles TestInt.smb
@@ -249,6 +258,18 @@ h2o Blink.Mod
 calln ORP.Compile Blink.Mod
 o2h Blink.rsc
 o2h Blink.smb
+h2o Hilbert.Mod
+calln ORP.Compile Hilbert.Mod
+o2h Hilbert.rsc
+o2h Hilbert.smb
+h2o Sierpinski.Mod
+calln ORP.Compile Sierpinski.Mod
+o2h Sierpinski.rsc
+o2h Sierpinski.smb
+h2o Stars.Mod
+calln ORP.Compile Stars.Mod
+o2h Stars.rsc
+o2h Stars.smb
 h2o TestInt.Mod
 calln ORP.Compile TestInt.Mod
 o2h TestInt.rsc

@@ -66,5 +66,11 @@ h2o Math.smb
 
 h2o Blink.rsc
 h2o Blink.smb
+h2o Hilbert.rsc
+h2o Hilbert.smb
+h2o Sierpinski.rsc
+h2o Sierpinski.smb
+h2o Stars.rsc
+h2o Stars.smb
 h2o TestInt.rsc
 h2o TestInt.smb
