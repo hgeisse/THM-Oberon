@@ -6,6 +6,7 @@ Group
 ------------------------------------------------------------------------
 Apps
   Blink			Oberon
+  Dummy			<none>
   Hilbert		Display, Viewers, Texts, Oberon,
 			MenuViewers, TextFrames
   Sierpinski		Display, Viewers, Oberon, MenuViewers,
@@ -18,21 +19,31 @@ BootLink
 BootLoad
   BootLoad		<none>
 Compiler
-  ORS			Texts, Oberon
   ORB			Files, ORS
   ORG			Files, ORS, ORB
   ORP			Texts, Oberon, ORS, ORB, ORG
+  ORS			Texts, Oberon
   ORTool		Files, Texts, Oberon, ORB
-Dummy
-  Dummy			<none>
 Editor
   Edit			Files, Fonts, Texts, Display, Viewers,
 			Oberon, MenuViewers, TextFrames
+Graphics
+  Curves		Display, Files, Oberon, Graphics, GraphicFrames
+  Draw			Files, Fonts, Viewers, Texts, Oberon,
+			TextFrames, MenuViewers, Graphics, GraphicFrames
+  GraphTool		Files, Texts, Oberon
+  GraphicFrames		Display, Viewers, Input, Fonts, Texts, Graphics,
+			Oberon, MenuViewers
+  Graphics		Files, Modules, Fonts, Texts, Oberon
+  Rectangles		Display, Files, Input, Texts, Oberon, Graphics,
+			GraphicFrames
 InnerCore
   FileDir		Kernel
   Files			Kernel, FileDir
   Kernel		<none>
   Modules		Files
+MacroTool
+  MacroTool		Texts, Oberon, Graphics, GraphicFrames
 Math
   Math			<none>
 Oberon0

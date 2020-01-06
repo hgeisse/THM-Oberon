@@ -30,8 +30,8 @@ h2o TextFrames.rsc
 h2o TextFrames.smb
 h2o System.rsc
 h2o System.smb
-h2o System.Tool
 h2o Oberon10.Scn.Fnt
+h2o System.Tool
 
 h2o ORS.rsc
 h2o ORS.smb
@@ -53,10 +53,14 @@ h2o PCLink2.smb
 h2o BootLink.rsc
 h2o BootLink.smb
 
+h2o BootLoad.rsc
+h2o BootLoad.mem
+
 h2o RS232.rsc
 h2o RS232.smb
 h2o Oberon0.rsc
 h2o Oberon0.smb
+h2o Oberon0.bin
 
 h2o Tools.rsc
 h2o Tools.smb
@@ -64,8 +68,37 @@ h2o Tools.smb
 h2o Math.rsc
 h2o Math.smb
 
+h2o Curves.rsc
+h2o Curves.smb
+h2o Draw.rsc
+h2o Draw.smb
+h2o GraphTool.rsc
+h2o GraphTool.smb
+h2o GraphicFrames.rsc
+h2o GraphicFrames.smb
+h2o Graphics.rsc
+h2o Graphics.smb
+h2o Rectangles.rsc
+h2o Rectangles.smb
+h2o Oberon10b.Scn.Fnt
+h2o Oberon10i.Scn.Fnt
+h2o Oberon12.Scn.Fnt
+h2o Oberon12b.Scn.Fnt
+h2o Oberon12i.Scn.Fnt
+h2o Oberon16.Scn.Fnt
+h2o Oberon8.Scn.Fnt
+h2o Oberon8i.Scn.Fnt
+h2o TTL0.Lib
+h2o TTL1.Lib
+h2o Draw.Tool
+
+h2o MacroTool.rsc
+h2o MacroTool.smb
+
 h2o Blink.rsc
 h2o Blink.smb
+h2o Dummy.rsc
+h2o Dummy.smb
 h2o Hilbert.rsc
 h2o Hilbert.smb
 h2o Sierpinski.rsc

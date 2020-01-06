@@ -7,7 +7,7 @@ KIT=../..
 D2O=$(BUILD)/bin/dos2oberon
 
 MODGRPS=Oberon0 InnerCore OuterCore Compiler Editor PCLink2 BootLink \
-        Tools Math Apps
+        BootLoad Tools Math Graphics MacroTool Apps
 
 all:
 		@echo "For installing the system:"
@@ -55,8 +55,8 @@ InnerCore:
 
 OuterCore:
 		cp $(KIT)/OuterCore/rsc/* .
-		cp $(KIT)/OuterCore/fnt/* .
-		$(D2O) $(KIT)/OuterCore/txt/System.Tool.txt System.Tool
+		cp $(KIT)/OuterCore/fonts/* .
+		$(D2O) $(KIT)/OuterCore/tools/System.Tool.txt System.Tool
 
 Compiler:
 		cp $(KIT)/Compiler/rsc/* .
@@ -70,11 +70,23 @@ PCLink2:
 BootLink:
 		cp $(KIT)/BootLink/rsc/* .
 
+BootLoad:
+		cp $(KIT)/BootLoad/rsc/* .
+
 Tools:
 		cp $(KIT)/Tools/rsc/* .
 
 Math:
 		cp $(KIT)/Math/rsc/* .
+
+Graphics:
+		cp $(KIT)/Graphics/rsc/* .
+		cp $(KIT)/Graphics/fonts/* .
+		cp $(KIT)/Graphics/libs/* .
+		$(D2O) $(KIT)/Graphics/tools/Draw.Tool.txt Draw.Tool
+
+MacroTool:
+		cp $(KIT)/MacroTool/rsc/* .
 
 Apps:
 		cp $(KIT)/Apps/rsc/* .
@@ -83,4 +95,4 @@ clean:
 		rm -f *~
 		rm -f serial.dev Oberon.dsk BootLoad.mem
 		rm -f Oberon0.bin Modules.bin
-		rm -f *.rsc *.smb Oberon10.Scn.Fnt System.Tool
+		rm -f *.rsc *.smb *.Scn.Fnt *.Lib *.Tool
