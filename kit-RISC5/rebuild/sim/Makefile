@@ -7,6 +7,7 @@ KIT=../..
 INSTALL=$(KIT)/install/sim
 D2O=$(BUILD)/bin/dos2oberon
 O2U=$(BUILD)/bin/oberon2unix
+M2B=$(BUILD)/bin/mem2bin
 NEW=./new
 
 all:
@@ -138,7 +139,11 @@ epilogue:
 		mkdir -p $(NEW)/BootLoad/rsc
 		mv BootLoad.rsc $(NEW)/BootLoad/rsc
 		mkdir -p $(NEW)/BootLoad/mem
-		$(O2U) BootLoad.prm $(NEW)/BootLoad/mem/BootLoad.mem
+		mkdir -p $(NEW)/BootLoad/bin
+		$(O2U) BootLoad.prm BootLoad.mem
+		$(M2B) BootLoad.mem BootLoad.bin
+		mv BootLoad.mem $(NEW)/BootLoad/mem/BootLoad.mem
+		mv BootLoad.bin $(NEW)/BootLoad/bin/BootLoad.bin
 		rm BootLoad.prm
 		#
 		mkdir -p $(NEW)/Compiler/rsc
