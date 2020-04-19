@@ -31,10 +31,10 @@ install-link:	$(MODGRPS)
 		$(BUILD)/bin/serlink Oberon0.bin
 
 run:		Oberon.dsk BootLoad.mem
-		$(BUILD)/bin/sim -d Oberon.dsk -p BootLoad.mem -s 000
+		$(BUILD)/bin/sim -d Oberon.dsk -p BootLoad.mem -s 001
 
 debug:		Oberon.dsk BootLoad.mem
-		$(BUILD)/bin/sim -i -d Oberon.dsk -p BootLoad.mem -s 000
+		$(BUILD)/bin/sim -i -d Oberon.dsk -p BootLoad.mem -s 001
 
 run-link:
 		$(BUILD)/bin/serlink
