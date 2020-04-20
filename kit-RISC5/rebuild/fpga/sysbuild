@@ -1,0 +1,362 @@
+#
+#-----------------------------------------------
+# load all modules needed into main memory
+#-----------------------------------------------
+#
+h2o Dummy.Mod
+calln ORP.Compile Dummy.Mod
+calln BootLink.Link Dummy
+#
+#-----------------------------------------------
+# get rid of all old files
+#-----------------------------------------------
+#
+calln System.DeleteFiles Blink.Mod
+calln System.DeleteFiles Blink.rsc
+calln System.DeleteFiles Blink.smb
+calln System.DeleteFiles Dummy.Mod
+calln System.DeleteFiles Dummy.rsc
+calln System.DeleteFiles Dummy.smb
+calln System.DeleteFiles Dummy.bin
+calln System.DeleteFiles Hilbert.Mod
+calln System.DeleteFiles Hilbert.rsc
+calln System.DeleteFiles Hilbert.smb
+calln System.DeleteFiles Sierpinski.Mod
+calln System.DeleteFiles Sierpinski.rsc
+calln System.DeleteFiles Sierpinski.smb
+calln System.DeleteFiles Stars.Mod
+calln System.DeleteFiles Stars.rsc
+calln System.DeleteFiles Stars.smb
+calln System.DeleteFiles TestInt.Mod
+calln System.DeleteFiles TestInt.rsc
+calln System.DeleteFiles TestInt.smb
+#
+calln System.DeleteFiles BootLink.Mod
+calln System.DeleteFiles BootLink.rsc
+calln System.DeleteFiles BootLink.smb
+#
+calln System.DeleteFiles BootLoad.Mod
+calln System.DeleteFiles BootLoad.rsc
+calln System.DeleteFiles BootLoad.mem
+#
+calln System.DeleteFiles ORB.Mod
+calln System.DeleteFiles ORB.rsc
+calln System.DeleteFiles ORB.smb
+calln System.DeleteFiles ORG.Mod
+calln System.DeleteFiles ORG.rsc
+calln System.DeleteFiles ORG.smb
+calln System.DeleteFiles ORP.Mod
+calln System.DeleteFiles ORP.rsc
+calln System.DeleteFiles ORP.smb
+calln System.DeleteFiles ORS.Mod
+calln System.DeleteFiles ORS.rsc
+calln System.DeleteFiles ORS.smb
+calln System.DeleteFiles ORTool.Mod
+calln System.DeleteFiles ORTool.rsc
+calln System.DeleteFiles ORTool.smb
+#
+calln System.DeleteFiles Edit.Mod
+calln System.DeleteFiles Edit.rsc
+calln System.DeleteFiles Edit.smb
+#
+calln System.DeleteFiles Curves.Mod
+calln System.DeleteFiles Curves.rsc
+calln System.DeleteFiles Curves.smb
+calln System.DeleteFiles Draw.Mod
+calln System.DeleteFiles Draw.rsc
+calln System.DeleteFiles Draw.smb
+calln System.DeleteFiles GraphTool.Mod
+calln System.DeleteFiles GraphTool.rsc
+calln System.DeleteFiles GraphTool.smb
+calln System.DeleteFiles GraphicFrames.Mod
+calln System.DeleteFiles GraphicFrames.rsc
+calln System.DeleteFiles GraphicFrames.smb
+calln System.DeleteFiles Graphics.Mod
+calln System.DeleteFiles Graphics.rsc
+calln System.DeleteFiles Graphics.smb
+calln System.DeleteFiles Rectangles.Mod
+calln System.DeleteFiles Rectangles.rsc
+calln System.DeleteFiles Rectangles.smb
+calln System.DeleteFiles Oberon10b.Scn.Fnt
+calln System.DeleteFiles Oberon10i.Scn.Fnt
+calln System.DeleteFiles Oberon12.Scn.Fnt
+calln System.DeleteFiles Oberon12b.Scn.Fnt
+calln System.DeleteFiles Oberon12i.Scn.Fnt
+calln System.DeleteFiles Oberon16.Scn.Fnt
+calln System.DeleteFiles Oberon8.Scn.Fnt
+calln System.DeleteFiles Oberon8i.Scn.Fnt
+calln System.DeleteFiles TTL0.Lib
+calln System.DeleteFiles TTL1.Lib
+calln System.DeleteFiles Draw.Tool
+#
+calln System.DeleteFiles FileDir.Mod
+calln System.DeleteFiles FileDir.rsc
+calln System.DeleteFiles FileDir.smb
+calln System.DeleteFiles Files.Mod
+calln System.DeleteFiles Files.rsc
+calln System.DeleteFiles Files.smb
+calln System.DeleteFiles Kernel.Mod
+calln System.DeleteFiles Kernel.rsc
+calln System.DeleteFiles Kernel.smb
+calln System.DeleteFiles Modules.Mod
+calln System.DeleteFiles Modules.rsc
+calln System.DeleteFiles Modules.smb
+calln System.DeleteFiles Modules.bin
+#
+calln System.DeleteFiles MacroTool.Mod
+calln System.DeleteFiles MacroTool.rsc
+calln System.DeleteFiles MacroTool.smb
+#
+calln System.DeleteFiles Math.Mod
+calln System.DeleteFiles Math.rsc
+calln System.DeleteFiles Math.smb
+#
+calln System.DeleteFiles Oberon0.Mod
+calln System.DeleteFiles Oberon0.rsc
+calln System.DeleteFiles Oberon0.smb
+calln System.DeleteFiles RS232.Mod
+calln System.DeleteFiles RS232.rsc
+calln System.DeleteFiles RS232.smb
+calln System.DeleteFiles Oberon0.bin
+#
+calln System.DeleteFiles Display.Mod
+calln System.DeleteFiles Display.rsc
+calln System.DeleteFiles Display.smb
+calln System.DeleteFiles Fonts.Mod
+calln System.DeleteFiles Fonts.rsc
+calln System.DeleteFiles Fonts.smb
+calln System.DeleteFiles Input.Mod
+calln System.DeleteFiles Input.rsc
+calln System.DeleteFiles Input.smb
+calln System.DeleteFiles MenuViewers.Mod
+calln System.DeleteFiles MenuViewers.rsc
+calln System.DeleteFiles MenuViewers.smb
+calln System.DeleteFiles Oberon.Mod
+calln System.DeleteFiles Oberon.rsc
+calln System.DeleteFiles Oberon.smb
+calln System.DeleteFiles System.Mod
+calln System.DeleteFiles System.rsc
+calln System.DeleteFiles System.smb
+calln System.DeleteFiles TextFrames.Mod
+calln System.DeleteFiles TextFrames.rsc
+calln System.DeleteFiles TextFrames.smb
+calln System.DeleteFiles Texts.Mod
+calln System.DeleteFiles Texts.rsc
+calln System.DeleteFiles Texts.smb
+calln System.DeleteFiles Viewers.Mod
+calln System.DeleteFiles Viewers.rsc
+calln System.DeleteFiles Viewers.smb
+calln System.DeleteFiles Oberon10.Scn.Fnt
+calln System.DeleteFiles System.Tool
+#
+calln System.DeleteFiles PCLink2.Mod
+calln System.DeleteFiles PCLink2.rsc
+calln System.DeleteFiles PCLink2.smb
+#
+calln System.DeleteFiles Tools.Mod
+calln System.DeleteFiles Tools.rsc
+calln System.DeleteFiles Tools.smb
+#
+#-----------------------------------------------
+# compile the system according to dependencies
+#-----------------------------------------------
+#
+# InnerCore
+#
+h2o Kernel.Mod
+calln ORP.Compile Kernel.Mod
+o2h Kernel.rsc
+o2h Kernel.smb
+h2o FileDir.Mod
+calln ORP.Compile FileDir.Mod
+o2h FileDir.rsc
+o2h FileDir.smb
+h2o Files.Mod
+calln ORP.Compile Files.Mod
+o2h Files.rsc
+o2h Files.smb
+h2o Modules.Mod
+calln ORP.Compile Modules.Mod
+o2h Modules.rsc
+o2h Modules.smb
+calln BootLink.Link Modules
+o2h Modules.bin
+#
+# OuterCore
+#
+h2o Input.Mod
+calln ORP.Compile Input.Mod
+o2h Input.rsc
+o2h Input.smb
+h2o Fonts.Mod
+calln ORP.Compile Fonts.Mod
+o2h Fonts.rsc
+o2h Fonts.smb
+h2o Display.Mod
+calln ORP.Compile Display.Mod
+o2h Display.rsc
+o2h Display.smb
+h2o Viewers.Mod
+calln ORP.Compile Viewers.Mod
+o2h Viewers.rsc
+o2h Viewers.smb
+h2o Texts.Mod
+calln ORP.Compile Texts.Mod
+o2h Texts.rsc
+o2h Texts.smb
+h2o Oberon.Mod
+calln ORP.Compile Oberon.Mod
+o2h Oberon.rsc
+o2h Oberon.smb
+h2o MenuViewers.Mod
+calln ORP.Compile MenuViewers.Mod
+o2h MenuViewers.rsc
+o2h MenuViewers.smb
+h2o TextFrames.Mod
+calln ORP.Compile TextFrames.Mod
+o2h TextFrames.rsc
+o2h TextFrames.smb
+h2o System.Mod
+calln ORP.Compile System.Mod
+o2h System.rsc
+o2h System.smb
+#
+# BootLink
+#
+h2o BootLink.Mod
+calln ORP.Compile BootLink.Mod
+o2h BootLink.rsc
+o2h BootLink.smb
+#
+# BootLoad
+#
+h2o BootLoad.Mod
+calln ORP.Compile BootLoad.Mod
+o2h BootLoad.rsc
+calln BootLink.WriteFile BootLoad.rsc 512 BootLoad.prm
+o2h BootLoad.prm
+#
+# Oberon0
+#
+h2o RS232.Mod
+calln ORP.Compile RS232.Mod
+o2h RS232.rsc
+o2h RS232.smb
+h2o Oberon0.Mod
+calln ORP.Compile Oberon0.Mod
+o2h Oberon0.rsc
+o2h Oberon0.smb
+calln BootLink.Link Oberon0
+o2h Oberon0.bin
+#
+# Editor
+#
+h2o Edit.Mod
+calln ORP.Compile Edit.Mod
+o2h Edit.rsc
+o2h Edit.smb
+#
+# PCLink2
+#
+h2o PCLink2.Mod
+calln ORP.Compile PCLink2.Mod
+o2h PCLink2.rsc
+o2h PCLink2.smb
+#
+# Compiler
+#
+h2o ORS.Mod
+calln ORP.Compile ORS.Mod
+o2h ORS.rsc
+o2h ORS.smb
+h2o ORB.Mod
+calln ORP.Compile ORB.Mod
+o2h ORB.rsc
+o2h ORB.smb
+h2o ORG.Mod
+calln ORP.Compile ORG.Mod
+o2h ORG.rsc
+o2h ORG.smb
+h2o ORP.Mod
+calln ORP.Compile ORP.Mod
+o2h ORP.rsc
+o2h ORP.smb
+h2o ORTool.Mod
+calln ORP.Compile ORTool.Mod
+o2h ORTool.rsc
+o2h ORTool.smb
+#
+# Tools
+#
+h2o Tools.Mod
+calln ORP.Compile Tools.Mod
+o2h Tools.rsc
+o2h Tools.smb
+#
+# Math
+#
+h2o Math.Mod
+calln ORP.Compile Math.Mod
+o2h Math.rsc
+o2h Math.smb
+#
+# Graphics
+#
+h2o Graphics.Mod
+calln ORP.Compile Graphics.Mod
+o2h Graphics.rsc
+o2h Graphics.smb
+h2o GraphicFrames.Mod
+calln ORP.Compile GraphicFrames.Mod
+o2h GraphicFrames.rsc
+o2h GraphicFrames.smb
+h2o Draw.Mod
+calln ORP.Compile Draw.Mod
+o2h Draw.rsc
+o2h Draw.smb
+h2o Curves.Mod
+calln ORP.Compile Curves.Mod
+o2h Curves.rsc
+o2h Curves.smb
+h2o Rectangles.Mod
+calln ORP.Compile Rectangles.Mod
+o2h Rectangles.rsc
+o2h Rectangles.smb
+h2o GraphTool.Mod
+calln ORP.Compile GraphTool.Mod
+o2h GraphTool.rsc
+o2h GraphTool.smb
+#
+# MacroTool
+#
+h2o MacroTool.Mod
+calln ORP.Compile MacroTool.Mod
+o2h MacroTool.rsc
+o2h MacroTool.smb
+#
+# Apps
+#
+h2o Blink.Mod
+calln ORP.Compile Blink.Mod
+o2h Blink.rsc
+o2h Blink.smb
+h2o Dummy.Mod
+calln ORP.Compile Dummy.Mod
+o2h Dummy.rsc
+o2h Dummy.smb
+h2o Hilbert.Mod
+calln ORP.Compile Hilbert.Mod
+o2h Hilbert.rsc
+o2h Hilbert.smb
+h2o Sierpinski.Mod
+calln ORP.Compile Sierpinski.Mod
+o2h Sierpinski.rsc
+o2h Sierpinski.smb
+h2o Stars.Mod
+calln ORP.Compile Stars.Mod
+o2h Stars.rsc
+o2h Stars.smb
+h2o TestInt.Mod
+calln ORP.Compile TestInt.Mod
+o2h TestInt.rsc
+o2h TestInt.smb
