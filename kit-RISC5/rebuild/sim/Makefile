@@ -25,7 +25,7 @@ all:
 		@echo "    reported."
 
 rebuild:	Oberon.dsk BootLoad.mem
-		$(BUILD)/bin/sim -d Oberon.dsk -p BootLoad.mem -s 001
+		$(BUILD)/bin/sim-RISC5 -d Oberon.dsk -p BootLoad.mem -s 001
 
 rebuild-link:
 		$(MAKE) prologue
