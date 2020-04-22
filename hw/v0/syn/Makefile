@@ -29,6 +29,9 @@ clean:
 		if [ -f build/output_files/risc5.cdf ] ; then \
 		  mv build/output_files/risc5.cdf . ; \
 		fi
+		if [ -f build/risc5.svf ] ; then \
+		  mv build/risc5.svf . ; \
+		fi
 		rm -rf build/*
 		mkdir build/output_files
 		mv risc5.qpf build
@@ -47,5 +50,8 @@ clean:
 		fi
 		if [ -f risc5.cdf ] ; then \
 		  mv risc5.cdf build/output_files ; \
+		fi
+		if [ -f risc5.svf ] ; then \
+		  mv risc5.svf build ; \
 		fi
 		rm -f *~
