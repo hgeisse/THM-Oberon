@@ -4,7 +4,7 @@
 
 BUILD = `pwd`/build
 
-DIRS = sim-RISC5 serlink tools
+DIRS = sim-RISC5 sim-ECO32 serlink tools
 
 all:		builddir
 		for i in $(DIRS) ; do \
