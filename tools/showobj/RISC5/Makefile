@@ -11,7 +11,7 @@ LDLIBS = -lm
 
 SRCS = showobj.c
 OBJS = $(patsubst %.c,%.o,$(SRCS))
-BIN = showobj-RISC
+BIN = showobj-RISC5
 
 all:		$(BIN)
 
