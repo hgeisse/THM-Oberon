@@ -1,11 +1,10 @@
 #
-# Makefile for tools
+# Makefile for object file viewer
 #
 
-BUILD = ../build
+BUILD = ../../build
 
-DIRS = mkdisk dos2oberon oberon2dos oberon2unix unix2oberon mem2bin cmpx \
-       showobj
+DIRS = RISC5
 
 all:
 		for i in $(DIRS) ; do \
