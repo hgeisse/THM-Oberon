@@ -14,16 +14,29 @@
  *   code = nof {word}.
  *   commands = {comname offset} 0X.
  *   entries = nof {word}.
- *   ptrrefs = {word} 0.
+ *   ptrrefs = {word} -1.
  *
  * The entities above are encoded with the following types:
  *  - name:	Str
  *  - key:	Int
  *  - version:	Chr
  *  - size:	Int
+ *  - varsize:	Int
+ *  - fixP:	Int
+ *  - fixD:	Int
+ *  - fixT:	Int
+ *  - body:	Int
+ *  - "O":	Chr
  *  - modname:	Str
  *  - modkey:	Int
- *  - nof:
+ *  - 0X:	Str
+ *  - nof:	Int
+ *  - byte:	Chr
+ *  - char:	Chr
+ *  - word:	Int
+ *  - comname:	Str
+ *  - offset:	Int
+ *  - -1:	Int
  *
  * Here are the actual respresentations of these types:
  *  - Chr: a single byte (read by Files.Read)
@@ -36,7 +49,7 @@
  * - key
  *   the module's key (interface checksum)
  * - version
- *   the format version (0: stand-alone, 1: linkable)
+ *   the format version (0: standalone, 1: linkable)
  * - size
  *   size of the module in memory (in bytes, excluding descriptor)
  * - imports
@@ -426,9 +439,13 @@ char *disasm(unsigned int instr, unsigned int locus) {
 void usage(char *myself) {
   printf("usage: %s [options] <object file>\n", myself);
   printf("options:\n");
+  printf("    -i       show imports\n");
   printf("    -t       show type descriptors\n");
   printf("    -s       show strings\n");
   printf("    -d       show disassembled code\n");
+  printf("    -c       show commands\n");
+  printf("    -e       show entries\n");
+  printf("    -p       show pointer refs\n");
   printf("    -a       show all\n");
   exit(1);
 }
@@ -437,9 +454,13 @@ void usage(char *myself) {
 int main(int argc, char *argv[]) {
   int i;
   char *optptr;
+  Bool iFlag;
   Bool tFlag;
   Bool sFlag;
   Bool dFlag;
+  Bool cFlag;
+  Bool eFlag;
+  Bool pFlag;
   char *objFileName;
   char name[MAX_STRING];
   unsigned int key;
@@ -466,14 +487,21 @@ int main(int argc, char *argv[]) {
   unsigned int fixorgT;
   unsigned int body;
 
+  iFlag = FALSE;
   tFlag = FALSE;
   sFlag = FALSE;
   dFlag = FALSE;
+  cFlag = FALSE;
+  eFlag = FALSE;
+  pFlag = FALSE;
   objFileName = NULL;
   for (i = 1; i < argc; i++) {
     optptr = argv[i];
     if (*optptr == '-') {
       /* option */
+      if (strcmp(argv[i], "-i") == 0) {
+        iFlag = TRUE;
+      } else
       if (strcmp(argv[i], "-t") == 0) {
         tFlag = TRUE;
       } else
@@ -483,10 +511,23 @@ int main(int argc, char *argv[]) {
       if (strcmp(argv[i], "-d") == 0) {
         dFlag = TRUE;
       } else
+      if (strcmp(argv[i], "-c") == 0) {
+        cFlag = TRUE;
+      } else
+      if (strcmp(argv[i], "-e") == 0) {
+        eFlag = TRUE;
+      } else
+      if (strcmp(argv[i], "-p") == 0) {
+        pFlag = TRUE;
+      } else
       if (strcmp(argv[i], "-a") == 0) {
+        iFlag = TRUE;
         tFlag = TRUE;
         sFlag = TRUE;
         dFlag = TRUE;
+        cFlag = TRUE;
+        eFlag = TRUE;
+        pFlag = TRUE;
       } else {
         usage(argv[0]);
       }
@@ -511,13 +552,26 @@ int main(int argc, char *argv[]) {
   readInt(&key);
   printf("module key\t\t: 0x%08X\n", key);
   readByte(&version);
-  printf("format version\t\t: 0x%02X\n", version);
+  if (version != 0 && version != 1) {
+    error("unknown format version 0x%02X", version);
+  }
+  printf("format version\t\t: 0x%02X (%s)\n", version,
+         (version == 0) ? "standalone" : "linkable");
   readInt(&size);
-  printf("total size\t\t: 0x%08X bytes\n", size);
+  printf("memory size\t\t: 0x%08X bytes\n", size);
   readStr(impName);
+  if (impName[0] == '\0') {
+    printf("imported modules\t: <none>\n");
+  } else {
+    if (!iFlag) {
+      printf("imported modules\t: ...\n");
+    }
+  }
   while (impName[0] != '\0') {
     readInt(&impKey);
-    printf("import module / key\t: %s / 0x%08X\n", impName, impKey);
+    if (iFlag) {
+      printf("imported module / key\t: %s / 0x%08X\n", impName, impKey);
+    }
     readStr(impName);
   }
   readInt(&tdsize);
@@ -572,27 +626,50 @@ int main(int argc, char *argv[]) {
       addr += 4;
     }
   }
-  readByte(&ch);
-  while (ch != '\0') {
-    i = 0;
-    do {
-      name[i++] = ch;
-      readByte(&ch);
-    } while (ch != '\0');
-    name[i] = '\0';
+  readStr(name);
+  if (name[0] == '\0') {
+    printf("commands\t\t: <none>\n");
+  } else {
+    if (!cFlag) {
+      printf("commands\t\t: ...\n");
+    }
+  }
+  while (name[0] != '\0') {
     readInt(&offset);
-    printf("command / offset\t: %s / 0x%08X\n", name, offset);
-    readByte(&ch);
+    if (cFlag) {
+      printf("command / offset\t: %s / 0x%08X\n", name, offset);
+    }
+    readStr(name);
   }
   readInt(&numEntries);
   printf("number of entries\t: %d\n", numEntries);
-  for (i = 0; i < numEntries; i++) {
-    readInt(&entry);
-    printf("entry[%d]\t\t: 0x%08X\n", i, entry);
+  if (numEntries != 0) {
+    if (!eFlag) {
+      printf("entries\t\t\t: ...\n");
+    }
+    for (i = 0; i < numEntries; i++) {
+      readInt(&entry);
+      if (eFlag) {
+        printf("entry[%d]\t\t: 0x%08X\n", i, entry);
+      }
+    }
   }
   readInt(&ptrRef);
+  if ((int) ptrRef < 0) {
+    printf("pointer refs\t\t: <none>\n");
+  } else {
+    if (!pFlag) {
+      printf("pointer refs\t\t: ...\n");
+    }
+  }
   while ((int) ptrRef >= 0) {
+    if (pFlag) {
+      printf("pointer ref\t\t: 0x%08X\n", ptrRef);
+    }
     readInt(&ptrRef);
+  }
+  if ((int) ptrRef != -1) {
+    error("ptrrefs not properly terminated by -1");
   }
   readInt(&fixorgP);
   printf("fixorgP\t\t\t: 0x%08X\n", fixorgP);
