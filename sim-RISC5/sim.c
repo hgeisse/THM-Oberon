@@ -1695,6 +1695,8 @@ static void help(void) {
   printf("  #       show/set PC\n");
   printf("  r       show/set register\n");
   printf("  d       dump memory\n");
+  printf("  mw      show/set memory word\n");
+  printf("  mb      show/set memory byte\n");
   printf("  ss      show/set switches\n");
   printf("  q       quit simulator\n");
   printf("type 'help <cmd>' to get help for <cmd>\n");
@@ -2039,6 +2041,86 @@ static void doDump(char *tokens[], int n) {
 }
 
 
+static void helpMemoryWord(void) {
+  printf("  mw                show memory word at PC\n");
+  printf("  mw <addr>         show memory word at <addr>\n");
+  printf("  mw <addr> <data>  set memory word at <addr> to <data>\n");
+}
+
+
+static void doMemoryWord(char *tokens[], int n) {
+  Word addr;
+  Word data;
+  Word tmpData;
+
+  if (n == 1) {
+    addr = cpuGetPC();
+    data = readWord(addr);
+    printf("%08X:  %08X\n", addr, data);
+  } else if (n == 2) {
+    if (!getHexNumber(tokens[1], &addr)) {
+      printf("illegal address\n");
+      return;
+    }
+    data = readWord(addr);
+    printf("%08X:  %08X\n", addr, data);
+  } else if (n == 3) {
+    if (!getHexNumber(tokens[1], &addr)) {
+      printf("illegal address\n");
+      return;
+    }
+    if (!getHexNumber(tokens[2], &tmpData)) {
+      printf("illegal data\n");
+      return;
+    }
+    data = tmpData;
+    writeWord(addr, data);
+  } else {
+    helpMemoryWord();
+  }
+}
+
+
+static void helpMemoryByte(void) {
+  printf("  mb                show memory byte at PC\n");
+  printf("  mb <addr>         show memory byte at <addr>\n");
+  printf("  mb <addr> <data>  set memory byte at <addr> to <data>\n");
+}
+
+
+static void doMemoryByte(char *tokens[], int n) {
+  Word addr;
+  Byte data;
+  Word tmpData;
+
+  if (n == 1) {
+    addr = cpuGetPC();
+    data = readByte(addr);
+    printf("%08X:  %02X\n", addr, data);
+  } else if (n == 2) {
+    if (!getHexNumber(tokens[1], &addr)) {
+      printf("illegal address\n");
+      return;
+    }
+    data = readByte(addr);
+    printf("%08X:  %02X\n", addr, data);
+  } else if (n == 3) {
+    if (!getHexNumber(tokens[1], &addr)) {
+      printf("illegal address\n");
+      return;
+    }
+    if (!getHexNumber(tokens[2], &tmpData)) {
+      printf("illegal data\n");
+      return;
+    }
+    data = (Byte) tmpData;
+    writeByte(addr, data);
+  } else {
+    helpMemoryByte();
+  }
+}
+
+
 static void helpSwitches(void) {
   printf("  ss                show button/switch settings\n");
   printf("  ss <data>         set buttons/switches to <data>\n");
@@ -2097,6 +2179,8 @@ Command commands[] = {
   { "#",    helpPC,         doPC         },
   { "r",    helpRegister,   doRegister   },
   { "d",    helpDump,       doDump       },
+  { "mw",   helpMemoryWord, doMemoryWord },
+  { "mb",   helpMemoryByte, doMemoryByte },
   { "ss",   helpSwitches,   doSwitches   },
   { "q",    helpQuit,       doQuit       },
 };
