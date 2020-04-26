@@ -765,6 +765,10 @@ Word cpuGetPC(void);
 
 Word readWord(Word addr) {
   addr &= ADDR_MASK;
+  if ((addr & 3) != 0) {
+    error("memory read @ 0x%08X not word aligned, PC = 0x%08X",
+          addr, cpuGetPC() - 4);
+  }
   if (addr >= RAM_BASE && addr < RAM_BASE + RAM_SIZE) {
     return ram[(addr - RAM_BASE) >> 2];
   }
@@ -783,6 +787,10 @@ Word readWord(Word addr) {
 
 void writeWord(Word addr, Word data) {
   addr &= ADDR_MASK;
+  if ((addr & 3) != 0) {
+    error("memory write @ 0x%08X not word aligned, PC = 0x%08X",
+          addr, cpuGetPC() - 4);
+  }
   if (addr >= RAM_BASE && addr < RAM_BASE + RAM_SIZE) {
     if (addr >= GRAPH_BASE && addr < GRAPH_BASE + GRAPH_SIZE) {
       graphWrite((addr - GRAPH_BASE) >> 2, data);
@@ -806,7 +814,7 @@ Byte readByte(Word addr) {
   Word w;
   Byte b;
 
-  w = readWord(addr);
+  w = readWord(addr & ~3);
   switch (addr & 3) {
     case 0:
       b = (w >> 0) & 0xFF;
@@ -828,7 +836,7 @@ Byte readByte(Word addr) {
 void writeByte(Word addr, Byte data) {
   Word w;
 
-  w = readWord(addr);
+  w = readWord(addr & ~3);
   switch (addr & 3) {
     case 0:
       w &= ~(0xFF << 0);
@@ -847,7 +855,7 @@ void writeByte(Word addr, Byte data) {
       w |= (Word) data << 24;
       break;
   }
-  writeWord(addr, w);
+  writeWord(addr & ~3, w);
 }
 
 
