@@ -1,5 +1,5 @@
 /*
- * sim.c -- Oberon RISC simulator
+ * sim.c -- Oberon RISC5 simulator
  */
 
 
@@ -17,6 +17,8 @@
 #include "fp.h"
 #include "graph.h"
 
+#include "getline.h"
+
 
 #define SERDEV_FILE	"serial.dev"		/* serial dev file */
 
@@ -32,6 +34,8 @@
 #define IO_BASE		0x00FFFFC0		/* byte address */
 #define IO_SIZE		0x00000040		/* counted in bytes */
 #define ADDR_MASK	(IO_BASE + IO_SIZE - 1)
+
+#define INITIAL_PC	0xFFE000		/* start executing here */
 
 #define SIGN_EXT_24(x)	((x) & 0x00800000 ? (x) | 0xFF000000 : (x))
 #define SIGN_EXT_20(x)	((x) & 0x00080000 ? (x) | 0xFFF00000 : (x))
@@ -2250,7 +2254,8 @@ int main(int argc, char *argv[]) {
   char *diskName;
   Word initialSwitches;
   char *endp;
-  char line[LINE_SIZE];
+  char command[20];
+  char *line;
 
   interactive = false;
   promName = NULL;
@@ -2287,7 +2292,7 @@ int main(int argc, char *argv[]) {
     }
   }
   signal(SIGINT, sigIntHandler);
-  printf("RISC Simulator started\n");
+  printf("RISC5 Simulator started\n");
   if (promName == NULL && !interactive) {
     printf("No PROM file was specified, ");
     printf("so interactive mode is assumed.\n");
@@ -2301,25 +2306,24 @@ int main(int argc, char *argv[]) {
   initGPIO();
   graphInit();
   memInit(promName);
-  cpuInit(0xFFE000);
+  cpuInit(INITIAL_PC);
   if (!interactive) {
     printf("Start executing...\n");
-    strcpy(line, "c\n");
-    execCommand(line);
+    strcpy(command, "c\n");
+    execCommand(command);
   } else {
     while (1) {
-      printf("RISC > ");
-      fflush(stdout);
-      if (fgets(line, LINE_SIZE, stdin) == NULL) {
-        printf("\n");
+      line = gl_getline("RISC5 > ");
+      if (*line == '\0') {
         break;
       }
+      gl_histadd(line);
       if (execCommand(line)) {
         break;
       }
     }
   }
   graphExit();
-  printf("RISC Simulator finished\n");
+  printf("RISC5 Simulator finished\n");
   return 0;
 }
