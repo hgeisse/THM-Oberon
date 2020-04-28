@@ -700,8 +700,7 @@ Word readIO(int dev) {
       data = readGPIO_1();
       break;
     default:
-      printf("NOTE: reading from unknown I/O device %d\n",
-             dev);
+      error("reading from unknown I/O device %d", dev);
       data = 0;
       break;
   }
@@ -742,8 +741,7 @@ void writeIO(int dev, Word data) {
       writeGPIO_1(data);
       break;
     default:
-      printf("NOTE: writing to unknown I/O device %d, data = 0x%08X\n",
-             dev, data);
+      error("writing to unknown I/O device %d, data = 0x%08X", dev, data);
       break;
   }
 }
