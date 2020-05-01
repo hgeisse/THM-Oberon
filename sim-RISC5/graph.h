@@ -7,6 +7,7 @@
 #define _GRAPH_H_
 
 
+Word graphRead(Word addr);
 void graphWrite(Word addr, Word data);
 
 void graphInit(void);

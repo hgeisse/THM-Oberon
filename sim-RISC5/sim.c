@@ -768,7 +768,11 @@ Word readWord(Word addr) {
           addr, cpuGetPC() - 4);
   }
   if (addr >= RAM_BASE && addr < RAM_BASE + RAM_SIZE) {
-    return ram[(addr - RAM_BASE) >> 2];
+    if (addr >= GRAPH_BASE && addr < GRAPH_BASE + GRAPH_SIZE) {
+      return graphRead((addr - GRAPH_BASE) >> 2);
+    } else {
+      return ram[(addr - RAM_BASE) >> 2];
+    }
   }
   if (addr >= ROM_BASE && addr < ROM_BASE + ROM_SIZE) {
     return rom[(addr - ROM_BASE) >> 2];
@@ -792,8 +796,9 @@ void writeWord(Word addr, Word data) {
   if (addr >= RAM_BASE && addr < RAM_BASE + RAM_SIZE) {
     if (addr >= GRAPH_BASE && addr < GRAPH_BASE + GRAPH_SIZE) {
       graphWrite((addr - GRAPH_BASE) >> 2, data);
+    } else {
+      ram[(addr - RAM_BASE) >> 2] = data;
     }
-    ram[(addr - RAM_BASE) >> 2] = data;
     return;
   }
   if (addr >= ROM_BASE && addr < ROM_BASE + ROM_SIZE) {
