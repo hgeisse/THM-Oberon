@@ -42,6 +42,11 @@ static Bool volatile installed = false;
 				 C2B(g, vga.green) | \
 				 C2B(b, vga.blue))
 
+#define B2C(b,ch)		(((((b) / ch.factor) << 8) / ch.scale) & 0xFF)
+#define PIXEL2R(p)		B2C(p, vga.red)
+#define PIXEL2G(p)		B2C(p, vga.green)
+#define PIXEL2B(p)		B2C(p, vga.blue)
+
 
 typedef struct {
   unsigned long scale;
@@ -381,6 +386,16 @@ static void vgaWrite(int x, int y, int r, int g, int b) {
 }
 
 
+static void vgaRead(int x, int y, int *r, int *g, int *b) {
+  unsigned long pixel;
+
+  pixel = XGetPixel(vga.image, x, y);
+  *r = PIXEL2R(pixel);
+  *g = PIXEL2G(pixel);
+  *b = PIXEL2B(pixel);
+}
+
+
 /**************************************************************/
 /**************************************************************/
 
@@ -389,6 +404,41 @@ static void vgaWrite(int x, int y, int r, int g, int b) {
 
 #define BACKGROUND	0x007CD4D6
 #define FOREGROUND	0x00000000
+
+
+Word graphRead(Word addr) {
+  int x, y;
+  int i;
+  int r, g, b;
+  Word data;
+
+  if (debug) {
+    printf("\n**** GRAPH READ from 0x%08X", addr);
+  }
+  if (!installed) {
+    return 0;
+  }
+  if (addr >= WINDOW_SIZE_X * WINDOW_SIZE_Y / 32) {
+    return 0;
+  }
+  /* read pixels from frame buffer memory */
+  addr <<= 5;
+  x = addr % WINDOW_SIZE_X;
+  y = WINDOW_SIZE_Y - 1 - addr / WINDOW_SIZE_X;
+  data = 0;
+  for (i = 0; i < 32; i++) {
+    vgaRead(x + i, y, &r, &g, &b);
+    if (r == ((FOREGROUND >> 16) & 0xFF) &&
+        g == ((FOREGROUND >>  8) & 0xFF) &&
+        b == ((FOREGROUND >>  0) & 0xFF)) {
+      data |= (1 << i);
+    }
+  }
+  if (debug) {
+    printf(", data = 0x%08X ****\n", data);
+  }
+  return data;
+}
 
 
 void graphWrite(Word addr, Word data) {

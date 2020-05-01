@@ -57,6 +57,22 @@ static Bool debugKeycode = false;
 /**************************************************************/
 
 /*
+ * RISC5 I/O remove switches
+ */
+
+
+static Bool remove_RISC5_timer = false;
+static Bool remove_RISC5_board = false;
+static Bool remove_RISC5_rs232 = false;
+static Bool remove_RISC5_spi = false;
+static Bool remove_RISC5_ps2 = false;
+static Bool remove_RISC5_gpio = false;
+static Bool remove_RISC5_gfx = false;
+
+
+/**************************************************************/
+
+/*
  * I/O device 0: timer
  */
 
@@ -665,43 +681,101 @@ void initGPIO(void) {
  */
 
 
+Word cpuGetPC(void);
+
+
+void devRemoved(char *access, char *device) {
+  error("%s removed RISC5 I/O device '%s', PC = 0x%08X",
+        access, device, cpuGetPC() - 4);
+}
+
+
 Word readIO(int dev) {
   Word data;
 
   switch (dev) {
     case 0:
-      data = readTimer();
+      if (remove_RISC5_timer) {
+        devRemoved("read from", "timer");
+        data = 0;
+      } else {
+        data = readTimer();
+      }
       break;
     case 1:
-      data = readSwitches();
+      if (remove_RISC5_board) {
+        devRemoved("read from", "board");
+        data = 0;
+      } else {
+        data = readSwitches();
+      }
       break;
     case 2:
-      data = readRS232_0();
+      if (remove_RISC5_rs232) {
+        devRemoved("read from", "rs232_0");
+        data = 0;
+      } else {
+        data = readRS232_0();
+      }
       break;
     case 3:
-      data = readRS232_1();
+      if (remove_RISC5_rs232) {
+        devRemoved("read from", "rs232_1");
+        data = 0;
+      } else {
+        data = readRS232_1();
+      }
       break;
     case 4:
-      data = readSPIdata();
+      if (remove_RISC5_spi) {
+        devRemoved("read from", "spi_0");
+        data = 0;
+      } else {
+        data = readSPIdata();
+      }
       break;
     case 5:
-      data = readSPIctrl();
+      if (remove_RISC5_spi) {
+        devRemoved("read from", "spi_1");
+        data = 0;
+      } else {
+        data = readSPIctrl();
+      }
       break;
     case 6:
-      data = readMouse();
+      if (remove_RISC5_ps2) {
+        devRemoved("read from", "ps2_0");
+        data = 0;
+      } else {
+        data = readMouse();
+      }
       break;
     case 7:
-      data = readKeybd();
+      if (remove_RISC5_ps2) {
+        devRemoved("read from", "ps2_1");
+        data = 0;
+      } else {
+        data = readKeybd();
+      }
       break;
     case 8:
-      data = readGPIO_0();
+      if (remove_RISC5_gpio) {
+        devRemoved("read from", "gpio_0");
+        data = 0;
+      } else {
+        data = readGPIO_0();
+      }
       break;
     case 9:
-      data = readGPIO_1();
+      if (remove_RISC5_gpio) {
+        devRemoved("read from", "gpio_1");
+        data = 0;
+      } else {
+        data = readGPIO_1();
+      }
       break;
     default:
-      printf("NOTE: reading from unknown I/O device %d\n",
-             dev);
+      error("reading from unknown I/O device %d", dev);
       data = 0;
       break;
   }
@@ -712,38 +786,77 @@ Word readIO(int dev) {
 void writeIO(int dev, Word data) {
   switch (dev) {
     case 0:
-      writeTimer(data);
+      if (remove_RISC5_timer) {
+        devRemoved("write to", "timer");
+      } else {
+        writeTimer(data);
+      }
       break;
     case 1:
-      writeLEDs(data);
+      if (remove_RISC5_board) {
+        devRemoved("write to", "board");
+      } else {
+        writeLEDs(data);
+      }
       break;
     case 2:
-      writeRS232_0(data);
+      if (remove_RISC5_rs232) {
+        devRemoved("write to", "rs232_0");
+      } else {
+        writeRS232_0(data);
+      }
       break;
     case 3:
-      writeRS232_1(data);
+      if (remove_RISC5_rs232) {
+        devRemoved("write to", "rs232_1");
+      } else {
+        writeRS232_1(data);
+      }
       break;
     case 4:
-      writeSPIdata(data);
+      if (remove_RISC5_spi) {
+        devRemoved("write to", "spi_0");
+      } else {
+        writeSPIdata(data);
+      }
       break;
     case 5:
-      writeSPIctrl(data);
+      if (remove_RISC5_spi) {
+        devRemoved("write to", "spi_1");
+      } else {
+        writeSPIctrl(data);
+      }
       break;
     case 6:
-      writeMouse(data);
+      if (remove_RISC5_ps2) {
+        devRemoved("write to", "ps2_0");
+      } else {
+        writeMouse(data);
+      }
       break;
     case 7:
-      writeKeybd(data);
+      if (remove_RISC5_ps2) {
+        devRemoved("write to", "ps2_1");
+      } else {
+        writeKeybd(data);
+      }
       break;
     case 8:
-      writeGPIO_0(data);
+      if (remove_RISC5_gpio) {
+        devRemoved("write to", "gpio_0");
+      } else {
+        writeGPIO_0(data);
+      }
       break;
     case 9:
-      writeGPIO_1(data);
+      if (remove_RISC5_gpio) {
+        devRemoved("write to", "gpio_1");
+      } else {
+        writeGPIO_1(data);
+      }
       break;
     default:
-      printf("NOTE: writing to unknown I/O device %d, data = 0x%08X\n",
-             dev, data);
+      error("writing to unknown I/O device %d, data = 0x%08X", dev, data);
       break;
   }
 }
@@ -770,7 +883,16 @@ Word readWord(Word addr) {
           addr, cpuGetPC() - 4);
   }
   if (addr >= RAM_BASE && addr < RAM_BASE + RAM_SIZE) {
-    return ram[(addr - RAM_BASE) >> 2];
+    if (addr >= GRAPH_BASE && addr < GRAPH_BASE + GRAPH_SIZE) {
+      if (remove_RISC5_gfx) {
+        devRemoved("read from", "gfx");
+        return 0;
+      } else {
+        return graphRead((addr - GRAPH_BASE) >> 2);
+      }
+    } else {
+      return ram[(addr - RAM_BASE) >> 2];
+    }
   }
   if (addr >= ROM_BASE && addr < ROM_BASE + ROM_SIZE) {
     return rom[(addr - ROM_BASE) >> 2];
@@ -793,9 +915,14 @@ void writeWord(Word addr, Word data) {
   }
   if (addr >= RAM_BASE && addr < RAM_BASE + RAM_SIZE) {
     if (addr >= GRAPH_BASE && addr < GRAPH_BASE + GRAPH_SIZE) {
-      graphWrite((addr - GRAPH_BASE) >> 2, data);
+      if (remove_RISC5_gfx) {
+        devRemoved("write to", "gfx");
+      } else {
+        graphWrite((addr - GRAPH_BASE) >> 2, data);
+      }
+    } else {
+      ram[(addr - RAM_BASE) >> 2] = data;
     }
-    ram[(addr - RAM_BASE) >> 2] = data;
     return;
   }
   if (addr >= ROM_BASE && addr < ROM_BASE + ROM_SIZE) {
@@ -2244,6 +2371,14 @@ static void usage(char *myself) {
   printf("    [-p <PROM>]         set PROM image file name\n");
   printf("    [-d <disk>]         set disk image file name\n");
   printf("    [-s <3 nibbles>]    set initial buttons(1)/switches(2)\n");
+  printf("    [-r tbrspig]        remove selected RISC5 devices\n");
+  printf("        t : Timer\n");
+  printf("        b : Board I/O\n");
+  printf("        r : RS232\n");
+  printf("        s : SPI\n");
+  printf("        p : PS/2\n");
+  printf("        i : GPIO\n");
+  printf("        g : Grafics\n");
   exit(1);
 }
 
@@ -2261,6 +2396,8 @@ int main(int argc, char *argv[]) {
   char *promName;
   char *diskName;
   Word initialSwitches;
+  char *rmDev;
+  char *p;
   char *endp;
   char command[20];
   char *line;
@@ -2294,6 +2431,49 @@ int main(int argc, char *argv[]) {
       initialSwitches = strtoul(argv[i], &endp, 16);
       if (*endp != '\0') {
         error("illegal button/switch value, must be 3 hex digits");
+      }
+    } else
+    if (strcmp(argp, "-r") == 0) {
+      if (i == argc - 1) {
+        usage(argv[0]);
+      }
+      rmDev = argv[++i];
+      p = rmDev;
+      while (*p != '\0') {
+        switch (*p) {
+          case 't':
+            printf("RISC5 Timer removed\n");
+            remove_RISC5_timer = true;
+            break;
+          case 'b':
+            printf("RISC5 Board I/O removed\n");
+            remove_RISC5_board = true;
+            break;
+          case 'r':
+            printf("RISC5 RS232 removed\n");
+            remove_RISC5_rs232 = true;
+            break;
+          case 's':
+            printf("RISC5 SPI removed\n");
+            remove_RISC5_spi = true;
+            break;
+          case 'p':
+            printf("RISC5 PS/2 removed\n");
+            remove_RISC5_ps2 = true;
+            break;
+          case 'i':
+            printf("RISC5 GPIO removed\n");
+            remove_RISC5_gpio = true;
+            break;
+          case 'g':
+            printf("RISC5 Grafics removed\n");
+            remove_RISC5_gfx = true;
+            break;
+          default:
+            printf("unknown RISC5 device '%c' not removed\n", *p);
+            break;
+        }
+        p++;
       }
     } else {
       usage(argv[0]);
