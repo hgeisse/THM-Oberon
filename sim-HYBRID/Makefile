@@ -1,7 +1,8 @@
 #
 # Makefile for Oberon HYBRID simulator
+#
 # This is essentially a RISC5 simulator,
-# supplemented by some ECO32 devices.
+# augmented by some ECO32 devices.
 #
 
 BUILD = ../build

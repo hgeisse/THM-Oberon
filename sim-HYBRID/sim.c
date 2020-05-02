@@ -1,5 +1,8 @@
 /*
- * sim.c -- Oberon RISC5 simulator
+ * sim.c -- Oberon HYBRID simulator
+ *
+ * This is essentially a RISC5 simulator,
+ * augmented by some ECO32 devices.
  */
 
 
@@ -2480,7 +2483,7 @@ int main(int argc, char *argv[]) {
     }
   }
   signal(SIGINT, sigIntHandler);
-  printf("RISC5 Simulator started\n");
+  printf("HYBRID Simulator started\n");
   if (promName == NULL && !interactive) {
     printf("No PROM file was specified, ");
     printf("so interactive mode is assumed.\n");
@@ -2501,7 +2504,7 @@ int main(int argc, char *argv[]) {
     execCommand(command);
   } else {
     while (1) {
-      line = gl_getline("RISC5 > ");
+      line = gl_getline("HYBRID > ");
       if (*line == '\0') {
         break;
       }
@@ -2512,6 +2515,6 @@ int main(int argc, char *argv[]) {
     }
   }
   graphExit();
-  printf("RISC5 Simulator finished\n");
+  printf("HYBRID Simulator finished\n");
   return 0;
 }
