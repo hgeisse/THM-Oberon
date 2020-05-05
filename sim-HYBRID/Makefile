@@ -8,9 +8,9 @@
 BUILD = ../build
 
 CC = gcc
-CFLAGS = -g -Wall -I./getline -I/usr/X11R7/include
-LDFLAGS = -g -L./getline -L/usr/X11R7/lib -Wl,-rpath -Wl,/usr/X11R7/lib
-LDLIBS = -lgetline -lX11 -lpthread -lm
+CFLAGS = -g -Wall -I./getline -I./eco32dev -I/usr/X11R7/include
+LDFLAGS = -g -L./getline -L./eco32dev -L/usr/X11R7/lib -Wl,-rpath -Wl,/usr/X11R7/lib
+LDLIBS = -lgetline -leco32dev -lX11 -lpthread -lm
 
 SRCS = sim.c common.c fp.c graph.c
 OBJS = $(patsubst %.c,%.o,$(SRCS))
@@ -25,7 +25,10 @@ install:	$(BIN)
 getline/libgetline.a:
 		$(MAKE) -C getline
 
-$(BIN):		$(OBJS) getline/libgetline.a
+eco32dev/libeco32dev.a:
+		$(MAKE) -C eco32dev
+
+$(BIN):		$(OBJS) getline/libgetline.a eco32dev/libeco32dev.a
 		$(CC) $(LDFLAGS) -o $(BIN) $(OBJS) $(LDLIBS)
 
 %.o:		%.c
@@ -38,4 +41,5 @@ depend.mak:
 
 clean:
 		$(MAKE) -C getline clean
+		$(MAKE) -C eco32dev clean
 		rm -f *~ $(OBJS) $(BIN) depend.mak serial.dev
