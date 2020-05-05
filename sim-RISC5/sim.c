@@ -806,7 +806,8 @@ void writeWord(Word addr, Word data) {
           addr, cpuGetPC() - 4);
   }
   if (addr >= IO_BASE && addr < IO_BASE + IO_SIZE) {
-    return writeIO((addr - IO_BASE) >> 2, data);
+    writeIO((addr - IO_BASE) >> 2, data);
+    return;
   }
   error("memory write word @ 0x%08X off bounds, PC = 0x%08X",
         addr, cpuGetPC() - 4);
