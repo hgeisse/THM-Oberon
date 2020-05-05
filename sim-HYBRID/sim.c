@@ -22,6 +22,8 @@
 
 #include "getline.h"
 
+#include "bio.h"
+
 
 #define SERDEV_FILE	"serial.dev"		/* serial dev file */
 
@@ -2489,13 +2491,30 @@ int main(int argc, char *argv[]) {
     printf("so interactive mode is assumed.\n");
     interactive = true;
   }
-  initTimer();
-  initSWLED(initialSwitches);
-  initRS232();
-  initSPI(diskName);
-  initMouseKeybd();
-  initGPIO();
-  graphInit();
+  /****************************/
+  bioInit(initialSwitches);
+  /****************************/
+  if (!remove_RISC5_timer) {
+    initTimer();
+  }
+  if (!remove_RISC5_board) {
+    initSWLED(initialSwitches);
+  }
+  if (!remove_RISC5_rs232) {
+    initRS232();
+  }
+  if (!remove_RISC5_spi) {
+    initSPI(diskName);
+  }
+  if (!remove_RISC5_ps2) {
+    initMouseKeybd();
+  }
+  if (!remove_RISC5_gpio) {
+    initGPIO();
+  }
+  if (!remove_RISC5_gfx) {
+    graphInit();
+  }
   memInit(promName);
   cpuInit(INITIAL_PC);
   if (!interactive) {
@@ -2514,7 +2533,12 @@ int main(int argc, char *argv[]) {
       }
     }
   }
-  graphExit();
+  if (!remove_RISC5_gfx) {
+    graphExit();
+  }
+  /****************************/
+  bioExit();
+  /****************************/
   printf("HYBRID Simulator finished\n");
   return 0;
 }
