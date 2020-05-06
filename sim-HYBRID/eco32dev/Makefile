@@ -5,7 +5,7 @@
 CC = gcc
 CFLAGS = -g -Wall
 
-LIBOBJS = bio.o
+LIBOBJS = eco32dev.o bio.o
 
 all:		libeco32dev.a
 

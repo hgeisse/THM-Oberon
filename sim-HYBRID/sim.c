@@ -22,6 +22,7 @@
 
 #include "getline.h"
 
+#include "eco32dev.h"
 #include "bio.h"
 
 
@@ -57,6 +58,16 @@
 
 
 static Bool debugKeycode = false;
+
+
+/**************************************************************/
+
+/*
+ * ECO32 I/O enable switches
+ */
+
+
+Bool enable_ECO32_board = false;
 
 
 /**************************************************************/
@@ -899,6 +910,9 @@ Word readWord(Word addr) {
       return ram[(addr - RAM_BASE) >> 2];
     }
   }
+  if (addr >= ECO32_IO_BASE && addr < ECO32_IO_BASE + ECO32_IO_SIZE) {
+    return ECO32_readIO(addr);
+  }
   if (addr >= ROM_BASE && addr < ROM_BASE + ROM_SIZE) {
     return rom[(addr - ROM_BASE) >> 2];
   }
@@ -930,12 +944,17 @@ void writeWord(Word addr, Word data) {
     }
     return;
   }
+  if (addr >= ECO32_IO_BASE && addr < ECO32_IO_BASE + ECO32_IO_SIZE) {
+    ECO32_writeIO(addr, data);
+    return;
+  }
   if (addr >= ROM_BASE && addr < ROM_BASE + ROM_SIZE) {
     error("PROM write word @ 0x%08X, PC = 0x%08X",
           addr, cpuGetPC() - 4);
   }
   if (addr >= IO_BASE && addr < IO_BASE + IO_SIZE) {
-    return writeIO((addr - IO_BASE) >> 2, data);
+    writeIO((addr - IO_BASE) >> 2, data);
+    return;
   }
   error("memory write word @ 0x%08X off bounds, PC = 0x%08X",
         addr, cpuGetPC() - 4);
@@ -2276,23 +2295,33 @@ static void doSwitches(char *tokens[], int n) {
   Word cs;
 
   if (n == 1) {
-    cs = readSwitches();
-    printf("buttons: %s %s %s %s",
-           st[(cs >> 11) & 1], st[(cs >> 10) & 1],
-           st[(cs >>  9) & 1], st[(cs >>  8) & 1]);
-    printf("    ");
-    printf("switches: %s %s %s %s %s %s %s %s\n",
-           st[(cs >>  7) & 1], st[(cs >>  6) & 1],
-           st[(cs >>  5) & 1], st[(cs >>  4) & 1],
-           st[(cs >>  3) & 1], st[(cs >>  2) & 1],
-           st[(cs >>  1) & 1], st[(cs >>  0) & 1]);
+    if (!remove_RISC5_board) {
+      cs = readSwitches();
+      printf("buttons: %s %s %s %s",
+             st[(cs >> 11) & 1], st[(cs >> 10) & 1],
+             st[(cs >>  9) & 1], st[(cs >>  8) & 1]);
+      printf("    ");
+      printf("switches: %s %s %s %s %s %s %s %s\n",
+             st[(cs >>  7) & 1], st[(cs >>  6) & 1],
+             st[(cs >>  5) & 1], st[(cs >>  4) & 1],
+             st[(cs >>  3) & 1], st[(cs >>  2) & 1],
+             st[(cs >>  1) & 1], st[(cs >>  0) & 1]);
+    }
+    if (enable_ECO32_board) {
+      bioShowBoard();
+    }
   } else
   if (n == 2) {
     if (!getHexNumber(tokens[1], &cs)) {
       printf("illegal data\n");
       return;
     }
-    setSwitches(cs);
+    if (!remove_RISC5_board) {
+      setSwitches(cs);
+    }
+    if (enable_ECO32_board) {
+      bioSetSwitches(cs);
+    }
   } else {
     helpSwitches();
   }
@@ -2376,6 +2405,8 @@ static void usage(char *myself) {
   printf("    [-p <PROM>]         set PROM image file name\n");
   printf("    [-d <disk>]         set disk image file name\n");
   printf("    [-s <3 nibbles>]    set initial buttons(1)/switches(2)\n");
+  printf("    [-e b]              enable selected ECO32 devices\n");
+  printf("        b : Board I/O\n");
   printf("    [-r tbrspig]        remove selected RISC5 devices\n");
   printf("        t : Timer\n");
   printf("        b : Board I/O\n");
@@ -2401,7 +2432,7 @@ int main(int argc, char *argv[]) {
   char *promName;
   char *diskName;
   Word initialSwitches;
-  char *rmDev;
+  char *dev;
   char *p;
   char *endp;
   char command[20];
@@ -2438,12 +2469,31 @@ int main(int argc, char *argv[]) {
         error("illegal button/switch value, must be 3 hex digits");
       }
     } else
+    if (strcmp(argp, "-e") == 0) {
+      if (i == argc - 1) {
+        usage(argv[0]);
+      }
+      dev = argv[++i];
+      p = dev;
+      while (*p != '\0') {
+        switch (*p) {
+          case 'b':
+            printf("ECO32 Board I/O enabled\n");
+            enable_ECO32_board = true;
+            break;
+          default:
+            printf("unknown ECO32 device '%c' not enabled\n", *p);
+            break;
+        }
+        p++;
+      }
+    } else
     if (strcmp(argp, "-r") == 0) {
       if (i == argc - 1) {
         usage(argv[0]);
       }
-      rmDev = argv[++i];
-      p = rmDev;
+      dev = argv[++i];
+      p = dev;
       while (*p != '\0') {
         switch (*p) {
           case 't':
@@ -2492,7 +2542,9 @@ int main(int argc, char *argv[]) {
     interactive = true;
   }
   /****************************/
-  bioInit(initialSwitches);
+  if (enable_ECO32_board) {
+    bioInit(initialSwitches);
+  }
   /****************************/
   if (!remove_RISC5_timer) {
     initTimer();
@@ -2537,7 +2589,9 @@ int main(int argc, char *argv[]) {
     graphExit();
   }
   /****************************/
-  bioExit();
+  if (enable_ECO32_board) {
+    bioExit();
+  }
   /****************************/
   printf("HYBRID Simulator finished\n");
   return 0;
