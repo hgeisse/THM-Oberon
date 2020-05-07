@@ -15,7 +15,8 @@
 #define TIMER_IEN	0x02	/* enable timer interrupt */
 
 #define NUMBER_TIMERS	20	/* number of simulation timers */
-#define NUMBER_TMRCNT	2	/* number of timer/counters */
+//#define NUMBER_TMRCNT	2	/* number of timer/counters */
+#define NUMBER_TMRCNT	1	/* number of timer/counters !!!! RISC5 !!!! */
 
 
 Word timerRead(Word addr);

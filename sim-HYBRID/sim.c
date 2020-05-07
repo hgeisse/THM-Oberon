@@ -23,6 +23,7 @@
 #include "getline.h"
 
 #include "eco32dev.h"
+#include "timer.h"
 #include "bio.h"
 
 
@@ -67,6 +68,7 @@ static Bool debugKeycode = false;
  */
 
 
+Bool enable_ECO32_timer = false;
 Bool enable_ECO32_board = false;
 
 
@@ -1494,7 +1496,12 @@ void cpuResetBreak(void) {
 
 
 void cpuStep(void) {
-  tickTimer();
+  if (enable_ECO32_timer) {
+    timerTick();
+  }
+  if (!remove_RISC5_timer) {
+    tickTimer();
+  }
   tickSerial();
   execNextInstruction();
   handleInterrupts();
@@ -1504,7 +1511,12 @@ void cpuStep(void) {
 void cpuRun(void) {
   run = true;
   while (run) {
-    tickTimer();
+    if (enable_ECO32_timer) {
+      timerTick();
+    }
+    if (!remove_RISC5_timer) {
+      tickTimer();
+    }
     tickSerial();
     execNextInstruction();
     handleInterrupts();
@@ -2405,7 +2417,8 @@ static void usage(char *myself) {
   printf("    [-p <PROM>]         set PROM image file name\n");
   printf("    [-d <disk>]         set disk image file name\n");
   printf("    [-s <3 nibbles>]    set initial buttons(1)/switches(2)\n");
-  printf("    [-e b]              enable selected ECO32 devices\n");
+  printf("    [-e tb]             enable selected ECO32 devices\n");
+  printf("        t : Timer\n");
   printf("        b : Board I/O\n");
   printf("    [-r tbrspig]        remove selected RISC5 devices\n");
   printf("        t : Timer\n");
@@ -2477,6 +2490,10 @@ int main(int argc, char *argv[]) {
       p = dev;
       while (*p != '\0') {
         switch (*p) {
+          case 't':
+            printf("ECO32 Timer enabled\n");
+            enable_ECO32_timer = true;
+            break;
           case 'b':
             printf("ECO32 Board I/O enabled\n");
             enable_ECO32_board = true;
@@ -2542,6 +2559,9 @@ int main(int argc, char *argv[]) {
     interactive = true;
   }
   /****************************/
+  if (enable_ECO32_timer) {
+    timerInit();
+  }
   if (enable_ECO32_board) {
     bioInit(initialSwitches);
   }
@@ -2589,6 +2609,9 @@ int main(int argc, char *argv[]) {
     graphExit();
   }
   /****************************/
+  if (enable_ECO32_timer) {
+    timerExit();
+  }
   if (enable_ECO32_board) {
     bioExit();
   }

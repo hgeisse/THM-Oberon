@@ -1,0 +1,34 @@
+This simulator is essentially a RISC5 simulator
+augmented with a few ECO32 I/O devices. If you
+want to use any ECO32 device, you have to enable
+it on the command line (switch '-e'). The command
+line switch '-r' removes RISC5 devices (to check,
+e.g., whether there is left any I/O access to
+this device).
+
+
+Here is a brief decsription of the ECO32 I/O devices:
+
+
+Timer
+-----
+
+0xC00000	timer control register (r/w)
+		bit 0: timer expired
+		bit 1: timer interrupt enabled (not yet in HYBRID)
+		reading the control register resets the 'expired' flag
+		the 'expired' flag cannot be written
+
+0xC00004	timer divisor register (r/w)
+		writing to this register also writes to the counter register
+
+0xC00008	timer counter register (r)
+		this register cannot be written
+
+
+Board I/O
+---------
+
+0xC10000	buttons, switches, and LEDs (r/w)
+		reading returns buttons[3:0] and switches[7:0] in the 12 LSBs
+		writing maps the 8 LSBs to the LEDs (1 = on)

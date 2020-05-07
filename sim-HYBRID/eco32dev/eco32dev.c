@@ -9,9 +9,11 @@
 
 #include "common.h"
 #include "eco32dev.h"
+#include "timer.h"
 #include "bio.h"
 
 
+extern Bool enable_ECO32_timer;
 extern Bool enable_ECO32_board;
 
 
@@ -26,6 +28,13 @@ static void devDisabled(char *access, char *device) {
 
 Word ECO32_readIO(Word addr) {
   switch (addr & ECO32_DEV_MASK) {
+    case ECO32_TIMER:
+      if (enable_ECO32_timer) {
+        return timerRead(addr & ~ECO32_DEV_MASK);
+      } else {
+        devDisabled("read from", "timer");
+        return 0;
+      }
     case ECO32_BOARD:
       if (enable_ECO32_board) {
         return bioRead(addr & ~ECO32_DEV_MASK);
@@ -43,6 +52,13 @@ Word ECO32_readIO(Word addr) {
 
 void ECO32_writeIO(Word addr, Word data) {
   switch (addr & ECO32_DEV_MASK) {
+    case ECO32_TIMER:
+      if (enable_ECO32_timer) {
+        timerWrite(addr & ~ECO32_DEV_MASK, data);
+      } else {
+        devDisabled("write to", "timer");
+      }
+      break;
     case ECO32_BOARD:
       if (enable_ECO32_board) {
         bioWrite(addr & ~ECO32_DEV_MASK, data);
