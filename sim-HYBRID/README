@@ -14,10 +14,9 @@ Timer
 -----
 
 0xC00000	timer control register (r/w)
-		bit 0: timer expired
+		bit 0: timer expired (cannot be written)
 		bit 1: timer interrupt enabled (not yet in HYBRID)
 		reading the control register resets the 'expired' flag
-		the 'expired' flag cannot be written
 
 0xC00004	timer divisor register (r/w)
 		writing to this register also writes to the counter register
@@ -32,3 +31,43 @@ Board I/O
 0xC10000	buttons, switches, and LEDs (r/w)
 		reading returns buttons[3:0] and switches[7:0] in the 12 LSBs
 		writing maps the 8 LSBs to the LEDs (1 = on)
+
+
+RS232
+-----
+
+0xC20000	receiver control register (r/w)
+		bit 0: receiver has a character (cannot be written)
+		bit 1: enable receiver interrupt (not yet in HYBRID)
+
+0xC20004	receiver data register (r)
+		reading this register clears the 'rcvr has a char' flag
+		this register cannot be written
+
+0xC20008	transmitter control register (r/w)
+		bit 0: transmitter accepts a character (cannot be written)
+		bit 1: enable transmitter interrupt (not yet in HYBRID)
+
+0xC2000C	transmitter data register (w)
+		writing this register clears the 'xmtr accepts a char' flag
+		this register cannot be read
+
+
+SD Card
+-------
+t.b.w.
+
+
+Keyboard
+--------
+t.b.w.
+
+
+Mouse
+-----
+t.b.w.
+
+
+Grafics
+-------
+t.b.w.

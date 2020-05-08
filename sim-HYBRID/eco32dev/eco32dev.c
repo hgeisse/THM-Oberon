@@ -11,10 +11,12 @@
 #include "eco32dev.h"
 #include "timer.h"
 #include "bio.h"
+#include "serial.h"
 
 
 extern Bool enable_ECO32_timer;
 extern Bool enable_ECO32_board;
+extern Bool enable_ECO32_serial;
 
 
 Word cpuGetPC(void);
@@ -42,6 +44,13 @@ Word ECO32_readIO(Word addr) {
         devDisabled("read from", "board");
         return 0;
       }
+    case ECO32_RS232:
+      if (enable_ECO32_serial) {
+        return serialRead(addr & ~ECO32_DEV_MASK);
+      } else {
+        devDisabled("read from", "RS232");
+        return 0;
+      }
     default:
       error("ECO32_readIO, unknown addr = 0x%08X, PC = 0x%08X",
             addr, cpuGetPC() - 4);
@@ -64,6 +73,13 @@ void ECO32_writeIO(Word addr, Word data) {
         bioWrite(addr & ~ECO32_DEV_MASK, data);
       } else {
         devDisabled("write to", "board");
+      }
+      break;
+    case ECO32_RS232:
+      if (enable_ECO32_serial) {
+        serialWrite(addr & ~ECO32_DEV_MASK, data);
+      } else {
+        devDisabled("write to", "RS232");
       }
       break;
     default:

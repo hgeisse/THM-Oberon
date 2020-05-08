@@ -25,6 +25,7 @@
 #include "eco32dev.h"
 #include "timer.h"
 #include "bio.h"
+#include "serial.h"
 
 
 #define SERDEV_FILE	"serial.dev"		/* serial dev file */
@@ -70,6 +71,7 @@ static Bool debugKeycode = false;
 
 Bool enable_ECO32_timer = false;
 Bool enable_ECO32_board = false;
+Bool enable_ECO32_serial = false;
 
 
 /**************************************************************/
@@ -1502,7 +1504,9 @@ void cpuStep(void) {
   if (!remove_RISC5_timer) {
     tickTimer();
   }
-  tickSerial();
+  if (!remove_RISC5_rs232) {
+    tickSerial();
+  }
   execNextInstruction();
   handleInterrupts();
 }
@@ -1517,7 +1521,9 @@ void cpuRun(void) {
     if (!remove_RISC5_timer) {
       tickTimer();
     }
-    tickSerial();
+    if (!remove_RISC5_rs232) {
+      tickSerial();
+    }
     execNextInstruction();
     handleInterrupts();
     if (breakSet && pc == breakAddr) {
@@ -2417,9 +2423,10 @@ static void usage(char *myself) {
   printf("    [-p <PROM>]         set PROM image file name\n");
   printf("    [-d <disk>]         set disk image file name\n");
   printf("    [-s <3 nibbles>]    set initial buttons(1)/switches(2)\n");
-  printf("    [-e tb]             enable selected ECO32 devices\n");
+  printf("    [-e tbr]            enable selected ECO32 devices\n");
   printf("        t : Timer\n");
   printf("        b : Board I/O\n");
+  printf("        r : RS232\n");
   printf("    [-r tbrspig]        remove selected RISC5 devices\n");
   printf("        t : Timer\n");
   printf("        b : Board I/O\n");
@@ -2498,6 +2505,10 @@ int main(int argc, char *argv[]) {
             printf("ECO32 Board I/O enabled\n");
             enable_ECO32_board = true;
             break;
+          case 'r':
+            printf("ECO32 RS232 enabled\n");
+            enable_ECO32_serial = true;
+            break;
           default:
             printf("unknown ECO32 device '%c' not enabled\n", *p);
             break;
@@ -2559,11 +2570,16 @@ int main(int argc, char *argv[]) {
     interactive = true;
   }
   /****************************/
-  if (enable_ECO32_timer) {
+  if (enable_ECO32_timer || enable_ECO32_serial) {
     timerInit();
   }
   if (enable_ECO32_board) {
     bioInit(initialSwitches);
+  }
+  if (enable_ECO32_serial) {
+    Bool connectTerminals[1];
+    connectTerminals[0] = false;
+    serialInit(1, connectTerminals, false);
   }
   /****************************/
   if (!remove_RISC5_timer) {
@@ -2609,11 +2625,14 @@ int main(int argc, char *argv[]) {
     graphExit();
   }
   /****************************/
-  if (enable_ECO32_timer) {
-    timerExit();
+  if (enable_ECO32_serial) {
+    serialExit();
   }
   if (enable_ECO32_board) {
     bioExit();
+  }
+  if (enable_ECO32_timer || enable_ECO32_serial) {
+    timerExit();
   }
   /****************************/
   printf("HYBRID Simulator finished\n");
