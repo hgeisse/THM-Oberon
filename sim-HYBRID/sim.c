@@ -26,6 +26,7 @@
 #include "timer.h"
 #include "bio.h"
 #include "serial.h"
+#include "graph2.h"
 
 
 #define SERDEV_FILE	"serial.dev"		/* serial dev file */
@@ -72,6 +73,7 @@ static Bool debugKeycode = false;
 Bool enable_ECO32_timer = false;
 Bool enable_ECO32_board = false;
 Bool enable_ECO32_serial = false;
+Bool enable_ECO32_gfx = false;
 
 
 /**************************************************************/
@@ -914,6 +916,14 @@ Word readWord(Word addr) {
       return ram[(addr - RAM_BASE) >> 2];
     }
   }
+  if (addr >= ECO32_GFX_BASE && addr < ECO32_GFX_BASE + ECO32_GFX_SIZE) {
+    if (enable_ECO32_gfx) {
+      return graph2Read(addr - ECO32_GFX_BASE);
+    } else {
+      devDisabled("read from", "graphics");
+      return 0;
+    }
+  }
   if (addr >= ECO32_IO_BASE && addr < ECO32_IO_BASE + ECO32_IO_SIZE) {
     return ECO32_readIO(addr);
   }
@@ -945,6 +955,14 @@ void writeWord(Word addr, Word data) {
       }
     } else {
       ram[(addr - RAM_BASE) >> 2] = data;
+    }
+    return;
+  }
+  if (addr >= ECO32_GFX_BASE && addr < ECO32_GFX_BASE + ECO32_GFX_SIZE) {
+    if (enable_ECO32_gfx) {
+      graph2Write(addr - ECO32_GFX_BASE, data);
+    } else {
+      devDisabled("write to", "graphics");
     }
     return;
   }
@@ -2423,10 +2441,11 @@ static void usage(char *myself) {
   printf("    [-p <PROM>]         set PROM image file name\n");
   printf("    [-d <disk>]         set disk image file name\n");
   printf("    [-s <3 nibbles>]    set initial buttons(1)/switches(2)\n");
-  printf("    [-e tbr]            enable selected ECO32 devices\n");
+  printf("    [-e tbrg]           enable selected ECO32 devices\n");
   printf("        t : Timer\n");
   printf("        b : Board I/O\n");
   printf("        r : RS232\n");
+  printf("        g : Graphics\n");
   printf("    [-r tbrspig]        remove selected RISC5 devices\n");
   printf("        t : Timer\n");
   printf("        b : Board I/O\n");
@@ -2434,7 +2453,7 @@ static void usage(char *myself) {
   printf("        s : SPI\n");
   printf("        p : PS/2\n");
   printf("        i : GPIO\n");
-  printf("        g : Grafics\n");
+  printf("        g : Graphics\n");
   exit(1);
 }
 
@@ -2509,6 +2528,10 @@ int main(int argc, char *argv[]) {
             printf("ECO32 RS232 enabled\n");
             enable_ECO32_serial = true;
             break;
+          case 'g':
+            printf("ECO32 Graphics enabled\n");
+            enable_ECO32_gfx = true;
+            break;
           default:
             printf("unknown ECO32 device '%c' not enabled\n", *p);
             break;
@@ -2549,7 +2572,7 @@ int main(int argc, char *argv[]) {
             remove_RISC5_gpio = true;
             break;
           case 'g':
-            printf("RISC5 Grafics removed\n");
+            printf("RISC5 Graphics removed\n");
             remove_RISC5_gfx = true;
             break;
           default:
@@ -2580,6 +2603,9 @@ int main(int argc, char *argv[]) {
     Bool connectTerminals[1];
     connectTerminals[0] = false;
     serialInit(1, connectTerminals, false);
+  }
+  if (enable_ECO32_gfx) {
+    graph2Init();
   }
   /****************************/
   if (!remove_RISC5_timer) {
@@ -2625,6 +2651,9 @@ int main(int argc, char *argv[]) {
     graphExit();
   }
   /****************************/
+  if (enable_ECO32_gfx) {
+    graph2Exit();
+  }
   if (enable_ECO32_serial) {
     serialExit();
   }

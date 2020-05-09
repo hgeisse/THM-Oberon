@@ -18,6 +18,11 @@
 #define ECO32_KEYBD	0xC40000
 #define ECO32_MOUSE	0xC50000
 
+#define ECO32_GFX_BASE	0x800000
+#define ECO32_GFX_SIZE	0x018000
+
+
+void devDisabled(char *access, char *device);
 
 Word ECO32_readIO(Word addr);
 void ECO32_writeIO(Word addr, Word data);

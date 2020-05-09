@@ -5,7 +5,8 @@
 CC = gcc
 CFLAGS = -g -Wall
 
-LIBOBJS = eco32dev.o except.o cpu.o timer.o bio.o serial.o
+LIBOBJS = eco32dev.o except.o cpu.o timer.o bio.o serial.o \
+          kbd.o mouse.o graph2.o
 
 all:		libeco32dev.a
 

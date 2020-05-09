@@ -22,7 +22,7 @@ extern Bool enable_ECO32_serial;
 Word cpuGetPC(void);
 
 
-static void devDisabled(char *access, char *device) {
+void devDisabled(char *access, char *device) {
   error("%s disabled ECO32 I/O device '%s', PC = 0x%08X",
         access, device, cpuGetPC() - 4);
 }
