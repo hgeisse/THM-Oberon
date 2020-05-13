@@ -763,7 +763,7 @@ static void doKeyRelease(int k) {
 /* mouse and keyboard device interface */
 
 
-Word mouseRead(void) {
+Word mouseRead_RISC5(void) {
   return rKeybd << 28 | bMouse << 24 | yMouse << 12 | xMouse;
 }
 

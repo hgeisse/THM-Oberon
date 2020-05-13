@@ -12,11 +12,15 @@
 #include "timer.h"
 #include "bio.h"
 #include "serial.h"
+#include "kbd.h"
+#include "mouse.h"
 
 
 extern Bool enable_ECO32_timer;
 extern Bool enable_ECO32_board;
 extern Bool enable_ECO32_serial;
+extern Bool enable_ECO32_kbd;
+extern Bool enable_ECO32_mouse;
 
 
 Word cpuGetPC(void);
@@ -51,6 +55,20 @@ Word ECO32_readIO(Word addr) {
         devDisabled("read from", "RS232");
         return 0;
       }
+    case ECO32_KEYBD:
+      if (enable_ECO32_kbd) {
+        return keyboardRead(addr & ~ECO32_DEV_MASK);
+      } else {
+        devDisabled("read from", "keyboard");
+        return 0;
+      }
+    case ECO32_MOUSE:
+      if (enable_ECO32_mouse) {
+        return mouseRead(addr & ~ECO32_DEV_MASK);
+      } else {
+        devDisabled("read from", "mouse");
+        return 0;
+      }
     default:
       error("ECO32_readIO, unknown addr = 0x%08X, PC = 0x%08X",
             addr, cpuGetPC() - 4);
@@ -80,6 +98,20 @@ void ECO32_writeIO(Word addr, Word data) {
         serialWrite(addr & ~ECO32_DEV_MASK, data);
       } else {
         devDisabled("write to", "RS232");
+      }
+      break;
+    case ECO32_KEYBD:
+      if (enable_ECO32_kbd) {
+        keyboardWrite(addr & ~ECO32_DEV_MASK, data);
+      } else {
+        devDisabled("write to", "keyboard");
+      }
+      break;
+    case ECO32_MOUSE:
+      if (enable_ECO32_mouse) {
+        mouseWrite(addr & ~ECO32_DEV_MASK, data);
+      } else {
+        devDisabled("write to", "mouse");
       }
       break;
     default:

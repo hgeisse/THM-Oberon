@@ -13,7 +13,7 @@ void graphWrite(Word addr, Word data);
 void graphInit(void);
 void graphExit(void);
 
-Word mouseRead(void);
+Word mouseRead_RISC5(void);
 Word keybdRead(void);
 
 void mouseKeybdInit(void);

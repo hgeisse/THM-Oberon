@@ -26,6 +26,8 @@
 #include "timer.h"
 #include "bio.h"
 #include "serial.h"
+#include "kbd.h"
+#include "mouse.h"
 #include "graph2.h"
 
 
@@ -73,6 +75,8 @@ static Bool debugKeycode = false;
 Bool enable_ECO32_timer = false;
 Bool enable_ECO32_board = false;
 Bool enable_ECO32_serial = false;
+Bool enable_ECO32_kbd = false;
+Bool enable_ECO32_mouse = false;
 Bool enable_ECO32_gfx = false;
 
 
@@ -616,7 +620,7 @@ void initSPI(char *diskName) {
  *     { 3'bx, kbd_rdy, 1'bx, btn[2:0], 2'bx, ypos[9:0], 2'bx, xpos[9:0] }
  */
 Word readMouse(void) {
-  return mouseRead();
+  return mouseRead_RISC5();
 }
 
 
@@ -2441,12 +2445,15 @@ static void usage(char *myself) {
   printf("    [-p <PROM>]         set PROM image file name\n");
   printf("    [-d <disk>]         set disk image file name\n");
   printf("    [-s <3 nibbles>]    set initial buttons(1)/switches(2)\n");
-  printf("    [-e tbrg]           enable selected ECO32 devices\n");
+  printf("    [-e tbrkmga]        enable selected ECO32 devices\n");
   printf("        t : Timer\n");
   printf("        b : Board I/O\n");
   printf("        r : RS232\n");
+  printf("        k : Keyboard (needs Graphics)\n");
+  printf("        m : Mouse (needs Graphics)\n");
   printf("        g : Graphics\n");
-  printf("    [-r tbrspig]        remove selected RISC5 devices\n");
+  printf("        a : all of the above\n");
+  printf("    [-r tbrspiga]       remove selected RISC5 devices\n");
   printf("        t : Timer\n");
   printf("        b : Board I/O\n");
   printf("        r : RS232\n");
@@ -2454,6 +2461,7 @@ static void usage(char *myself) {
   printf("        p : PS/2\n");
   printf("        i : GPIO\n");
   printf("        g : Graphics\n");
+  printf("        a : all of the above\n");
   exit(1);
 }
 
@@ -2528,8 +2536,27 @@ int main(int argc, char *argv[]) {
             printf("ECO32 RS232 enabled\n");
             enable_ECO32_serial = true;
             break;
+          case 'k':
+            printf("ECO32 Keyboard enabled (Graphics as well)\n");
+            enable_ECO32_kbd = true;
+            enable_ECO32_gfx = true;
+            break;
+          case 'm':
+            printf("ECO32 Mouse enabled (Graphics as well)\n");
+            enable_ECO32_mouse = true;
+            enable_ECO32_gfx = true;
+            break;
           case 'g':
             printf("ECO32 Graphics enabled\n");
+            enable_ECO32_gfx = true;
+            break;
+          case 'a':
+            printf("All ECO32 devices enabled\n");
+            enable_ECO32_timer = true;
+            enable_ECO32_board = true;
+            enable_ECO32_serial = true;
+            enable_ECO32_kbd = true;
+            enable_ECO32_mouse = true;
             enable_ECO32_gfx = true;
             break;
           default:
@@ -2575,6 +2602,16 @@ int main(int argc, char *argv[]) {
             printf("RISC5 Graphics removed\n");
             remove_RISC5_gfx = true;
             break;
+          case 'a':
+            printf("All RISC5 devices removed\n");
+            remove_RISC5_timer = true;
+            remove_RISC5_board = true;
+            remove_RISC5_rs232 = true;
+            remove_RISC5_spi = true;
+            remove_RISC5_ps2 = true;
+            remove_RISC5_gpio = true;
+            remove_RISC5_gfx = true;
+            break;
           default:
             printf("unknown RISC5 device '%c' not removed\n", *p);
             break;
@@ -2593,7 +2630,8 @@ int main(int argc, char *argv[]) {
     interactive = true;
   }
   /****************************/
-  if (enable_ECO32_timer || enable_ECO32_serial) {
+  if (enable_ECO32_timer || enable_ECO32_serial ||
+      enable_ECO32_kbd   || enable_ECO32_mouse) {
     timerInit();
   }
   if (enable_ECO32_board) {
@@ -2603,6 +2641,12 @@ int main(int argc, char *argv[]) {
     Bool connectTerminals[1];
     connectTerminals[0] = false;
     serialInit(1, connectTerminals, false);
+  }
+  if (enable_ECO32_kbd) {
+    keyboardInit();
+  }
+  if (enable_ECO32_mouse) {
+    mouseInit();
   }
   if (enable_ECO32_gfx) {
     graph2Init();
@@ -2654,13 +2698,20 @@ int main(int argc, char *argv[]) {
   if (enable_ECO32_gfx) {
     graph2Exit();
   }
+  if (enable_ECO32_mouse) {
+    mouseExit();
+  }
+  if (enable_ECO32_kbd) {
+    keyboardExit();
+  }
   if (enable_ECO32_serial) {
     serialExit();
   }
   if (enable_ECO32_board) {
     bioExit();
   }
-  if (enable_ECO32_timer || enable_ECO32_serial) {
+  if (enable_ECO32_timer || enable_ECO32_serial ||
+      enable_ECO32_kbd   || enable_ECO32_mouse) {
     timerExit();
   }
   /****************************/
