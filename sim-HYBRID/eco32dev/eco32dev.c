@@ -12,6 +12,7 @@
 #include "timer.h"
 #include "bio.h"
 #include "serial.h"
+#include "sdcard.h"
 #include "kbd.h"
 #include "mouse.h"
 
@@ -19,6 +20,7 @@
 extern Bool enable_ECO32_timer;
 extern Bool enable_ECO32_board;
 extern Bool enable_ECO32_serial;
+extern Bool enable_ECO32_sdcard;
 extern Bool enable_ECO32_kbd;
 extern Bool enable_ECO32_mouse;
 
@@ -53,6 +55,13 @@ Word ECO32_readIO(Word addr) {
         return serialRead(addr & ~ECO32_DEV_MASK);
       } else {
         devDisabled("read from", "RS232");
+        return 0;
+      }
+    case ECO32_SDCRD:
+      if (enable_ECO32_sdcard) {
+        return sdcardRead(addr & ~ECO32_DEV_MASK);
+      } else {
+        devDisabled("read from", "SD card");
         return 0;
       }
     case ECO32_KEYBD:
@@ -98,6 +107,13 @@ void ECO32_writeIO(Word addr, Word data) {
         serialWrite(addr & ~ECO32_DEV_MASK, data);
       } else {
         devDisabled("write to", "RS232");
+      }
+      break;
+    case ECO32_SDCRD:
+      if (enable_ECO32_sdcard) {
+        sdcardWrite(addr & ~ECO32_DEV_MASK, data);
+      } else {
+        devDisabled("write to", "SD card");
       }
       break;
     case ECO32_KEYBD:

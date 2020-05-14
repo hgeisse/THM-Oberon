@@ -26,6 +26,7 @@
 #include "timer.h"
 #include "bio.h"
 #include "serial.h"
+#include "sdcard.h"
 #include "kbd.h"
 #include "mouse.h"
 #include "graph2.h"
@@ -75,6 +76,7 @@ static Bool debugKeycode = false;
 Bool enable_ECO32_timer = false;
 Bool enable_ECO32_board = false;
 Bool enable_ECO32_serial = false;
+Bool enable_ECO32_sdcard = false;
 Bool enable_ECO32_kbd = false;
 Bool enable_ECO32_mouse = false;
 Bool enable_ECO32_gfx = false;
@@ -2445,10 +2447,11 @@ static void usage(char *myself) {
   printf("    [-p <PROM>]         set PROM image file name\n");
   printf("    [-d <disk>]         set disk image file name\n");
   printf("    [-s <3 nibbles>]    set initial buttons(1)/switches(2)\n");
-  printf("    [-e tbrkmga]        enable selected ECO32 devices\n");
+  printf("    [-e tbrskmga]       enable selected ECO32 devices\n");
   printf("        t : Timer\n");
   printf("        b : Board I/O\n");
   printf("        r : RS232\n");
+  printf("        s : SD Card\n");
   printf("        k : Keyboard (needs Graphics)\n");
   printf("        m : Mouse (needs Graphics)\n");
   printf("        g : Graphics\n");
@@ -2536,6 +2539,10 @@ int main(int argc, char *argv[]) {
             printf("ECO32 RS232 enabled\n");
             enable_ECO32_serial = true;
             break;
+          case 's':
+            printf("ECO32 SD Card enabled\n");
+            enable_ECO32_sdcard = true;
+            break;
           case 'k':
             printf("ECO32 Keyboard enabled (Graphics as well)\n");
             enable_ECO32_kbd = true;
@@ -2555,6 +2562,7 @@ int main(int argc, char *argv[]) {
             enable_ECO32_timer = true;
             enable_ECO32_board = true;
             enable_ECO32_serial = true;
+            enable_ECO32_sdcard = true;
             enable_ECO32_kbd = true;
             enable_ECO32_mouse = true;
             enable_ECO32_gfx = true;
@@ -2642,6 +2650,9 @@ int main(int argc, char *argv[]) {
     connectTerminals[0] = false;
     serialInit(1, connectTerminals, false);
   }
+  if (enable_ECO32_sdcard) {
+    sdcardInit(diskName);
+  }
   if (enable_ECO32_kbd) {
     keyboardInit();
   }
@@ -2703,6 +2714,9 @@ int main(int argc, char *argv[]) {
   }
   if (enable_ECO32_kbd) {
     keyboardExit();
+  }
+  if (enable_ECO32_sdcard) {
+    sdcardExit();
   }
   if (enable_ECO32_serial) {
     serialExit();
