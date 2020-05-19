@@ -399,12 +399,12 @@ MODULE Oberon0;
       ELSE (*Oberon-0 commands*) end := TRUE;
         code := ROR(code, 8); i := 3;
         REPEAT DEC(i); RS232.Rec(y); code := ROR(code+y, 8) UNTIL i = 0;
-        IF code = 0 THEN Mirror (*n*)
-        ELSIF code = 1 THEN Inspect (*a, n*)
+        IF code = 1 THEN Inspect (*a, n*)
         ELSIF code = 2 THEN FillDisplay (*w*)
         ELSIF code = 3 THEN Sector (*secno*)
         ELSIF code = 4 THEN ShowFile (*filename*)
         ELSIF code = 7 THEN Watch
+        ELSIF code = 8 THEN Mirror (*n*)
         ELSIF code = 10 THEN ShowModules
         ELSIF code = 11 THEN ShowCommands (*modname*)
         ELSIF code = 12 THEN Directory (*prefix*)

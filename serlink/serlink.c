@@ -27,12 +27,12 @@
 #define SND		((unsigned char) 0x22)
 #define CAL		((unsigned char) 0x23)
 
-#define CMD_MIRROR	0
 #define CMD_INSPECT	1
 #define CMD_FILLDSP	2
 #define CMD_SECTOR	3
 #define CMD_SHFILE	4
 #define CMD_WATCH	7
+#define CMD_MIRROR	8
 #define CMD_SHMOD	10
 #define CMD_SHCMD	11
 #define CMD_DIR		12
@@ -549,12 +549,12 @@ void help(int argc, char *argv[]) {
   printf("  p                    check if Oberon system is responding\n");
   printf("  h2o     <file> ...   transfer files from host to Oberon\n");
   printf("  o2h     <file> ...   transfer files from Oberon to host\n");
-  printf("  mirror  <integer>    mirror <integer> back\n");
   printf("  inspect <a> <n>      show <n> words of memory at addr <a>\n");
   printf("  filldsp <integer>    fill display with <integer>\n");
   printf("  sector  <secno>      show disk sector <secno>\n");
   printf("  shfile  <file>       show <file>\n");
   printf("  watch                watch\n");
+  printf("  mirror  <integer>    mirror <integer> back\n");
   printf("  shmod                show modules\n");
   printf("  shcmd   <module>     show commands for <module>\n");
   printf("  dir     <prefix>     show directory for <prefix>\n");
@@ -574,21 +574,6 @@ void quit(int argc, char *argv[]) {
 
 
 /**************************************************************/
-
-
-void mirror(int argc, char *argv[]) {
-  int arg;
-  char *endp;
-
-  arg = strtol(argv[1], &endp, 10);
-  if (*endp != '\0') {
-    printf("error: cannot read number to mirror\n");
-    return;
-  }
-  sndInt(CMD_MIRROR);
-  sndInt(arg);
-  getAndShowAnswer();
-}
 
 
 void inspect(int argc, char *argv[]) {
@@ -652,6 +637,21 @@ void shfile(int argc, char *argv[]) {
 
 void watch(int argc, char *argv[]) {
   sndInt(CMD_WATCH);
+  getAndShowAnswer();
+}
+
+
+void mirror(int argc, char *argv[]) {
+  int arg;
+  char *endp;
+
+  arg = strtol(argv[1], &endp, 10);
+  if (*endp != '\0') {
+    printf("error: cannot read number to mirror\n");
+    return;
+  }
+  sndInt(CMD_MIRROR);
+  sndInt(arg);
   getAndShowAnswer();
 }
 
@@ -735,12 +735,12 @@ Cmd cmds[] = {
   { "h",        1, help     },
   { "q",        1, quit     },
   /* --------------------- */
-  { "mirror",   2, mirror   },
   { "inspect",  3, inspect  },
   { "filldsp",  2, filldsp  },
   { "sector",   2, sector   },
   { "shfile",   2, shfile   },
   { "watch",    1, watch    },
+  { "mirror",   2, mirror   },
   { "shmod",    1, shmod    },
   { "shcmd",    2, shcmd    },
   { "dir",      2, dir      },
