@@ -1,0 +1,81 @@
+
+Dependencies of modules (dependencies on SYSTEM not listed):
+
+Group
+  Module depends on	Module(s)
+------------------------------------------------------------------------
+Apps
+  Blink			Oberon
+  Checkers		Display, Viewers, Oberon, MenuViewers, TextFrames
+  Dummy			<none>
+  EBNF			Input, Texts, Oberon
+  Hilbert		Display, Viewers, Texts, Oberon,
+			MenuViewers, TextFrames
+  RISC			Texts, Oberon
+  Sierpinski		Display, Viewers, Oberon, MenuViewers,
+			TextFrames
+  Stars			Display, Viewers, Texts, Oberon,
+			MenuViewers, TextFrames
+  TestInt		<none>
+BootLink
+  ORL			Kernel, Disk, Files, Modules, Texts, Oberon
+  ORX			Files, Texts, Oberon
+BootLoad
+  BootLoad		<none>
+Compiler
+  ORB			Files, ORS
+  ORG			Files, ORS, ORB
+  ORP			Texts, Oberon, ORS, ORB, ORG
+  ORS			Texts, Oberon
+  ORTool		Files, Modules, Texts, Oberon, ORB
+Editor
+  Edit			Files, Fonts, Texts, Input, Display, Viewers,
+			Oberon, MenuViewers, TextFrames
+Fonts
+  FontTool		Files, Input, Texts, Oberon
+Graphics
+  Curves		Display, Files, Oberon, Graphics, GraphicFrames
+  Draw			Files, Fonts, Viewers, Texts, Oberon,
+			TextFrames, MenuViewers, Graphics, GraphicFrames
+  GraphTool		Files, Texts, Oberon
+  GraphicFrames		Display, Viewers, Input, Fonts, Texts, Graphics,
+			Oberon
+  Graphics		Files, Modules, Input, Fonts, Texts, Oberon
+  Rectangles		Display, Files, Input, Texts, Oberon, Graphics,
+			GraphicFrames
+InnerCore
+  Disk			<none>
+  FileDir		Disk
+  Files			Kernel, Disk, FileDir
+  Kernel		<none>
+  Modules		Kernel, Files
+MacroTool
+  MacroTool		Texts, Oberon, Graphics, GraphicFrames
+Math
+  Math			<none>
+Oberon0
+  Oberon0		Kernel, Disk, FileDir, Files, Modules, RS232,
+			PCLink0
+  PCLink0		Files, RS232
+  RS232			<none>
+Out
+  Out			Texts, Oberon
+OuterCore
+  Display		<none>
+  Fonts			Files
+  Input			<none>
+  MenuViewers		Input, Display, Viewers, Oberon
+  Oberon		Kernel, Files, Modules, Input, Display,
+			Viewers, Fonts, Texts
+  System		Kernel, Disk, FileDir, Files, Modules,
+			Input, Display, Viewers, Fonts, Texts,
+			Oberon, MenuViewers, TextFrames
+  TextFrames		Input, Display, Viewers, Fonts, Texts, Oberon
+  Texts			Files, Input, Fonts
+  Viewers		Display
+PCLink2
+  PCLink2		Files, Texts, TextFrames, Oberon
+Tools
+  Tools			Kernel, Disk, Files, Modules, Input, Texts,
+			Viewers, Oberon, MenuViewers, TextFrames
+
