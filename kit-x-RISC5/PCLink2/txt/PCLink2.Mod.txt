@@ -1,8 +1,10 @@
 MODULE PCLink2;
 
-  (* NW 25.7.2013 / HG 13.11.2019 *)
+  (* NW 25.07.2013
+     HG 13.11.2019
+     HG 20.05.2020 Extended Oberon *)
 
-  IMPORT SYSTEM, Files, Texts, TextFrames, Oberon;
+  IMPORT SYSTEM, Files, Modules, Texts, TextFrames, Oberon;
 
   CONST
     data = -56;
@@ -201,8 +203,9 @@ MODULE PCLink2;
     Texts.OpenBuf(buf);
     Texts.Delete(T, 0, T.len, buf);
     Texts.Append(T, W.buf);
-   (* Oberon.SetPar(F, T, 0); *)
-    Oberon.Call(F, T, 0, FALSE);
+    Oberon.SetPar(F, T, 0);
+    Modules.Call(name);
+    res := Modules.res;
     IF res > 0 THEN
       IF res = 1 THEN
         SndString("module not found")

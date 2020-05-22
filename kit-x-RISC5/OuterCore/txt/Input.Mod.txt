@@ -55,7 +55,7 @@ MODULE Input;
       SYSTEM.GET(KTabAdr1 + kbdCode, ch);
     ELSE
       SYSTEM.GET(KTabAdr2 + kbdCode, ch);
-    END
+    END ;
     IF Ctrl THEN ch := CHR(ORD(ch) MOD 20H) END;
     Recd := FALSE
   END Read;

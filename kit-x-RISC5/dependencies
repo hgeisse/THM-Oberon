@@ -11,7 +11,6 @@ Apps
   EBNF			Input, Texts, Oberon
   Hilbert		Display, Viewers, Texts, Oberon,
 			MenuViewers, TextFrames
-  RISC			Texts, Oberon
   Sierpinski		Display, Viewers, Oberon, MenuViewers,
 			TextFrames
   Stars			Display, Viewers, Texts, Oberon,
@@ -74,7 +73,7 @@ OuterCore
   Texts			Files, Input, Fonts
   Viewers		Display
 PCLink2
-  PCLink2		Files, Texts, TextFrames, Oberon
+  PCLink2		Files, Modules, Texts, TextFrames, Oberon
 Tools
   Tools			Kernel, Disk, Files, Modules, Input, Texts,
 			Viewers, Oberon, MenuViewers, TextFrames

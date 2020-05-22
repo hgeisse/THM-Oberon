@@ -20,9 +20,9 @@ System.DeleteFiles ~           13.ShowModules  *Stars.Stop
 System.ShowModules  System.ShowCommands ^  Modules.Collect
 System.ShowImports ORP~  System.ShowReferences Hilbert Sierpinski ~
 System.ShowClients ORS~  System.ShowGroupReferences Hilbert Viewers ~
-                                
-PCLink1.Run  PCLink1.Stop    Oberon0Tool.Run  Oberon0Tool.Stop  # run only of of these 2
-Hilbert.Draw  Sierpinski.Draw  Blink.Run  Stars.Open
+
+PCLink2.Run  PCLink2.Stop
+Hilbert.Draw  Sierpinski.Draw  Blink.Run  Blink.Stop  Stars.Open
 Tools.Inspect 0  Tools.Sector 1  Tools.ShowFile
 Tools.Recall  Tools.Clear
 
