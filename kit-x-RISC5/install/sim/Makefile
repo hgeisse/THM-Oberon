@@ -6,9 +6,8 @@ BUILD=../../../build
 KIT=../..
 D2O=$(BUILD)/bin/dos2oberon
 
-#MODGRPS=Oberon0 InnerCore OuterCore Compiler Editor PCLink2 BootLink \
-#        BootLoad Tools Math Graphics MacroTool Apps
-MODGRPS=Oberon0
+MODGRPS=Apps BootLink BootLoad Compiler Editor Fonts Graphics \
+        InnerCore MacroTool Math Oberon0 Out OuterCore PCLink2 Tools
 
 all:
 		@echo "For installing the system:"
@@ -32,24 +31,24 @@ install:	Oberon.dsk BootLoad.mem
 install-link:	$(MODGRPS)
 		$(BUILD)/bin/serlink Oberon0.bin
 
-#run:		Oberon.dsk BootLoad.mem
-#		$(BUILD)/bin/sim-RISC5 -d Oberon.dsk -p BootLoad.mem \
-#		  -s 001
+run:		Oberon.dsk BootLoad.mem
+		$(BUILD)/bin/sim-RISC5 -d Oberon.dsk -p BootLoad.mem \
+		  -s 001
 
-#debug:		Oberon.dsk BootLoad.mem
-#		$(BUILD)/bin/sim-RISC5 -i -d Oberon.dsk -p BootLoad.mem \
-#		  -s 001
+debug:		Oberon.dsk BootLoad.mem
+		$(BUILD)/bin/sim-RISC5 -i -d Oberon.dsk -p BootLoad.mem \
+		  -s 001
 
-#debug-rmdev:	Oberon.dsk BootLoad.mem
-#		$(BUILD)/bin/sim-HYBRID -i -d Oberon.dsk -p BootLoad.mem \
-#		  -s 001 -r i
+debug-rmdev:	Oberon.dsk BootLoad.mem
+		$(BUILD)/bin/sim-HYBRID -i -d Oberon.dsk -p BootLoad.mem \
+		  -s 001 -r i
 
-#debug-rmall:	Oberon.dsk BootLoad.mem
-#		$(BUILD)/bin/sim-HYBRID -i -d Oberon.dsk -p BootLoad.mem \
-#		  -s 001 -r tbrspig
+debug-rmall:	Oberon.dsk BootLoad.mem
+		$(BUILD)/bin/sim-HYBRID -i -d Oberon.dsk -p BootLoad.mem \
+		  -s 001 -r a
 
-#run-link:
-#		$(BUILD)/bin/serlink
+run-link:
+		$(BUILD)/bin/serlink
 
 Oberon.dsk:
 		$(BUILD)/bin/mkdisk Oberon.dsk 300M
@@ -57,54 +56,61 @@ Oberon.dsk:
 BootLoad.mem:
 		cp $(KIT)/BootLoad/mem/BootLoad.mem .
 
+Apps:
+		cp $(KIT)/Apps/rsc/* .
+
+BootLink:
+		cp $(KIT)/BootLink/rsc/* .
+
+BootLoad:
+		cp $(KIT)/BootLoad/rsc/* .
+		cp $(KIT)/BootLoad/mem/* .
+		cp $(KIT)/BootLoad/bin/* .
+
+Compiler:
+		cp $(KIT)/Compiler/rsc/* .
+
+Editor:
+		cp $(KIT)/Editor/rsc/* .
+
+Fonts:
+		cp $(KIT)/Fonts/rsc/* .
+		cp $(KIT)/Fonts/fonts/* .
+
+Graphics:
+		cp $(KIT)/Graphics/rsc/* .
+		$(D2O) $(KIT)/Graphics/tools/Draw.Tool.txt Draw.Tool
+		cp $(KIT)/Graphics/libs/* .
+
+InnerCore:
+		cp $(KIT)/InnerCore/rsc/* .
+		cp $(KIT)/InnerCore/bin/* .
+
+MacroTool:
+		cp $(KIT)/MacroTool/rsc/* .
+
+Math:
+		cp $(KIT)/Math/rsc/* .
+
 Oberon0:
-		cp $(KIT)/Oberon0/bin/Oberon0.bin .
 		cp $(KIT)/Oberon0/rsc/* .
+		cp $(KIT)/Oberon0/bin/* .
 
-#InnerCore:
-#		cp $(KIT)/InnerCore/bin/Modules.bin .
-#		cp $(KIT)/InnerCore/rsc/* .
+Out:
+		cp $(KIT)/Out/rsc/* .
 
-#OuterCore:
-#		cp $(KIT)/OuterCore/rsc/* .
-#		cp $(KIT)/OuterCore/fonts/* .
-#		$(D2O) $(KIT)/OuterCore/tools/System.Tool.txt System.Tool
+OuterCore:
+		cp $(KIT)/OuterCore/rsc/* .
+		$(D2O) $(KIT)/OuterCore/tools/System.Tool.txt System.Tool
 
-#Compiler:
-#		cp $(KIT)/Compiler/rsc/* .
+PCLink2:
+		cp $(KIT)/PCLink2/rsc/* .
 
-#Editor:
-#		cp $(KIT)/Editor/rsc/* .
-
-#PCLink2:
-#		cp $(KIT)/PCLink2/rsc/* .
-
-#BootLink:
-#		cp $(KIT)/BootLink/rsc/* .
-
-#BootLoad:
-#		cp $(KIT)/BootLoad/rsc/* .
-
-#Tools:
-#		cp $(KIT)/Tools/rsc/* .
-
-#Math:
-#		cp $(KIT)/Math/rsc/* .
-
-#Graphics:
-#		cp $(KIT)/Graphics/rsc/* .
-#		cp $(KIT)/Graphics/fonts/* .
-#		cp $(KIT)/Graphics/libs/* .
-#		$(D2O) $(KIT)/Graphics/tools/Draw.Tool.txt Draw.Tool
-
-#MacroTool:
-#		cp $(KIT)/MacroTool/rsc/* .
-
-#Apps:
-#		cp $(KIT)/Apps/rsc/* .
+Tools:
+		cp $(KIT)/Tools/rsc/* .
 
 clean:
 		rm -f *~
 		rm -f serial.dev Oberon.dsk BootLoad.mem
-#		rm -f Oberon0.bin Modules.bin
-#		rm -f *.rsc *.smb *.Scn.Fnt *.Lib *.Tool
+		rm -f Oberon0.bin Modules.bin BootLoad.bin
+		rm -f *.rsc *.smb *.Scn.Fnt *.Lib *.Tool

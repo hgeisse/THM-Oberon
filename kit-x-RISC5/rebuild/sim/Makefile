@@ -253,7 +253,7 @@ BootLoad.mem:
 mostly-clean:
 		rm -f *~
 		rm -f serial.dev Oberon.dsk BootLoad.mem
-		rm -f Modules.bin Oberon0.bin
+		rm -f Oberon0.bin Modules.bin BootLoad.bin
 		rm -f *.Mod *.rsc *.smb *.Scn.Fnt *.Tool *.Lib
 
 clean:		mostly-clean
