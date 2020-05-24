@@ -1,0 +1,18 @@
+MODULE Pattern04;
+  TYPE
+    Ptr = POINTER TO Node;
+    Node = RECORD
+             num: INTEGER;
+             name: ARRAY 8 OF CHAR;
+             next: Ptr;
+           END;
+  VAR
+    p, q: Ptr;
+    r: Node;
+BEGIN
+  r.num := 10;
+  p.num := 6;
+  p.name[7] := "0";
+  p.next := q;
+  p.next.next := NIL;
+END Pattern04.

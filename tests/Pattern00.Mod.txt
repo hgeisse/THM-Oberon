@@ -1,0 +1,5 @@
+MODULE Pattern00;
+  VAR
+    i: INTEGER;
+BEGIN
+END Pattern00.

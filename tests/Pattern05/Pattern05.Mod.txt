@@ -1,0 +1,24 @@
+MODULE Pattern05;
+  VAR
+    n: INTEGER;
+    s: SET;
+BEGIN
+  IF n = 0 THEN
+    INC(n);
+  END;
+  IF (n >= 0) & (n < 100) THEN
+    DEC(n);
+  END;
+  IF ODD(n) OR (n IN s) THEN
+    n := -1000;
+  END;
+  IF n < 0 THEN
+    s := {};
+  ELSIF n < 10 THEN
+    s := {0};
+  ELSIF n < 100 THEN
+    s := {1};
+  ELSE
+    s := {2};
+  END;
+END Pattern05.

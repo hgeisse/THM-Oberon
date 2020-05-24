@@ -1,0 +1,13 @@
+MODULE Pattern03;
+  VAR
+    i, j, k, n: INTEGER;
+    a: ARRAY 10 OF INTEGER;
+    x: ARRAY 10, 10 OF INTEGER;
+    y: ARRAY 10, 10, 10 OF INTEGER;
+BEGIN
+  k := a[i];
+  n := a[5];
+  x[i, j] := 2;
+  y[i, j, k] := 3;
+  y[3, 4, 5] := 6;
+END Pattern03.
