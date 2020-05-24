@@ -1,0 +1,13 @@
+MODULE Pattern15;
+  VAR s0, s1: ARRAY 32 OF CHAR;
+
+  PROCEDURE P(x: ARRAY OF CHAR);
+  END P;
+
+BEGIN
+  s0 := "ABCDEF";
+  s0 := s1;
+  P(s1);
+  P("012345");
+  P("%");
+END Pattern15.

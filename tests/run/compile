@@ -28,6 +28,61 @@ calln ORP.Compile Pattern06.Mod
 o2h Pattern06.smb
 o2h Pattern06.rsc
 
+h2o Pattern07.Mod
+calln ORP.Compile Pattern07.Mod
+o2h Pattern07.smb
+o2h Pattern07.rsc
+
+h2o Pattern08.Mod
+calln ORP.Compile Pattern08.Mod
+o2h Pattern08.smb
+o2h Pattern08.rsc
+
+h2o Pattern09.Mod
+calln ORP.Compile Pattern09.Mod
+o2h Pattern09.smb
+o2h Pattern09.rsc
+
+h2o Pattern10.Mod
+calln ORP.Compile Pattern10.Mod
+o2h Pattern10.smb
+o2h Pattern10.rsc
+
+h2o Pattern11.Mod
+calln ORP.Compile Pattern11.Mod
+o2h Pattern11.smb
+o2h Pattern11.rsc
+
+h2o Pattern12a.Mod
+calln ORP.Compile Pattern12a.Mod
+o2h Pattern12a.smb
+o2h Pattern12a.rsc
+
+h2o Pattern12b.Mod
+calln ORP.Compile Pattern12b.Mod
+o2h Pattern12b.smb
+o2h Pattern12b.rsc
+
+h2o Pattern12c.Mod
+calln ORP.Compile Pattern12c.Mod
+o2h Pattern12c.smb
+o2h Pattern12c.rsc
+
+h2o Pattern13.Mod
+calln ORP.Compile Pattern13.Mod
+o2h Pattern13.smb
+o2h Pattern13.rsc
+
+h2o Pattern14.Mod
+calln ORP.Compile Pattern14.Mod
+o2h Pattern14.smb
+o2h Pattern14.rsc
+
+h2o Pattern15.Mod
+calln ORP.Compile Pattern15.Mod
+o2h Pattern15.smb
+o2h Pattern15.rsc
+
 h2o Pattern16.Mod
 calln ORP.Compile Pattern16.Mod
 o2h Pattern16.smb

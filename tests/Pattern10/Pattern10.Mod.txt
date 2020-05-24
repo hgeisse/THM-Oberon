@@ -1,0 +1,14 @@
+MODULE Pattern10;
+  VAR
+    a: ARRAY 12 OF INTEGER;
+
+  PROCEDURE P(VAR x: ARRAY OF INTEGER);
+    VAR i, n: INTEGER;
+  BEGIN
+    n := x[i];
+    x[i+1] := n+5;
+  END P;
+
+BEGIN
+  P(a);
+END Pattern10.

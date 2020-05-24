@@ -1,0 +1,13 @@
+MODULE Pattern11;
+  VAR
+    s: SET;
+    m, n: INTEGER;
+BEGIN
+  s := {m};
+  s := {0 .. n};
+  s := {m .. 31};
+  s := {m .. n};
+  IF n IN {2, 3, 5, 7, 11, 13} THEN
+    m := 1;
+  END;
+END Pattern11.

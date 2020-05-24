@@ -6,8 +6,9 @@ BUILD=../../build
 KIT=../../kit-x-RISC5
 D2O=$(BUILD)/bin/dos2oberon
 
-TESTS=Pattern01 Pattern02 Pattern03 Pattern04 Pattern05 Pattern06 \
-      Pattern16 Pattern17
+DIRS=Pattern01 Pattern02 Pattern03 Pattern04 Pattern05 Pattern06 \
+     Pattern07 Pattern08 Pattern09 Pattern10 Pattern11 Pattern12 \
+     Pattern13 Pattern14 Pattern15 Pattern16 Pattern17
 
 all:
 		@echo "Please use 'make run' and 'make run-link!'"
@@ -20,8 +21,10 @@ run-link:	sources
 		$(BUILD)/bin/serlink
 
 sources:
-		for i in $(TESTS) ; do \
-		  $(BUILD)/bin/unix2oberon ../$$i/$$i.Mod.txt $$i.Mod ; \
+		for i in $(DIRS) ; do \
+		  for j in ../$$i/*.Mod.txt ; do \
+		    $(BUILD)/bin/unix2oberon $$j `basename $$j .txt`; \
+		  done ; \
 		done
 
 Oberon.dsk:
