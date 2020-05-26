@@ -578,9 +578,9 @@ int main(int argc, char *argv[]) {
   printf("type descriptor size\t: 0x%08X bytes\n", tdsize);
   if (tdsize != 0) {
     if (tFlag) {
-      printf("type desciptors\t\t: \n");
+      printf("type descriptors\t\t: \n");
     } else {
-      printf("type desciptors\t\t: ...\n");
+      printf("type descriptors\t\t: ...\n");
     }
     tdescs = memAlloc(tdsize);
     for (i = 0; i < tdsize; i++) {
