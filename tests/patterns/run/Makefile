@@ -2,8 +2,8 @@
 # Makefile for running pattern tests
 #
 
-BUILD=../../build
-KIT=../../kit-x-RISC5
+BUILD=../../../build
+KIT=../../../kit-x-RISC5
 D2O=$(BUILD)/bin/dos2oberon
 
 DIRS=Pattern01 Pattern02 Pattern03 Pattern04 Pattern05 Pattern06 \
