@@ -15,7 +15,7 @@ Timer
 
 0xC00000	timer control register (r/w)
 		bit 0: timer expired (cannot be written)
-		bit 1: timer interrupt enabled (not yet in HYBRID)
+		bit 1: timer interrupt enabled
 		reading the control register resets the 'expired' flag
 
 0xC00004	timer divisor register (r/w)
