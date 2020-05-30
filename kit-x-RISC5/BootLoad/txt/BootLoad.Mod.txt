@@ -3,7 +3,8 @@ MODULE* BootLoad;
      PR 04.02.2014: boot from SDHC disk or serial line
      HG 09.06.2018: re-definition of switches
      HG 24.11.2019: send ACK at end of load from serial line
-     AP 13.03.2020: eliminate MT and MTOrg, set TR to TrapAdr *)
+     AP 13.03.2020: eliminate MT and MTOrg, set TR to TrapAdr
+     HG 30.05.2020: set file system offset to zero *)
   IMPORT SYSTEM;
   (* sw1: boot from serial line/not SDHC disk
      sw0: enforce cold boot *)
@@ -13,7 +14,7 @@ MODULE* BootLoad;
     swi = -60; led = -60; rsData = -56; rsCtrl = -52;
     spiData = -48; spiCtrl = -44;
     CARD0 = 1; SPIFAST = 4;
-    FSoffset = 80000H;  (* block offset *)
+    FSoffset = 0H;  (* file system offset, in 512-byte SD card blocks *)
     ACK = 10H;
 
 (* ---------- line ------------ *)

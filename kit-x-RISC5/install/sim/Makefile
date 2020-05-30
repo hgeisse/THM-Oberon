@@ -6,6 +6,8 @@ BUILD=../../../build
 KIT=../..
 D2O=$(BUILD)/bin/dos2oberon
 
+DISK_SIZE=64M
+
 MODGRPS=Apps BootLink BootLoad Compiler Editor Fonts Graphics \
         InnerCore MacroTool Math Oberon0 Out OuterCore PCLink2 Tools
 
@@ -51,7 +53,7 @@ run-link:
 		$(BUILD)/bin/serlink
 
 Oberon.dsk:
-		$(BUILD)/bin/mkdisk Oberon.dsk 300M
+		$(BUILD)/bin/mkdisk Oberon.dsk $(DISK_SIZE)
 
 BootLoad.mem:
 		cp $(KIT)/BootLoad/mem/BootLoad.mem .
