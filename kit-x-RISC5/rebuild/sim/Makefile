@@ -3,12 +3,12 @@
 #
 
 BUILD=../../../build
-KIT=../..
-INSTALL=$(KIT)/install/sim
+KIT=../../Stable
+INSTALL=../../install/sim
 D2O=$(BUILD)/bin/dos2oberon
 O2U=$(BUILD)/bin/oberon2unix
 M2B=$(BUILD)/bin/mem2bin
-NEW=./new
+NEW=../../New
 
 all:
 		@echo "For re-building the system binaries:"
@@ -228,21 +228,7 @@ epilogue:
 		mv Tools.rsc Tools.smb $(NEW)/Tools/rsc
 
 check:
-		diff -r $(NEW)/Apps $(KIT)/Apps
-		diff -r $(NEW)/BootLink $(KIT)/BootLink
-		diff -r $(NEW)/BootLoad $(KIT)/BootLoad
-		diff -r $(NEW)/Compiler $(KIT)/Compiler
-		diff -r $(NEW)/Editor $(KIT)/Editor
-		diff -r $(NEW)/Fonts $(KIT)/Fonts
-		diff -r $(NEW)/Graphics $(KIT)/Graphics
-		diff -r $(NEW)/InnerCore $(KIT)/InnerCore
-		diff -r $(NEW)/MacroTool $(KIT)/MacroTool
-		diff -r $(NEW)/Math $(KIT)/Math
-		diff -r $(NEW)/Oberon0 $(KIT)/Oberon0
-		diff -r $(NEW)/Out $(KIT)/Out
-		diff -r $(NEW)/OuterCore $(KIT)/OuterCore
-		diff -r $(NEW)/PCLink2 $(KIT)/PCLink2
-		diff -r $(NEW)/Tools $(KIT)/Tools
+		diff -r $(NEW) $(KIT)
 
 Oberon.dsk:
 		cp $(INSTALL)/Oberon.dsk .
@@ -250,11 +236,8 @@ Oberon.dsk:
 BootLoad.mem:
 		cp $(KIT)/BootLoad/mem/BootLoad.mem .
 
-mostly-clean:
+clean:
 		rm -f *~
 		rm -f serial.dev Oberon.dsk BootLoad.mem
 		rm -f Oberon0.bin Modules.bin BootLoad.bin
 		rm -f *.Mod *.rsc *.smb *.Scn.Fnt *.Tool *.Lib
-
-clean:		mostly-clean
-		rm -rf new

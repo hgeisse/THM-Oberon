@@ -3,7 +3,7 @@
 #
 
 BUILD=../../../build
-KIT=../..
+KIT=../../Stable
 D2O=$(BUILD)/bin/dos2oberon
 
 DISK_SIZE=64M
