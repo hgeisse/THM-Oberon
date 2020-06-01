@@ -48,7 +48,7 @@
 #define ADDR_MASK	(IO_BASE + IO_SIZE - 1)
 
 #define INITIAL_PC	0xFFE000		/* start executing here */
-#define TIMER_VECTOR	0x000004		/* timer IRQ lands here */
+#define TIMER_VECTOR	0x000094		/* timer IRQ lands here */
 
 #define SIGN_EXT_24(x)	((x) & 0x00800000 ? (x) | 0xFF000000 : (x))
 #define SIGN_EXT_20(x)	((x) & 0x00080000 ? (x) | 0xFFF00000 : (x))
