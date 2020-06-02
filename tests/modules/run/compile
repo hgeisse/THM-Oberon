@@ -1,0 +1,24 @@
+h2o Module01.Mod
+calln ORP.Compile Module01.Mod
+o2h Module01.smb
+o2h Module01.rsc
+
+h2o Module02a.Mod
+calln ORP.Compile Module02a.Mod
+o2h Module02a.smb
+o2h Module02a.rsc
+
+h2o Module02b.Mod
+calln ORP.Compile Module02b.Mod
+o2h Module02b.smb
+o2h Module02b.rsc
+
+h2o Module03.Mod
+calln ORP.Compile Module03.Mod
+o2h Module03.smb
+o2h Module03.rsc
+
+h2o Module04.Mod
+calln ORP.Compile Module04.Mod
+o2h Module04.smb
+o2h Module04.rsc

@@ -1,0 +1,7 @@
+(*
+ * name, key, version, minimal size
+ *)
+
+MODULE Module01;
+
+END Module01.

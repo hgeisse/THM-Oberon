@@ -1,0 +1,7 @@
+(*
+ *
+ *)
+
+MODULE Module00;
+
+END Module00.

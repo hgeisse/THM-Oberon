@@ -1,0 +1,12 @@
+(*
+ * strings
+ *)
+
+MODULE Module04;
+  CONST
+    s1 = "String 1";
+    s2 = "String 2";
+    s3 = "String 3";
+
+BEGIN
+END Module04.

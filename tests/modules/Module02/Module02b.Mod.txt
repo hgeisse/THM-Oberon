@@ -1,0 +1,10 @@
+(*
+ * imported module, call of an external procedure
+ *)
+
+MODULE Module02b;
+  IMPORT Module02a;
+
+BEGIN
+  Module02a.P3();
+END Module02b.

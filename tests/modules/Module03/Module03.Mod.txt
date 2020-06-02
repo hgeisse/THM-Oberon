@@ -1,0 +1,11 @@
+(*
+ * varsize
+ *)
+
+MODULE Module03;
+  VAR
+    a: ARRAY 17 OF INTEGER;
+    b: BOOLEAN;
+
+BEGIN
+END Module03.

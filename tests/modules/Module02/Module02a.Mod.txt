@@ -1,0 +1,24 @@
+(*
+ * exported procedures
+ *)
+
+MODULE Module02a;
+
+  PROCEDURE P1;
+  BEGIN
+  END P1;
+
+  PROCEDURE P2*;
+  BEGIN
+  END P2;
+
+  PROCEDURE P3*;
+  BEGIN
+  END P3;
+
+  PROCEDURE P4;
+  BEGIN
+  END P4;
+
+BEGIN
+END Module02a.
