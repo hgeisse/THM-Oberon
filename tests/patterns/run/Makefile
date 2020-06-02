@@ -31,7 +31,7 @@ Oberon.dsk:
 		cp $(KIT)/install/sim/Oberon.dsk .
 
 BootLoad.mem:
-		cp $(KIT)/BootLoad/mem/BootLoad.mem .
+		cp $(KIT)/Stable/BootLoad/mem/BootLoad.mem .
 
 clean:
 		rm -f *~
