@@ -69,7 +69,7 @@
  *   when the module is loaded.
  * - strings
  *   This area holds constant strings. Each string is terminated by
- *   a NUL byte and is padded to an integral number od words.
+ *   a NUL byte and is padded to an integral number of words.
  * - typedesc
  *   ?
  * - code
