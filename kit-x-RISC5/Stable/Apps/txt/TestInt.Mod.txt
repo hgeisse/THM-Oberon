@@ -15,6 +15,6 @@ MODULE TestInt;
   BEGIN SYSTEM.LDPSR(0)
   END Off;
 
-BEGIN led := 1; cnt := 0; (*install Int at address 4*)
-  SYSTEM.PUT(4, 0E7000000H + SYSTEM.ADR(Int) DIV 4 - 2)
+BEGIN led := 1; cnt := 0; (*install Int at address 8*)
+  SYSTEM.PUT(8, 0E7000000H + (SYSTEM.ADR(Int) - 8) DIV 4 - 1)
 END TestInt.
