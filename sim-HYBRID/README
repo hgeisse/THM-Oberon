@@ -69,16 +69,78 @@ is fixed at 9600 baud.
 
 SD Card
 -------
-t.b.w.
+
+This interface uses the SD card's SPI mode (mode 0, i.e. CPOL=0, CPHA=0).
+The interface is neither a "bit banging" nor a high level block-oriented
+design, but something in between: you have to send the various commands
+for the SD card by software, but the low-level tasks (shifting the bits,
+computing command and data CRCs) are implemented in hardware.
+
+Some basic facts: SPI is a synchronous bit-serial interface where the
+master supplies the clock. Data is always tansferred in both directions
+(both, the master as well as the slave, have shift registers, which are
+connected in a ring). The interface to the card uses four lines:
+  MISO		master in, slave out
+  MOSI		master out, slave in
+  SCLK		serial clock
+  SS		slave select
+For details, see:
+  https://en.wikipedia.org/wiki/Serial_Peripheral_Interface
+
+The SD card protocol on top of SPI is rather complicated, see:
+  https://en.wikipedia.org/wiki/SD_card    (an introduction)
+  https://www.sdcard.org/downloads/pls     (the real thing)
+The specification must be followed exactly, otherwise communication
+with the card is impossible.
+
+0xC30000	command/status register (r/w)
+		When read, this register presents the interface status:
+		bit 0: ready (a transmission cycle may start)
+		bit 1: write protect (the card's switch state is "locked")
+		When written, the following bits control the interface:
+		bit 0: 0 = slave deselected, 1 = slave selected
+		bit 1: 0 = slow clock (), 1 = fast clock ()
+		bit 2: 0 = crc16 input from MOSI, 1 = crc16 input from MISO
+
+0xC30004	data register (r/w)
+		This is the master's shift register. The data is located
+		in the 8 rightmost bits of the word. The register may
+		only be written if the status bit "ready" allows that.
+		When the register is written, ready is cleared, and
+		a transmission cycle starts. When the cycle ends (this
+		is again indicated by ready), the byte received from
+		the slave can be read.
+
+0xC30008	CRC7 register (r/w)
+		This is the CRC register for commands. It can be read
+		as well as written (i.e. initialized) by software. The
+		CRC value is located in the 8 rightmost bits of the word,
+		and is computed from the MOSI bits leaving the master.
+
+0xC3000C	CRC16 register (r/w)
+		This is the CRC register for data. It can be read as
+		well as written (i.e. initialized) by software. The CRC
+		value is located in the 16 rightmost bits of the word,
+		and is computed either from the MOSI bits leaving the
+		master, or from the MISO bits entering the master. Bit 2
+		in the command register controls the source (0 = input
+		from MOSI, 1 = input from MISO).
+
+Note: The ECO32 project on GitHub
+  https://github.com/hgeisse/eco32
+has 512-byte block ("sector") read/write routines in the subdirectory
+monitor/monitor/common (in file dsksdc.c).
 
 
 Keyboard
 --------
+
 t.b.w.
 
 
 Mouse
 -----
+
 t.b.w.
 
 
