@@ -625,23 +625,23 @@ int main(int argc, char *argv[]) {
   /*
    * read and interpret file contents
    */
-  /* */
+  /* name */
   readStr(name);
   printf("module name\t\t: %s\n", name);
-  /* */
+  /* key */
   readInt(&key);
   printf("module key\t\t: 0x%08X\n", key);
-  /* */
+  /* version */
   readByte(&version);
   if (version != 0 && version != 1) {
     error("unknown format version 0x%02X", version);
   }
   printf("format version\t\t: 0x%02X (%s)\n", version,
          (version == 0) ? "standalone" : "linkable");
-  /* */
+  /* size */
   readInt(&size);
   printf("memory size\t\t: 0x%08X bytes\n", size);
-  /* */
+  /* imports */
   readStr(impName);
   if (impName[0] == '\0') {
     printf("imported modules\t: <none>\n");
@@ -657,10 +657,10 @@ int main(int argc, char *argv[]) {
     }
     readStr(impName);
   }
-  /* */
+  /* varsize */
   readInt(&varsize);
   printf("variable size\t\t: 0x%08X bytes\n", varsize);
-  /* */
+  /* strings */
   readInt(&strsize);
   printf("string size\t\t: 0x%08X bytes\n", strsize);
   if (strsize != 0) {
@@ -677,7 +677,7 @@ int main(int argc, char *argv[]) {
       bindump(strings, strsize);
     }
   }
-  /* */
+  /* typedesc */
   readInt(&tdsize);
   printf("type descriptor size\t: 0x%08X bytes\n", tdsize);
   if (tdsize != 0) {
@@ -718,7 +718,7 @@ int main(int argc, char *argv[]) {
       }
     }
   }
-  /* */
+  /* commands */
   readStr(name);
   if (name[0] == '\0') {
     printf("commands\t\t: <none>\n");
@@ -734,7 +734,7 @@ int main(int argc, char *argv[]) {
     }
     readStr(name);
   }
-  /* */
+  /* entries */
   readInt(&numEntries);
   printf("number of entries\t: %d\n", numEntries);
   if (numEntries != 0) {
@@ -748,7 +748,7 @@ int main(int argc, char *argv[]) {
       }
     }
   }
-  /* */
+  /* ptrrefs */
   readInt(&ptrRef);
   if ((int) ptrRef < 0) {
     printf("pointer refs\t\t: <none>\n");
@@ -766,7 +766,7 @@ int main(int argc, char *argv[]) {
   if ((int) ptrRef != -1) {
     error("ptrrefs not properly terminated by -1");
   }
-  /* */
+  /* pvrrefs */
   readInt(&pvrRef);
   if ((int) pvrRef < 0) {
     printf("procvar refs\t\t: <none>\n");
