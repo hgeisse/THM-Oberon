@@ -133,6 +133,14 @@ typedef int Bool;
 #define TRUE		1
 
 
+typedef struct fixup {
+  unsigned int addr;
+  int mno;
+  int pno;
+  struct fixup *next;
+} Fixup;
+
+
 /**************************************************************/
 
 
@@ -396,9 +404,12 @@ static char *condName[16] = {
 };
 
 
-static void disasmF3(unsigned int instr, unsigned int locus) {
+static void disasmF3(unsigned int instr,
+                     unsigned int locus,
+                     Fixup *fixProg) {
   char *cond;
   int c;
+  char type;
   int offset;
   unsigned int target;
 
@@ -436,20 +447,29 @@ static void disasmF3(unsigned int instr, unsigned int locus) {
     }
   } else {
     /* u = 1: branch target is pc + 1 + offset */
-    offset = SIGN_EXT_24(instr & 0x00FFFFFF);
-    target = ((locus >> 2) + 1 + offset) << 2;
     if (((instr >> 28) & 1) == 0) {
       /* v = 0: branch */
-      sprintf(instrBuffer, "B%-6s %08X", cond, target);
+      type = 'B';
     } else {
       /* v = 1: call */
-      sprintf(instrBuffer, "C%-6s %08X", cond, target);
+      type = 'C';
+    }
+    if (fixProg == NULL) {
+      /* instruction is not on prog fixup list */
+      offset = SIGN_EXT_24(instr & 0x00FFFFFF);
+      target = ((locus >> 2) + 1 + offset) << 2;
+      sprintf(instrBuffer, "%c%-6s %08X", type, cond, target);
+    } else {
+      /* instruction is on prog fixup list */
+      sprintf(instrBuffer, "%c       fixP: mno=%d, pno=%d",
+              type, fixProg->mno, fixProg->pno);
     }
   }
 }
 
 
-char *disasm(unsigned int instr, unsigned int locus) {
+char *disasm(unsigned int instr, unsigned int locus,
+             Fixup *fixProg, Fixup *fixData) {
   switch ((instr >> 30) & 3) {
     case 0:
       disasmF0(instr);
@@ -461,7 +481,7 @@ char *disasm(unsigned int instr, unsigned int locus) {
       disasmF2(instr);
       break;
     case 3:
-      disasmF3(instr, locus);
+      disasmF3(instr, locus, fixProg);
       break;
   }
   return instrBuffer;
@@ -530,7 +550,11 @@ int main(int argc, char *argv[]) {
   unsigned int ptrRef;
   unsigned int pvrRef;
   unsigned int fixorgP;
+  Fixup *fixP;
+  Fixup *fixProg;
   unsigned int fixorgD;
+  Fixup *fixD;
+  Fixup *fixData;
   unsigned int fixorgT;
   unsigned int fixorgM;
   unsigned int body;
@@ -682,9 +706,9 @@ int main(int argc, char *argv[]) {
   printf("type descriptor size\t: 0x%08X bytes\n", tdsize);
   if (tdsize != 0) {
     if (tFlag) {
-      printf("type descriptors\t\t: \n");
+      printf("type descriptors\t: \n");
     } else {
-      printf("type descriptors\t\t: ...\n");
+      printf("type descriptors\t: ...\n");
     }
     tdescs = memAlloc(tdsize);
     for (i = 0; i < tdsize; i++) {
@@ -698,26 +722,13 @@ int main(int argc, char *argv[]) {
   readInt(&codesize);
   printf("code size\t\t: 0x%08X words\n", codesize);
   if (codesize != 0) {
-    if (dFlag) {
-      printf("code\t\t\t: \n");
-    } else {
-      printf("code\t\t\t: ...\n");
-    }
     code = memAlloc(codesize << 2);
     for (i = 0; i < codesize; i++) {
       readInt(&instr);
       code[i] = instr;
     }
-    if (dFlag) {
-      addr = 0;
-      for (i = 0; i < codesize; i++) {
-        instr = code[i];
-        src = disasm(instr, addr);
-        printf("%08X:  %08X    %s\n", addr, instr, src);
-        addr += 4;
-      }
-    }
   }
+  /* note: the code cannot be displayed yet, fixups are missing */
   /* commands */
   readStr(name);
   if (name[0] == '\0') {
@@ -787,31 +798,53 @@ int main(int argc, char *argv[]) {
   /* fixup chain of code references */
   readInt(&fixorgP);
   printf("fixorgP\t\t\t: 0x%08X\n", fixorgP);
+  fixP = NULL;
+  addr = fixorgP << 2;
+  while (addr != 0) {
+    instr = code[addr >> 2];
+    mno = (instr >> 22) & MASK(6);
+    pno = (instr >> 14) & MASK(8);
+    dsp = instr & MASK(14);
+    fixProg = memAlloc(sizeof(Fixup));
+    fixProg->addr = addr;
+    fixProg->mno = mno;
+    fixProg->pno = pno;
+    fixProg->next = fixP;
+    fixP = fixProg;
+    addr -= dsp << 2;
+  }
   if (fpFlag) {
-    addr = fixorgP << 2;
-    while (addr != 0) {
-      instr = code[addr >> 2];
-      mno = (instr >> 22) & MASK(6);
-      pno = (instr >> 14) & MASK(8);
-      dsp = instr & MASK(14);
-      printf("fixup code @ 0x%08X, ref to code: ", addr);
-      printf("module %d / entry %d, dsp 0x%08X\n", mno, pno, dsp);
-      addr -= dsp << 2;
+    fixProg = fixP;
+    while (fixProg != NULL) {
+      printf("fixup code @ 0x%08X, ref to code: ", fixProg->addr);
+      printf("module %d / entry %d\n", fixProg->mno, fixProg->pno);
+      fixProg = fixProg->next;
     }
   }
   /* fixup chain of data references */
   readInt(&fixorgD);
   printf("fixorgD\t\t\t: 0x%08X\n", fixorgD);
+  fixD = NULL;
+  addr = fixorgD << 2;
+  while (addr != 0) {
+    instr = code[addr >> 2];
+    pno = (instr >> 26) & MASK(4);
+    mno = (instr >> 20) & MASK(6);
+    dsp = instr & MASK(12);
+    fixData = memAlloc(sizeof(Fixup));
+    fixData->addr = addr;
+    fixData->mno = mno;
+    fixData->pno = pno;
+    fixData->next = fixD;
+    fixD = fixData;
+    addr -= dsp << 2;
+  }
   if (fdFlag) {
-    addr = fixorgD << 2;
-    while (addr != 0) {
-      instr = code[addr >> 2];
-      pno = (instr >> 26) & MASK(4);
-      mno = (instr >> 20) & MASK(6);
-      dsp = instr & MASK(12);
-      printf("fixup code @ 0x%08X, ref to data: ", addr);
-      printf("module %d, dsp 0x%08X\n", mno, dsp);
-      addr -= dsp << 2;
+    fixData = fixD;
+    while (fixData != NULL) {
+      printf("fixup code @ 0x%08X, ref to data: ", fixData->addr);
+      printf("module %d / ??? %d\n", fixData->mno, fixData->pno);
+      fixData = fixData->next;
     }
   }
   /* fixup chain of type descriptors */
@@ -827,6 +860,35 @@ int main(int argc, char *argv[]) {
   /* body */
   readInt(&body);
   printf("body\t\t\t: 0x%08X\n", body);
+  /* now display the code */
+  if (codesize != 0) {
+    if (dFlag) {
+      printf("code\t\t\t: \n");
+      addr = 0;
+      fixProg = fixP;
+      fixData = fixD;
+      for (i = 0; i < codesize; i++) {
+        instr = code[i];
+        if (fixProg != NULL && addr == fixProg->addr) {
+          /* disassemble with prog fixup */
+          src = disasm(instr, addr, fixProg, NULL);
+          fixProg = fixProg->next;
+        } else
+        if (fixData != NULL && addr == fixData->addr) {
+          /* disassemble with data fixup */
+          src = disasm(instr, addr, NULL, fixData);
+          fixData = fixData->next;
+        } else {
+          /* disassemble without any fixup */
+          src = disasm(instr, addr, NULL, NULL);
+        }
+        printf("%08X:  %08X    %s\n", addr, instr, src);
+        addr += 4;
+      }
+    } else {
+      printf("code\t\t\t: ...\n");
+    }
+  }
   /* "O" */
   readByte(&ch);
   if (ch != 'O') {
