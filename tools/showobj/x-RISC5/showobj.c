@@ -134,10 +134,10 @@ typedef int Bool;
 
 
 typedef struct fixup {
-  unsigned int addr;
-  int mno;
-  int pno;
-  struct fixup *next;
+  unsigned int addr;		/* address where fixup takes place */
+  int mno;			/* module which is referenced */
+  int off;			/* offset (different meanings) */
+  struct fixup *next;		/* next fixup record in list */
 } Fixup;
 
 
@@ -461,8 +461,8 @@ static void disasmF3(unsigned int instr,
       sprintf(instrBuffer, "%c%-6s %08X", type, cond, target);
     } else {
       /* instruction is on prog fixup list */
-      sprintf(instrBuffer, "%c       fixP: mno=%d, pno=%d",
-              type, fixProg->mno, fixProg->pno);
+      sprintf(instrBuffer, "%c       fixP: module=%d, entry=%d",
+              type, fixProg->mno, fixProg->off);
     }
   }
 }
@@ -563,8 +563,8 @@ int main(int argc, char *argv[]) {
   Fixup *fixMeth;
   unsigned int body;
   unsigned int mno;
-  unsigned int pno;
-  unsigned int dsp;
+  unsigned int off;
+  unsigned int disp;
 
   iFlag = FALSE;
   tFlag = FALSE;
@@ -812,21 +812,21 @@ int main(int argc, char *argv[]) {
   while (addr != 0) {
     instr = code[addr >> 2];
     mno = (instr >> 22) & MASK(6);
-    pno = (instr >> 14) & MASK(8);
-    dsp = instr & MASK(14);
+    off = (instr >> 14) & MASK(8);
+    disp = instr & MASK(14);
     fixProg = memAlloc(sizeof(Fixup));
     fixProg->addr = addr;
     fixProg->mno = mno;
-    fixProg->pno = pno;
+    fixProg->off = off;
     fixProg->next = fixP;
     fixP = fixProg;
-    addr -= dsp << 2;
+    addr -= disp << 2;
   }
   if (fpFlag) {
     fixProg = fixP;
     while (fixProg != NULL) {
       printf("fixup code @ 0x%08X, ref to code: ", fixProg->addr);
-      printf("module %d / entry %d\n", fixProg->mno, fixProg->pno);
+      printf("module %d / entry %d\n", fixProg->mno, fixProg->off);
       fixProg = fixProg->next;
     }
   }
@@ -837,22 +837,22 @@ int main(int argc, char *argv[]) {
   addr = fixorgD << 2;
   while (addr != 0) {
     instr = code[addr >> 2];
-    pno = (instr >> 26) & MASK(4);
+    off = (instr >> 26) & MASK(4);
     mno = (instr >> 20) & MASK(6);
-    dsp = instr & MASK(12);
+    disp = instr & MASK(12);
     fixData = memAlloc(sizeof(Fixup));
     fixData->addr = addr;
     fixData->mno = mno;
-    fixData->pno = pno;
+    fixData->off = off;
     fixData->next = fixD;
     fixD = fixData;
-    addr -= dsp << 2;
+    addr -= disp << 2;
   }
   if (fdFlag) {
     fixData = fixD;
     while (fixData != NULL) {
       printf("fixup code @ 0x%08X, ref to data: ", fixData->addr);
-      printf("module %d / ??? %d\n", fixData->mno, fixData->pno);
+      printf("module %d / ??? %d\n", fixData->mno, fixData->off);
       fixData = fixData->next;
     }
   }
@@ -864,21 +864,21 @@ int main(int argc, char *argv[]) {
   while (addr != 0) {
     instr = tdescs[addr >> 2];
     mno = (instr >> 24) & MASK(6);
-    pno = (instr >> 12) & MASK(12);
-    dsp = instr & MASK(12);
+    off = (instr >> 12) & MASK(12);
+    disp = instr & MASK(12);
     fixType = memAlloc(sizeof(Fixup));
     fixType->addr = addr;
     fixType->mno = mno;
-    fixType->pno = pno;
+    fixType->off = off;
     fixType->next = fixT;
     fixT = fixType;
-    addr -= dsp << 2;
+    addr -= disp << 2;
   }
   if (ftFlag) {
     fixType = fixT;
     while (fixType != NULL) {
       printf("fixup type @ 0x%08X: ", fixType->addr);
-      printf("??? %d / ??? %d\n", fixType->mno, fixType->pno);
+      printf("??? %d / ??? %d\n", fixType->mno, fixType->off);
       fixType = fixType->next;
     }
   }
@@ -890,21 +890,21 @@ int main(int argc, char *argv[]) {
   while (addr != 0) {
     instr = tdescs[addr >> 2];
     mno = (instr >> 26) & MASK(6);
-    pno = (instr >> 10) & MASK(16);
-    dsp = instr & MASK(10);
+    off = (instr >> 10) & MASK(16);
+    disp = instr & MASK(10);
     fixMeth = memAlloc(sizeof(Fixup));
     fixMeth->addr = addr;
     fixMeth->mno = mno;
-    fixMeth->pno = pno;
+    fixMeth->off = off;
     fixMeth->next = fixM;
     fixM = fixMeth;
-    addr -= dsp << 2;
+    addr -= disp << 2;
   }
   if (fmFlag) {
     fixMeth = fixM;
     while (fixMeth != NULL) {
       printf("fixup method @ 0x%08X: ", fixMeth->addr);
-      printf("??? %d / ??? %d\n", fixMeth->mno, fixMeth->pno);
+      printf("??? %d / ??? %d\n", fixMeth->mno, fixMeth->off);
       fixMeth = fixMeth->next;
     }
   }
