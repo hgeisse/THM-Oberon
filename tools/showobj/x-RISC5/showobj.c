@@ -534,7 +534,7 @@ int main(int argc, char *argv[]) {
   char impName[MAX_STRING];
   unsigned int impKey;
   unsigned int tdsize;
-  unsigned char *tdescs;
+  unsigned int *tdescs;
   unsigned int varsize;
   unsigned int strsize;
   unsigned char *strings;
@@ -556,7 +556,11 @@ int main(int argc, char *argv[]) {
   Fixup *fixD;
   Fixup *fixData;
   unsigned int fixorgT;
+  Fixup *fixT;
+  Fixup *fixType;
   unsigned int fixorgM;
+  Fixup *fixM;
+  Fixup *fixMeth;
   unsigned int body;
   unsigned int mno;
   unsigned int pno;
@@ -703,19 +707,24 @@ int main(int argc, char *argv[]) {
   }
   /* typedesc */
   readInt(&tdsize);
-  printf("type descriptor size\t: 0x%08X bytes\n", tdsize);
+  if ((tdsize & 3) != 0) {
+    error("size of type descriptors (0x%08X) is not a multiple of 4",
+          tdsize);
+  }
+  tdsize >>= 2;
+  printf("type descriptor size\t: 0x%08X words\n", tdsize);
   if (tdsize != 0) {
     if (tFlag) {
       printf("type descriptors\t: \n");
     } else {
       printf("type descriptors\t: ...\n");
     }
-    tdescs = memAlloc(tdsize);
+    tdescs = memAlloc(tdsize << 2);
     for (i = 0; i < tdsize; i++) {
-      readByte(tdescs + i);
+      readInt(tdescs + i);
     }
     if (tFlag) {
-      bindump(tdescs, tdsize);
+      bindump((unsigned char *) tdescs, tdsize << 2);
     }
   }
   /* code */
@@ -850,12 +859,54 @@ int main(int argc, char *argv[]) {
   /* fixup chain of type descriptors */
   readInt(&fixorgT);
   printf("fixorgT\t\t\t: 0x%08X\n", fixorgT);
+  fixT = NULL;
+  addr = fixorgT << 2;
+  while (addr != 0) {
+    instr = tdescs[addr >> 2];
+    mno = (instr >> 24) & MASK(6);
+    pno = (instr >> 12) & MASK(12);
+    dsp = instr & MASK(12);
+    fixType = memAlloc(sizeof(Fixup));
+    fixType->addr = addr;
+    fixType->mno = mno;
+    fixType->pno = pno;
+    fixType->next = fixT;
+    fixT = fixType;
+    addr -= dsp << 2;
+  }
   if (ftFlag) {
+    fixType = fixT;
+    while (fixType != NULL) {
+      printf("fixup type @ 0x%08X: ", fixType->addr);
+      printf("??? %d / ??? %d\n", fixType->mno, fixType->pno);
+      fixType = fixType->next;
+    }
   }
   /* fixup chain of method tables */
   readInt(&fixorgM);
   printf("fixorgM\t\t\t: 0x%08X\n", fixorgM);
+  fixM = NULL;
+  addr = fixorgM << 2;
+  while (addr != 0) {
+    instr = tdescs[addr >> 2];
+    mno = (instr >> 26) & MASK(6);
+    pno = (instr >> 10) & MASK(16);
+    dsp = instr & MASK(10);
+    fixMeth = memAlloc(sizeof(Fixup));
+    fixMeth->addr = addr;
+    fixMeth->mno = mno;
+    fixMeth->pno = pno;
+    fixMeth->next = fixM;
+    fixM = fixMeth;
+    addr -= dsp << 2;
+  }
   if (fmFlag) {
+    fixMeth = fixM;
+    while (fixMeth != NULL) {
+      printf("fixup method @ 0x%08X: ", fixMeth->addr);
+      printf("??? %d / ??? %d\n", fixMeth->mno, fixMeth->pno);
+      fixMeth = fixMeth->next;
+    }
   }
   /* body */
   readInt(&body);
