@@ -826,7 +826,7 @@ int main(int argc, char *argv[]) {
     fixProg = fixP;
     while (fixProg != NULL) {
       printf("fixup code @ 0x%08X, ref to code: ", fixProg->addr);
-      printf("module %d / entry %d\n", fixProg->mno, fixProg->off);
+      printf("mno %d / off %d\n", fixProg->mno, fixProg->off);
       fixProg = fixProg->next;
     }
   }
@@ -852,7 +852,7 @@ int main(int argc, char *argv[]) {
     fixData = fixD;
     while (fixData != NULL) {
       printf("fixup code @ 0x%08X, ref to data: ", fixData->addr);
-      printf("module %d / ??? %d\n", fixData->mno, fixData->off);
+      printf("mno %d / off %d\n", fixData->mno, fixData->off);
       fixData = fixData->next;
     }
   }
@@ -878,7 +878,7 @@ int main(int argc, char *argv[]) {
     fixType = fixT;
     while (fixType != NULL) {
       printf("fixup type @ 0x%08X: ", fixType->addr);
-      printf("??? %d / ??? %d\n", fixType->mno, fixType->off);
+      printf("mno %d / off %d\n", fixType->mno, fixType->off);
       fixType = fixType->next;
     }
   }
@@ -904,7 +904,7 @@ int main(int argc, char *argv[]) {
     fixMeth = fixM;
     while (fixMeth != NULL) {
       printf("fixup method @ 0x%08X: ", fixMeth->addr);
-      printf("??? %d / ??? %d\n", fixMeth->mno, fixMeth->off);
+      printf("mno %d / off %d\n", fixMeth->mno, fixMeth->off);
       fixMeth = fixMeth->next;
     }
   }
