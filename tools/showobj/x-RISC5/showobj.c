@@ -310,7 +310,7 @@ static void disasmF0(unsigned int instr) {
         /* v = 0: get H register */
         sprintf(instrBuffer, "%-7s R%d,H", regOps[op], a);
       } else {
-        /* v = 1: get flag values */
+        /* v = 1: get flag values and CPU ID */
         sprintf(instrBuffer, "%-7s R%d,F", regOps[op], a);
       }
     }
@@ -404,12 +404,9 @@ static char *condName[16] = {
 };
 
 
-static void disasmF3(unsigned int instr,
-                     unsigned int locus,
-                     Fixup *fixProg) {
+static void disasmF3(unsigned int instr, unsigned int locus) {
   char *cond;
   int c;
-  char type;
   int offset;
   unsigned int target;
 
@@ -447,29 +444,20 @@ static void disasmF3(unsigned int instr,
     }
   } else {
     /* u = 1: branch target is pc + 1 + offset */
+    offset = SIGN_EXT_24(instr & 0x00FFFFFF);
+    target = ((locus >> 2) + 1 + offset) << 2;
     if (((instr >> 28) & 1) == 0) {
       /* v = 0: branch */
-      type = 'B';
+      sprintf(instrBuffer, "B%-6s %08X", cond, target);
     } else {
       /* v = 1: call */
-      type = 'C';
-    }
-    if (fixProg == NULL) {
-      /* instruction is not on prog fixup list */
-      offset = SIGN_EXT_24(instr & 0x00FFFFFF);
-      target = ((locus >> 2) + 1 + offset) << 2;
-      sprintf(instrBuffer, "%c%-6s %08X", type, cond, target);
-    } else {
-      /* instruction is on prog fixup list */
-      sprintf(instrBuffer, "%c       fixP: module=%d, entry=%d",
-              type, fixProg->mno, fixProg->off);
+      sprintf(instrBuffer, "C%-6s %08X", cond, target);
     }
   }
 }
 
 
-char *disasm(unsigned int instr, unsigned int locus,
-             Fixup *fixProg, Fixup *fixData) {
+char *disasm(unsigned int instr, unsigned int locus) {
   switch ((instr >> 30) & 3) {
     case 0:
       disasmF0(instr);
@@ -481,9 +469,40 @@ char *disasm(unsigned int instr, unsigned int locus,
       disasmF2(instr);
       break;
     case 3:
-      disasmF3(instr, locus, fixProg);
+      disasmF3(instr, locus);
       break;
   }
+  return instrBuffer;
+}
+
+
+char *disasmFixProg(unsigned int instr,
+                    unsigned int locus,
+                    Fixup *fixProg) {
+  if ((instr >> 28) != 0xF) {
+    error("unknown instruction 0x%08X @ 0x%08X on prog fixup list",
+          instr, locus);
+  }
+  sprintf(instrBuffer, "C       fixP: module=%d, entry=%d",
+          fixProg->mno, fixProg->off);
+  return instrBuffer;
+}
+
+
+char *disasmFixData1(unsigned int instr,
+                     unsigned int instr2,
+                     unsigned int locus,
+                     Fixup *fixData) {
+  sprintf(instrBuffer, "-- not yet 1 --");
+  return instrBuffer;
+}
+
+
+char *disasmFixData2(unsigned int instr,
+                     unsigned int instr2,
+                     unsigned int locus,
+                     Fixup *fixData) {
+  sprintf(instrBuffer, "-- not yet 2 --");
   return instrBuffer;
 }
 
@@ -542,6 +561,7 @@ int main(int argc, char *argv[]) {
   unsigned int *code;
   unsigned int addr;
   unsigned int instr;
+  unsigned int instr2;
   char *src;
   unsigned char ch;
   unsigned int offset;
@@ -919,22 +939,33 @@ int main(int argc, char *argv[]) {
       fixProg = fixP;
       fixData = fixD;
       for (i = 0; i < codesize; i++) {
-        instr = code[i];
         if (fixProg != NULL && addr == fixProg->addr) {
           /* disassemble with prog fixup */
-          src = disasm(instr, addr, fixProg, NULL);
+          instr = code[i];
+          src = disasmFixProg(instr, addr, fixProg);
+          printf("%08X:  %08X    %s\n", addr, instr, src);
+          addr += 4;
           fixProg = fixProg->next;
         } else
         if (fixData != NULL && addr == fixData->addr) {
           /* disassemble with data fixup */
-          src = disasm(instr, addr, NULL, fixData);
+          instr = code[i];
+          i++;
+          instr2 = code[i];
+          src = disasmFixData1(instr, instr2, addr, fixData);
+          printf("%08X:  %08X    %s\n", addr, instr, src);
+          addr += 4;
+          src = disasmFixData2(instr, instr2, addr, fixData);
+          printf("%08X:  %08X    %s\n", addr, instr2, src);
+          addr += 4;
           fixData = fixData->next;
         } else {
           /* disassemble without any fixup */
-          src = disasm(instr, addr, NULL, NULL);
+          instr = code[i];
+          src = disasm(instr, addr);
+          printf("%08X:  %08X    %s\n", addr, instr, src);
+          addr += 4;
         }
-        printf("%08X:  %08X    %s\n", addr, instr, src);
-        addr += 4;
       }
     } else {
       printf("code\t\t\t: ...\n");
