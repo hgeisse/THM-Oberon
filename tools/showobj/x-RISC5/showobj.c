@@ -347,7 +347,8 @@ static void disasmF1(unsigned int instr) {
       sprintf(instrBuffer, "%-7s R%d,0x%08X", regOps[op], a, im);
     } else {
       /* u = 1: shift immediate value to upper 16 bits */
-      sprintf(instrBuffer, "%-7s R%d,0x%08X", regOps[op], a, im << 16);
+      sprintf(instrBuffer, "%-7s R%d,0x%08X", regOps[op], a, im);
+      instrBuffer[3] = 'H';
     }
   } else {
     /* any operation other than MOV */
@@ -483,17 +484,33 @@ char *disasmFixProg(unsigned int instr,
     error("unknown instruction 0x%08X @ 0x%08X on prog fixup list",
           instr, locus);
   }
-  sprintf(instrBuffer, "C       fixP: module=%d, entry=%d",
+  sprintf(instrBuffer, "C       extern: module=%d, entry=%d",
           fixProg->mno, fixProg->off);
   return instrBuffer;
 }
+
+
+static char instrBuffer2[100];
 
 
 char *disasmFixData1(unsigned int instr,
                      unsigned int instr2,
                      unsigned int locus,
                      Fixup *fixData) {
-  sprintf(instrBuffer, "-- not yet 1 --");
+  unsigned int offsetH;
+  unsigned int offsetL;
+
+  if (fixData->mno == 0) {
+    /* global variable */
+    offsetH = (instr >> 12) & MASK(8);
+    offsetL = instr2 & MASK(16);
+    sprintf(instrBuffer, "MOVH    R%d,0x%08X", fixData->off, offsetH);
+    sprintf(instrBuffer2, "-- not yet 2 (global) --");
+  } else {
+    /* external variable */
+    sprintf(instrBuffer, "-- not yet 1 (extern) --");
+    sprintf(instrBuffer2, "-- not yet 2 (extern) --");
+  }
   return instrBuffer;
 }
 
@@ -502,8 +519,7 @@ char *disasmFixData2(unsigned int instr,
                      unsigned int instr2,
                      unsigned int locus,
                      Fixup *fixData) {
-  sprintf(instrBuffer, "-- not yet 2 --");
-  return instrBuffer;
+  return instrBuffer2;
 }
 
 
