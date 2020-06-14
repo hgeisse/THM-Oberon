@@ -484,7 +484,7 @@ char *disasmFixProg(unsigned int instr,
     error("unknown instruction 0x%08X @ 0x%08X on prog fixup list",
           instr, locus);
   }
-  sprintf(instrBuffer, "C       extern: module=%d, entry=%d",
+  sprintf(instrBuffer, "C       extern:module=%d,entry=%d",
           fixProg->mno, fixProg->off);
   return instrBuffer;
 }
@@ -493,19 +493,60 @@ char *disasmFixProg(unsigned int instr,
 static char instrBuffer2[100];
 
 
+static void disasmF2Fix(unsigned int instr, unsigned int offLo) {
+  char *opName;
+  int a, b;
+
+  if (((instr >> 29) & 1) == 0) {
+    /* u = 0: load */
+    if (((instr >> 28) & 1) == 0) {
+      /* v = 0: word */
+      opName = "LDW";
+    } else {
+      /* v = 1: byte */
+      opName = "LDB";
+    }
+  } else {
+    /* u = 1: store */
+    if (((instr >> 28) & 1) == 0) {
+      /* v = 0: word */
+      opName = "STW";
+    } else {
+      /* v = 1: byte */
+      opName = "STB";
+    }
+  }
+  a = (instr >> 24) & 0x0F;
+  b = (instr >> 20) & 0x0F;
+  sprintf(instrBuffer2, "%-7s R%d,R%d,global:offLo=0x%05X",
+          opName, a, b, offLo);
+}
+
+
 char *disasmFixData1(unsigned int instr,
                      unsigned int instr2,
                      unsigned int locus,
                      Fixup *fixData) {
-  unsigned int offsetH;
-  unsigned int offsetL;
+  unsigned int offHi;
+  unsigned int offLo;
+  int a, b;
 
   if (fixData->mno == 0) {
     /* global variable */
-    offsetH = (instr >> 12) & MASK(8);
-    offsetL = instr2 & MASK(16);
-    sprintf(instrBuffer, "MOVH    R%d,0x%08X", fixData->off, offsetH);
-    sprintf(instrBuffer2, "-- not yet 2 (global) --");
+    offHi = (instr >> 12) & MASK(8);
+    offLo = instr2 & MASK(16);
+    sprintf(instrBuffer, "MOVH    R%d,global:offHi=0x%08X",
+            fixData->off, offHi);
+    if ((instr2 >> 30) == 2) {
+      /* memory access */
+      disasmF2Fix(instr2 & ~MASK(20), offLo);
+    } else {
+      /* any other instruction */
+      a = (instr2 >> 24) & 0x0F;
+      b = (instr2 >> 20) & 0x0F;
+      sprintf(instrBuffer2, "IOR     R%d,R%d,global:offLo=0x%05X",
+              a, b, offLo);
+    }
   } else {
     /* external variable */
     sprintf(instrBuffer, "-- not yet 1 (extern) --");
