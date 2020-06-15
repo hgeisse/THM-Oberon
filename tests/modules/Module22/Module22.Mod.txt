@@ -1,0 +1,15 @@
+(*
+ * fixD, global variables in same module, 64KB < offset
+ *)
+
+MODULE Module22;
+
+  VAR
+    a: ARRAY 20000 OF INTEGER;
+    x: INTEGER;
+    y: INTEGER;
+    z: INTEGER;
+
+BEGIN
+  z := x + y;
+END Module22.

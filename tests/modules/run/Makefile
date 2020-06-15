@@ -6,7 +6,9 @@ BUILD=../../../build
 KIT=../../../kit-x-RISC5
 D2O=$(BUILD)/bin/dos2oberon
 
-DIRS=Module01 Module02 Module03 Module04
+DIRS=Module01 Module02 Module03 Module04 Module05 \
+     Module10 \
+     Module20 Module21 Module22
 
 all:
 		@echo "Please use 'make run' and 'make run-link!'"

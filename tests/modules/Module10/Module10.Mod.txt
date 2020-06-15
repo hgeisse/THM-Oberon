@@ -1,0 +1,10 @@
+(*
+ * fixP
+ *)
+
+MODULE Module10;
+  IMPORT Display, Fonts, MenuViewers, Oberon, System, TextFrames;
+
+BEGIN
+  System.Flush();
+END Module10.

@@ -1,0 +1,25 @@
+(*
+ * type descriptors
+ *)
+
+MODULE Module05;
+
+  TYPE
+    R = RECORD
+          n: INTEGER;
+        END;
+    P = POINTER TO R;
+
+  VAR
+    x: INTEGER;
+    r: R;
+    p: P;
+    y: INTEGER;
+
+BEGIN
+  x := 1;
+  r.n := 2;
+  NEW(p);
+  p.n := 3;
+  y := 4;
+END Module05.

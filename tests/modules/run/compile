@@ -22,3 +22,28 @@ h2o Module04.Mod
 calln ORP.Compile Module04.Mod
 o2h Module04.smb
 o2h Module04.rsc
+
+h2o Module05.Mod
+calln ORP.Compile Module05.Mod
+o2h Module05.smb
+o2h Module05.rsc
+
+h2o Module10.Mod
+calln ORP.Compile Module10.Mod
+o2h Module10.smb
+o2h Module10.rsc
+
+h2o Module20.Mod
+calln ORP.Compile Module20.Mod
+o2h Module20.smb
+o2h Module20.rsc
+
+h2o Module21.Mod
+calln ORP.Compile Module21.Mod
+o2h Module21.smb
+o2h Module21.rsc
+
+h2o Module22.Mod
+calln ORP.Compile Module22.Mod
+o2h Module22.smb
+o2h Module22.rsc

@@ -1,0 +1,14 @@
+(*
+ * fixD, global variables in same module, small offset
+ *)
+
+MODULE Module20;
+
+  VAR
+    x: INTEGER;
+    y: INTEGER;
+    z: INTEGER;
+
+BEGIN
+  z := x + y;
+END Module20.
