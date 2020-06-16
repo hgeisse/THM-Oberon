@@ -136,7 +136,7 @@ typedef int Bool;
 typedef struct fixup {
   unsigned int addr;		/* address where fixup takes place */
   int mno;			/* module which is referenced */
-  int off;			/* offset (different meanings) */
+  int val;			/* value (different meanings) */
   struct fixup *next;		/* next fixup record in list */
 } Fixup;
 
@@ -485,82 +485,69 @@ char *disasmFixProg(unsigned int instr,
           instr, locus);
   }
   sprintf(instrBuffer, "C       extern:module=%d,entry=%d",
-          fixProg->mno, fixProg->off);
+          fixProg->mno, fixProg->val);
   return instrBuffer;
-}
-
-
-static char instrBuffer2[100];
-
-
-static void disasmF2Fix(unsigned int instr, unsigned int offLo) {
-  char *opName;
-  int a, b;
-
-  if (((instr >> 29) & 1) == 0) {
-    /* u = 0: load */
-    if (((instr >> 28) & 1) == 0) {
-      /* v = 0: word */
-      opName = "LDW";
-    } else {
-      /* v = 1: byte */
-      opName = "LDB";
-    }
-  } else {
-    /* u = 1: store */
-    if (((instr >> 28) & 1) == 0) {
-      /* v = 0: word */
-      opName = "STW";
-    } else {
-      /* v = 1: byte */
-      opName = "STB";
-    }
-  }
-  a = (instr >> 24) & 0x0F;
-  b = (instr >> 20) & 0x0F;
-  sprintf(instrBuffer2, "%-7s R%d,R%d,global:offLo=0x%05X",
-          opName, a, b, offLo);
 }
 
 
 char *disasmFixData1(unsigned int instr,
-                     unsigned int instr2,
                      unsigned int locus,
                      Fixup *fixData) {
   unsigned int offHi;
-  unsigned int offLo;
-  int a, b;
 
   if (fixData->mno == 0) {
     /* global variable */
     offHi = (instr >> 12) & MASK(8);
-    offLo = instr2 & MASK(16);
     sprintf(instrBuffer, "MOVH    R%d,global:offHi=0x%08X",
-            fixData->off, offHi);
-    if ((instr2 >> 30) == 2) {
-      /* memory access */
-      disasmF2Fix(instr2 & ~MASK(20), offLo);
-    } else {
-      /* any other instruction */
-      a = (instr2 >> 24) & 0x0F;
-      b = (instr2 >> 20) & 0x0F;
-      sprintf(instrBuffer2, "IOR     R%d,R%d,global:offLo=0x%05X",
-              a, b, offLo);
-    }
+            fixData->val, offHi);
   } else {
     /* external variable */
-    sprintf(instrBuffer, "-- not yet 1 (extern) --");
-    sprintf(instrBuffer2, "-- not yet 2 (extern) --");
+    sprintf(instrBuffer, "MOVH    R%d,extern:module=%d",
+            fixData->val, fixData->mno);
   }
   return instrBuffer;
 }
 
 
+static char *memOps[4] = {
+  /* 0 */  "LDW",
+  /* 1 */  "LDB",
+  /* 2 */  "STW",
+  /* 3 */  "STB",
+};
+
+
 char *disasmFixData2(unsigned int instr,
-                     unsigned int instr2,
                      unsigned int locus,
                      Fixup *fixData) {
-  return instrBuffer2;
+  char *opName;
+  int a, b;
+  unsigned int offLo;
+  int entry;
+  char *base;
+
+  if ((instr >> 30) == 2) {
+    /* memory access */
+    opName = memOps[(instr >> 28) & 3];
+  } else {
+    /* any other instruction */
+    opName = "IOR";
+  }
+  a = (instr >> 24) & MASK(4);
+  b = (instr >> 20) & MASK(4);
+  if (fixData->mno == 0) {
+    /* global variable */
+    offLo = instr & MASK(16);
+    sprintf(instrBuffer, "%-7s R%d,R%d,global:offLo=0x%05X",
+            opName, a, b, offLo);
+  } else {
+    /* external variable */
+    entry = instr & MASK(8);
+    base = ((instr >> 8) & 1) ? "code" : "data";
+    sprintf(instrBuffer, "%-7s R%d,R%d,extern:entry=%d(%s)",
+            opName, a, b, entry, base);
+  }
+  return instrBuffer;
 }
 
 
@@ -618,7 +605,6 @@ int main(int argc, char *argv[]) {
   unsigned int *code;
   unsigned int addr;
   unsigned int instr;
-  unsigned int instr2;
   char *src;
   unsigned char ch;
   unsigned int offset;
@@ -640,7 +626,7 @@ int main(int argc, char *argv[]) {
   Fixup *fixMeth;
   unsigned int body;
   unsigned int mno;
-  unsigned int off;
+  unsigned int val;
   unsigned int disp;
 
   iFlag = FALSE;
@@ -889,12 +875,12 @@ int main(int argc, char *argv[]) {
   while (addr != 0) {
     instr = code[addr >> 2];
     mno = (instr >> 22) & MASK(6);
-    off = (instr >> 14) & MASK(8);
+    val = (instr >> 14) & MASK(8);
     disp = instr & MASK(14);
     fixProg = memAlloc(sizeof(Fixup));
     fixProg->addr = addr;
     fixProg->mno = mno;
-    fixProg->off = off;
+    fixProg->val = val;
     fixProg->next = fixP;
     fixP = fixProg;
     addr -= disp << 2;
@@ -903,7 +889,7 @@ int main(int argc, char *argv[]) {
     fixProg = fixP;
     while (fixProg != NULL) {
       printf("fixup code @ 0x%08X, ref to code: ", fixProg->addr);
-      printf("mno %d / off %d\n", fixProg->mno, fixProg->off);
+      printf("mno %d / val %d\n", fixProg->mno, fixProg->val);
       fixProg = fixProg->next;
     }
   }
@@ -914,13 +900,13 @@ int main(int argc, char *argv[]) {
   addr = fixorgD << 2;
   while (addr != 0) {
     instr = code[addr >> 2];
-    off = (instr >> 26) & MASK(4);
+    val = (instr >> 26) & MASK(4);
     mno = (instr >> 20) & MASK(6);
     disp = instr & MASK(12);
     fixData = memAlloc(sizeof(Fixup));
     fixData->addr = addr;
     fixData->mno = mno;
-    fixData->off = off;
+    fixData->val = val;
     fixData->next = fixD;
     fixD = fixData;
     addr -= disp << 2;
@@ -929,7 +915,7 @@ int main(int argc, char *argv[]) {
     fixData = fixD;
     while (fixData != NULL) {
       printf("fixup code @ 0x%08X, ref to data: ", fixData->addr);
-      printf("mno %d / off %d\n", fixData->mno, fixData->off);
+      printf("mno %d / val %d\n", fixData->mno, fixData->val);
       fixData = fixData->next;
     }
   }
@@ -941,12 +927,12 @@ int main(int argc, char *argv[]) {
   while (addr != 0) {
     instr = tdescs[addr >> 2];
     mno = (instr >> 24) & MASK(6);
-    off = (instr >> 12) & MASK(12);
+    val = (instr >> 12) & MASK(12);
     disp = instr & MASK(12);
     fixType = memAlloc(sizeof(Fixup));
     fixType->addr = addr;
     fixType->mno = mno;
-    fixType->off = off;
+    fixType->val = val;
     fixType->next = fixT;
     fixT = fixType;
     addr -= disp << 2;
@@ -955,7 +941,7 @@ int main(int argc, char *argv[]) {
     fixType = fixT;
     while (fixType != NULL) {
       printf("fixup type @ 0x%08X: ", fixType->addr);
-      printf("mno %d / off %d\n", fixType->mno, fixType->off);
+      printf("mno %d / val %d\n", fixType->mno, fixType->val);
       fixType = fixType->next;
     }
   }
@@ -967,12 +953,12 @@ int main(int argc, char *argv[]) {
   while (addr != 0) {
     instr = tdescs[addr >> 2];
     mno = (instr >> 26) & MASK(6);
-    off = (instr >> 10) & MASK(16);
+    val = (instr >> 10) & MASK(16);
     disp = instr & MASK(10);
     fixMeth = memAlloc(sizeof(Fixup));
     fixMeth->addr = addr;
     fixMeth->mno = mno;
-    fixMeth->off = off;
+    fixMeth->val = val;
     fixMeth->next = fixM;
     fixM = fixMeth;
     addr -= disp << 2;
@@ -981,7 +967,7 @@ int main(int argc, char *argv[]) {
     fixMeth = fixM;
     while (fixMeth != NULL) {
       printf("fixup method @ 0x%08X: ", fixMeth->addr);
-      printf("mno %d / off %d\n", fixMeth->mno, fixMeth->off);
+      printf("mno %d / val %d\n", fixMeth->mno, fixMeth->val);
       fixMeth = fixMeth->next;
     }
   }
@@ -1007,13 +993,13 @@ int main(int argc, char *argv[]) {
         if (fixData != NULL && addr == fixData->addr) {
           /* disassemble with data fixup */
           instr = code[i];
-          i++;
-          instr2 = code[i];
-          src = disasmFixData1(instr, instr2, addr, fixData);
+          src = disasmFixData1(instr, addr, fixData);
           printf("%08X:  %08X    %s\n", addr, instr, src);
           addr += 4;
-          src = disasmFixData2(instr, instr2, addr, fixData);
-          printf("%08X:  %08X    %s\n", addr, instr2, src);
+          i++;
+          instr = code[i];
+          src = disasmFixData2(instr, addr, fixData);
+          printf("%08X:  %08X    %s\n", addr, instr, src);
           addr += 4;
           fixData = fixData->next;
         } else {
