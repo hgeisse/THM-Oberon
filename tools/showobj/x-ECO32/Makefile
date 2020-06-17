@@ -9,7 +9,7 @@ CFLAGS = -g -Wall
 LDFLAGS = -g -Wall
 LDLIBS = -lm
 
-SRCS = showobj.c
+SRCS = showobj.c disasm.c instr.c
 OBJS = $(patsubst %.c,%.o,$(SRCS))
 BIN = showobj-x-ECO32
 

@@ -118,27 +118,12 @@
 #include <string.h>
 #include <stdarg.h>
 
+#include "common.h"
+#include "instr.h"
+#include "disasm.h"
+
 
 #define MAX_STRING	100
-
-#define MASK(n)		((1 << (n)) - 1)
-
-
-/**************************************************************/
-
-
-typedef int Bool;
-
-#define FALSE		0
-#define TRUE		1
-
-
-typedef struct fixup {
-  unsigned int addr;		/* address where fixup takes place */
-  int mno;			/* module which is referenced */
-  int val;			/* value (different meanings) */
-  struct fixup *next;		/* next fixup record in list */
-} Fixup;
 
 
 /**************************************************************/
@@ -173,18 +158,18 @@ void *memAlloc(unsigned int size) {
 FILE *objFile;
 
 
-void readByte(unsigned char *p) {
+void readByte(Byte *p) {
   int c;
 
   c = fgetc(objFile);
   if (c == EOF) {
     error("unexpected EOF");
   }
-  *p = (unsigned char) c;
+  *p = (Byte) c;
 }
 
 
-void readInt(unsigned int *p) {
+void readInt(Word *p) {
   int c0, c1, c2, c3;
 
   c0 = fgetc(objFile);
@@ -221,12 +206,12 @@ void readStr(char *p) {
  */
 
 
-void bindump(unsigned char *bytes, unsigned int nbytes) {
-  unsigned int addr, count;
-  unsigned int lo, hi, curr;
+void bindump(Byte *bytes, Word nbytes) {
+  Word addr, count;
+  Word lo, hi, curr;
   int lines, i, j;
-  unsigned int tmp;
-  unsigned char c;
+  Word tmp;
+  Byte c;
 
   addr = 0;
   count = nbytes;
@@ -272,107 +257,6 @@ void bindump(unsigned char *bytes, unsigned int nbytes) {
 
 /**************************************************************/
 
-/*
- * disassembler
- */
-
-
-static char instrBuffer[100];
-
-
-char *disasm(unsigned int instr, unsigned int locus) {
-  sprintf(instrBuffer, "-- not yet 0 --");
-  return instrBuffer;
-}
-
-
-char *disasmFixProg(unsigned int instr,
-                    unsigned int locus,
-                    Fixup *fixProg) {
-#if 0
-  if ((instr >> 28) != 0xF) {
-    error("unknown instruction 0x%08X @ 0x%08X on prog fixup list",
-          instr, locus);
-  }
-  sprintf(instrBuffer, "C       extern:module=%d,entry=%d",
-          fixProg->mno, fixProg->val);
-#endif
-  sprintf(instrBuffer, "-- not yet 1 --");
-  return instrBuffer;
-}
-
-
-char *disasmFixData1(unsigned int instr,
-                     unsigned int locus,
-                     Fixup *fixData) {
-#if 0
-  unsigned int offHi;
-
-  if (fixData->mno == 0) {
-    /* global variable */
-    offHi = (instr >> 12) & MASK(8);
-    sprintf(instrBuffer, "MOVH    R%d,global:offHi=0x%08X",
-            fixData->val, offHi);
-  } else {
-    /* external variable */
-    sprintf(instrBuffer, "MOVH    R%d,extern:module=%d",
-            fixData->val, fixData->mno);
-  }
-#endif
-  sprintf(instrBuffer, "-- not yet 2 --");
-  return instrBuffer;
-}
-
-
-#if 0
-static char *memOps[4] = {
-  /* 0 */  "LDW",
-  /* 1 */  "LDB",
-  /* 2 */  "STW",
-  /* 3 */  "STB",
-};
-#endif
-
-
-char *disasmFixData2(unsigned int instr,
-                     unsigned int locus,
-                     Fixup *fixData) {
-#if 0
-  char *opName;
-  int a, b;
-  unsigned int offLo;
-  int entry;
-  char *base;
-
-  if ((instr >> 30) == 2) {
-    /* memory access */
-    opName = memOps[(instr >> 28) & 3];
-  } else {
-    /* any other instruction */
-    opName = "IOR";
-  }
-  a = (instr >> 24) & MASK(4);
-  b = (instr >> 20) & MASK(4);
-  if (fixData->mno == 0) {
-    /* global variable */
-    offLo = instr & MASK(16);
-    sprintf(instrBuffer, "%-7s R%d,R%d,global:offLo=0x%05X",
-            opName, a, b, offLo);
-  } else {
-    /* external variable */
-    entry = instr & MASK(8);
-    base = ((instr >> 8) & 1) ? "code" : "data";
-    sprintf(instrBuffer, "%-7s R%d,R%d,extern:entry=%d(%s)",
-            opName, a, b, entry, base);
-  }
-  sprintf(instrBuffer, "-- not yet 3 --");
-#endif
-  return instrBuffer;
-}
-
-
-/**************************************************************/
-
 
 void usage(char *myself) {
   printf("usage: %s [options] <object file>\n", myself);
@@ -411,110 +295,110 @@ int main(int argc, char *argv[]) {
   Bool fmFlag;
   char *objFileName;
   char name[MAX_STRING];
-  unsigned int key;
-  unsigned char version;
-  unsigned int size;
+  Word key;
+  Byte version;
+  Word size;
   char impName[MAX_STRING];
-  unsigned int impKey;
-  unsigned int tdsize;
-  unsigned int *tdescs;
-  unsigned int varsize;
-  unsigned int strsize;
-  unsigned char *strings;
-  unsigned int codesize;
-  unsigned int *code;
-  unsigned int addr;
-  unsigned int instr;
+  Word impKey;
+  Word tdsize;
+  Word *tdescs;
+  Word varsize;
+  Word strsize;
+  Byte *strings;
+  Word codesize;
+  Word *code;
+  Word addr;
+  Word instr;
   char *src;
-  unsigned char ch;
-  unsigned int offset;
-  unsigned int numEntries;
-  unsigned int entry;
-  unsigned int ptrRef;
-  unsigned int pvrRef;
-  unsigned int fixorgP;
+  Byte ch;
+  Word offset;
+  Word numEntries;
+  Word entry;
+  Word ptrRef;
+  Word pvrRef;
+  Word fixorgP;
   Fixup *fixP;
   Fixup *fixProg;
-  unsigned int fixorgD;
+  Word fixorgD;
   Fixup *fixD;
   Fixup *fixData;
-  unsigned int fixorgT;
+  Word fixorgT;
   Fixup *fixT;
   Fixup *fixType;
-  unsigned int fixorgM;
+  Word fixorgM;
   Fixup *fixM;
   Fixup *fixMeth;
-  unsigned int body;
-  unsigned int mno;
-  unsigned int val;
-  unsigned int disp;
+  Word body;
+  Word mno;
+  Word val;
+  Word disp;
 
-  iFlag = FALSE;
-  tFlag = FALSE;
-  sFlag = FALSE;
-  dFlag = FALSE;
-  cFlag = FALSE;
-  eFlag = FALSE;
-  pFlag = FALSE;
-  vFlag = FALSE;
-  fpFlag = FALSE;
-  fdFlag = FALSE;
-  ftFlag = FALSE;
-  fmFlag = FALSE;
+  iFlag = false;
+  tFlag = false;
+  sFlag = false;
+  dFlag = false;
+  cFlag = false;
+  eFlag = false;
+  pFlag = false;
+  vFlag = false;
+  fpFlag = false;
+  fdFlag = false;
+  ftFlag = false;
+  fmFlag = false;
   objFileName = NULL;
   for (i = 1; i < argc; i++) {
     optptr = argv[i];
     if (*optptr == '-') {
       /* option */
       if (strcmp(argv[i], "-i") == 0) {
-        iFlag = TRUE;
+        iFlag = true;
       } else
       if (strcmp(argv[i], "-t") == 0) {
-        tFlag = TRUE;
+        tFlag = true;
       } else
       if (strcmp(argv[i], "-s") == 0) {
-        sFlag = TRUE;
+        sFlag = true;
       } else
       if (strcmp(argv[i], "-d") == 0) {
-        dFlag = TRUE;
+        dFlag = true;
       } else
       if (strcmp(argv[i], "-c") == 0) {
-        cFlag = TRUE;
+        cFlag = true;
       } else
       if (strcmp(argv[i], "-e") == 0) {
-        eFlag = TRUE;
+        eFlag = true;
       } else
       if (strcmp(argv[i], "-p") == 0) {
-        pFlag = TRUE;
+        pFlag = true;
       } else
       if (strcmp(argv[i], "-v") == 0) {
-        vFlag = TRUE;
+        vFlag = true;
       } else
       if (strcmp(argv[i], "-fp") == 0) {
-        fpFlag = TRUE;
+        fpFlag = true;
       } else
       if (strcmp(argv[i], "-fd") == 0) {
-        fdFlag = TRUE;
+        fdFlag = true;
       } else
       if (strcmp(argv[i], "-ft") == 0) {
-        ftFlag = TRUE;
+        ftFlag = true;
       } else
       if (strcmp(argv[i], "-fm") == 0) {
-        fmFlag = TRUE;
+        fmFlag = true;
       } else
       if (strcmp(argv[i], "-a") == 0) {
-        iFlag = TRUE;
-        tFlag = TRUE;
-        sFlag = TRUE;
-        dFlag = TRUE;
-        cFlag = TRUE;
-        eFlag = TRUE;
-        pFlag = TRUE;
-        vFlag = TRUE;
-        fpFlag = TRUE;
-        fdFlag = TRUE;
-        ftFlag = TRUE;
-        fmFlag = TRUE;
+        iFlag = true;
+        tFlag = true;
+        sFlag = true;
+        dFlag = true;
+        cFlag = true;
+        eFlag = true;
+        pFlag = true;
+        vFlag = true;
+        fpFlag = true;
+        fdFlag = true;
+        ftFlag = true;
+        fmFlag = true;
       } else {
         usage(argv[0]);
       }
@@ -533,6 +417,7 @@ int main(int argc, char *argv[]) {
   if (objFile == NULL) {
     error("cannot open object file '%s'", argv[1]);
   }
+  initInstrTable();
   /*
    * read and interpret file contents
    */
@@ -607,7 +492,7 @@ int main(int argc, char *argv[]) {
       readInt(tdescs + i);
     }
     if (tFlag) {
-      bindump((unsigned char *) tdescs, tdsize << 2);
+      bindump((Byte *) tdescs, tdsize << 2);
     }
   }
   /* code */
