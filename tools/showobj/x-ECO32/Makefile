@@ -1,5 +1,5 @@
 #
-# Makefile for EO object file viewer
+# Makefile for Extended Oberon object file viewer (ECO32)
 #
 
 BUILD = ../../../build

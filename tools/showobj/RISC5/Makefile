@@ -1,5 +1,5 @@
 #
-# Makefile for object file viewer
+# Makefile for Oberon object file viewer (RISC5)
 #
 
 BUILD = ../../../build

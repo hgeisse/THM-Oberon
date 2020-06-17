@@ -1,5 +1,5 @@
 /*
- * showobj.c -- show object file
+ * showobj.c -- show Oberon object file (RISC5)
  */
 
 /*
