@@ -4,14 +4,20 @@
 
 BUILD = ../../build
 
-all:		mem2bin
+DIRS = RISC5 ECO32
 
-install:	mem2bin
-		mkdir -p $(BUILD)/bin
-		cp mem2bin $(BUILD)/bin
+all:
+		for i in $(DIRS) ; do \
+		  $(MAKE) -C $$i all ; \
+		done
 
-mem2bin:	mem2bin.c
-		gcc -g -Wall -o mem2bin mem2bin.c
+install:
+		for i in $(DIRS) ; do \
+		  $(MAKE) -C $$i install ; \
+		done
 
 clean:
-		rm -f *~ mem2bin
+		for i in $(DIRS) ; do \
+		  $(MAKE) -C $$i clean ; \
+		done
+		rm -f *~
