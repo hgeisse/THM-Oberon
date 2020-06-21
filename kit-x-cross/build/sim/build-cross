@@ -1,0 +1,110 @@
+#-----------------------------------------------
+# build target objects (with cross compiler)
+#-----------------------------------------------
+
+#
+# BootLoad
+#
+
+h2o BootLoad.Mod
+calln CORP.Compile BootLoad.Mod
+o2h BootLoad.rsc
+
+calln CORX.WriteFile BootLoad.rsc BootLoad.prm
+o2h BootLoad.prm
+
+#
+# InnerCore
+#
+
+h2o Disk.Mod
+calln CORP.Compile Disk.Mod
+o2h Disk.rsc
+
+h2o Kernel.Mod
+calln CORP.Compile Kernel.Mod
+o2h Kernel.rsc
+
+h2o FileDir.Mod
+calln CORP.Compile FileDir.Mod
+o2h FileDir.rsc
+
+h2o Files.Mod
+calln CORP.Compile Files.Mod
+o2h Files.rsc
+
+h2o Modules.Mod
+calln CORP.Compile Modules.Mod
+o2h Modules.rsc
+
+calln CORL.Link Modules
+o2h Modules.bin
+
+#
+# Oberon0
+#
+
+h2o RS232.Mod
+calln CORP.Compile RS232.Mod
+o2h RS232.rsc
+
+h2o PCLink0.Mod
+calln CORP.Compile PCLink0.Mod
+o2h PCLink0.rsc
+
+h2o Oberon0.Mod
+calln CORP.Compile Oberon0.Mod
+o2h Oberon0.rsc
+
+calln CORL.Link Oberon0
+o2h Oberon0.bin
+
+#--------------------------------------
+
+#
+# OuterCore
+#
+
+#
+# BootLink
+#
+
+#
+# Editor
+#
+
+#
+# PCLink2
+#
+
+#
+# Compiler
+#
+
+#
+# Tools
+#
+
+#
+# Out
+#
+
+#
+# Math
+#
+
+#
+# Fonts
+#
+
+#
+# Graphics
+#
+
+#
+# MacroTool
+#
+
+#
+# Apps
+#

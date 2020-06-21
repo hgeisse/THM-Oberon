@@ -1,0 +1,21 @@
+#-----------------------------------------------
+# build cross tools (with host compiler)
+#-----------------------------------------------
+
+h2o CrossUtil.Mod
+calln ORP.Compile CrossUtil.Mod
+
+h2o CORB.Mod
+calln ORP.Compile CORB.Mod
+
+h2o CORG.Mod
+calln ORP.Compile CORG.Mod
+
+h2o CORP.Mod
+calln ORP.Compile CORP.Mod
+
+h2o CORL.Mod
+calln ORP.Compile CORL.Mod
+
+h2o CORX.Mod
+calln ORP.Compile CORX.Mod
