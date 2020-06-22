@@ -7,6 +7,9 @@
 #define _COMMON_H_
 
 
+#define SERDEV_FILE	"serial.dev"		/* serial dev file */
+
+
 typedef enum { false = 0, true = 1 } Bool;
 
 typedef unsigned int Word;

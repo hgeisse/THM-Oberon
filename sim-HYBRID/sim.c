@@ -32,8 +32,6 @@
 #include "graph2.h"
 
 
-#define SERDEV_FILE	"serial.dev"		/* serial dev file */
-
 #define INST_PER_MSEC	17000			/* execution speed */
 #define INST_PER_CHAR	10000			/* serial line speed */
 

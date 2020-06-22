@@ -239,6 +239,7 @@ void serialInit(int numSerials, Bool connectTerminals[], Bool expect) {
   int slave;
   char termTitle[100];
   char termSlave[100];
+  FILE *serdevFile;
 
   nSerials = numSerials;
   for (i = 0; i < nSerials; i++) {
@@ -282,6 +283,13 @@ void serialInit(int numSerials, Bool connectTerminals[], Bool expect) {
       serials[i].pid = 0;
       cPrintf("Serial line %d can be accessed by opening device '%s'.\n",
               i, slavePath);
+      serdevFile = fopen(SERDEV_FILE, "w");
+      if (serdevFile == NULL) {
+        error("cannot open file for writing serial device path");
+      }
+      fprintf(serdevFile, "%s\n", slavePath);
+      fclose(serdevFile);
+      cPrintf("This path was also written to file '%s'.\n", SERDEV_FILE);
     }
     fcntl(master, F_SETFL, O_NONBLOCK);
     serials[i].in = fdopen(master, "r");
