@@ -11,6 +11,7 @@ O2U=$(BUILD)/bin/oberon2unix
 M2B=$(BUILD)/bin/mem2bin-ECO32
 SRC=../../Source
 NEW=../../New
+PATCHES=../../Patches
 
 all:
 		@echo "For cross compiling the system:"
@@ -48,6 +49,7 @@ prologue:
 		#
 		mkdir -p $(NEW)/BootLoad/txt
 		cp $(SRC)/BootLoad/txt/* $(NEW)/BootLoad/txt
+		cp $(PATCHES)/BootLoad/txt/* $(NEW)/BootLoad/txt
 		$(D2O) $(NEW)/BootLoad/txt/BootLoad.Mod.txt BootLoad.Mod
 		#
 		mkdir -p $(NEW)/Compiler/txt
@@ -103,6 +105,7 @@ prologue:
 		#
 		mkdir -p $(NEW)/Oberon0/txt
 		cp $(SRC)/Oberon0/txt/* $(NEW)/Oberon0/txt
+		cp $(PATCHES)/Oberon0/txt/* $(NEW)/Oberon0/txt
 		$(D2O) $(NEW)/Oberon0/txt/Oberon0.Mod.txt Oberon0.Mod
 		$(D2O) $(NEW)/Oberon0/txt/PCLink0.Mod.txt PCLink0.Mod
 		$(D2O) $(NEW)/Oberon0/txt/RS232.Mod.txt RS232.Mod
