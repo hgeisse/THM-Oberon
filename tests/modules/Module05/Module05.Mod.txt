@@ -7,6 +7,12 @@ MODULE Module05;
   TYPE
     R = RECORD
           n: INTEGER;
+          m: INTEGER;
+          k: INTEGER;
+          n1: INTEGER;
+          m1: INTEGER;
+          k1: INTEGER;
+          c: INTEGER;
         END;
     P = POINTER TO R;
 
@@ -16,10 +22,12 @@ MODULE Module05;
     p: P;
     y: INTEGER;
 
-BEGIN
-  x := 1;
-  r.n := 2;
-  NEW(p);
-  p.n := 3;
-  y := 4;
+  PROCEDURE Doit*;
+  BEGIN
+    x := 1;
+    r.n := 2;
+    NEW(p);
+    p.n := 3;
+    y := 4;
+  END Doit;
 END Module05.

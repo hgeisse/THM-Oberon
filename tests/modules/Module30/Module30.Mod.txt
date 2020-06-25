@@ -1,0 +1,33 @@
+(*
+ * word vs. byte
+ *)
+
+MODULE Module30;
+  VAR w1, w2: INTEGER; b1, b2: BYTE;
+
+  PROCEDURE proc1(w1: INTEGER; w2: INTEGER);
+  BEGIN
+    w1 := w2;
+  END proc1;
+
+  PROCEDURE proc2(b1: BYTE; b2: BYTE);
+  BEGIN
+    b1 := b2;
+  END proc2;
+
+  PROCEDURE proc3(w1: INTEGER; b2: BYTE);
+  BEGIN
+    w1 := b2;
+    b2 := w1;
+  END proc3;
+
+BEGIN
+  w1 := w2;
+  b1 := b2;
+  w1 := b2;
+  b1 := w2;
+  proc1(w1, w2);
+  proc2(b1, b2);
+  proc3(w1, b2);
+  proc3(b1, w2);
+END Module30.
