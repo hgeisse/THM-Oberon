@@ -15,12 +15,12 @@ MODULE CORG; (* N.Wirth, 16.4.2016 / 4.4.2017 / 31.5.2019  Oberon compiler; code
     F3 = -3; BCT = 0A8000000H; RTI = 10H; STI = 20H;  (*F3 branch instructions*)
     C4 = 10H; C5 = 20H; C6 = 40H; C8 = 100H; C10 = 400H; C11 = 800H; C12 = 1000H; C14 = 4000H; C16 = 10000H; C18 = 40000H; 
     C20 = 100000H; C21 = 200000H; C22 = 400000H; C24 = 1000000H; C26 = 4000000H; C28 = 10000000H; C30 = 40000000H; C31 = 80000000H;
-    boardIOAddr = 0C10000H;
+    boardIOAddr = 0F1000000H;
 
   (*frequently used opcodes*)  U = 2000H; V = 1000H;
-    Mov = 0; Lsl = 24; Asr = 28; Ror= 3; And = 16; Ann = 5; Ior = 18; Xor = 20;
+    Mov = 0; Lsl = 24; Slr = 26; Sar = 28; Ror= 3; And = 16; Ann = 5; Ior = 18; Xor = 20;
     Add = 0; Sub = 2; Cmp = 2; Mul = 4; Mulu = 6; Div = 6; Remu = 14;
-    Ldw = 48; Ldb = 51; Stw = 53; Stb = 55;
+    Ldw = 48; Ldb = 52; Stw = 53; Stb = 55;
 
     Fpar = 59;
     Addf = 0; Subf = 1; Mulf = 2; Divf = 3; CF2I = 6; CI2F = 7;
@@ -63,6 +63,7 @@ MODULE CORG; (* N.Wirth, 16.4.2016 / 4.4.2017 / 31.5.2019  Oberon compiler; code
     entry: LONGINT;   (*main entry point*)
     RH: LONGINT;  (*available registers R[0] ... R[H-1]*)
     frame: LONGINT;  (*frame offset changed in SaveRegs and RestoreRegs*)
+    currentParlbksize: LONGINT; (* size of the current parameterlist in words *)
     fixorgP, fixorgD, fixorgT, fixorgM: LONGINT;   (*origins of lists of locations to be fixed up by loader*)
     check: BOOLEAN;  (*emit run-time checks*)
     version: INTEGER;  (* 0 = RISC-0, 1 = RISC-5 *)
@@ -100,18 +101,18 @@ MODULE CORG; (* N.Wirth, 16.4.2016 / 4.4.2017 / 31.5.2019  Oberon compiler; code
     INC(pc)
   END Put1;
 
-  PROCEDURE Put1a(op, a, b, im: LONGINT);
+  PROCEDURE Put1a(op, a, b, im: LONGINT; isMove: BOOLEAN);
     VAR r: INTEGER;
   BEGIN (*same as Put1, but with range test -C16 <= im < C16*)
     IF (im >= -C16) & (im < C16) THEN Put1(op, a, b, im)
-    ELSIF op = Mov THEN
+    ELSIF isMove THEN
       Put1(Ldhi, a, 0, im DIV C16 MOD C16);
       IF im MOD C16 # 0 THEN Put1(Ior, a, a, im MOD C16) END
     ELSE r := RH;
       IF b = RH THEN incR END ;
       Put1(Ldhi, RH, 0, im DIV C16 MOD C16);
       IF im MOD C16 # 0 THEN Put1(Ior, RH, RH, im MOD C16) END ;
-      Put0(op, a, b, RH);
+      IF b # 0 THEN Put0(op, a, b, RH) END ;
       IF RH > r THEN DEC(RH) END
     END
   END Put1a;
@@ -129,8 +130,8 @@ MODULE CORG; (* N.Wirth, 16.4.2016 / 4.4.2017 / 31.5.2019  Oberon compiler; code
   PROCEDURE Put3(op, cond, a, b, off: LONGINT; isFloatOp: BOOLEAN);
   VAR partialCode: LONGINT;
   BEGIN 
-    IF isFloatOp & (cond IN {GTF, GEF}) THEN partialCode := (op + cond - 2) * C5 + b
-    ELSIF ~isFloatOp & (cond IN {GT, GE}) THEN partialCode := (op + cond -4) * C5 + b
+    IF isFloatOp & (cond IN {GTF, GEF}) THEN partialCode := ((op + cond - 2) * C5 + b) * C5 + a
+    ELSIF ~isFloatOp & (cond IN {GT, GE}) THEN partialCode := ((op + cond - 4) * C5 + b) * C5 + a
     ELSE partialCode := ((op + cond) * C5 + a) * C5 + b
     END; 
     code[pc] := partialCode * C16 + off MOD C16;
@@ -187,7 +188,7 @@ MODULE CORG; (* N.Wirth, 16.4.2016 / 4.4.2017 / 31.5.2019  Oberon compiler; code
     ELSE GetCodeInfo(pc - 1, a, b, isFloatOp);
       IF isFloatOp THEN op := Bcf; lt := LTF ELSE op := Bc; lt := LT END ;
       IF cond = CC THEN Put3(op, lt, b, 0, 1, isFloatOp); Put3(op, lt, a, 0, 1, isFloatOp); Put3c(J, off)
-      ELSIF extend THEN Put3(op, negated[cond], a, 0, 1, isFloatOp); Put3c(J, off)
+      ELSIF extend THEN Put3(op, negated[cond], a, 0, 1, isFloatOp); Put3c(J, off);
       ELSE Put3(op, cond, a, 0, off, isFloatOp)
       END
     END
@@ -299,15 +300,18 @@ MODULE CORG; (* N.Wirth, 16.4.2016 / 4.4.2017 / 31.5.2019  Oberon compiler; code
         IF x.type.form = CORB.Proc THEN
           IF x.a < 0 THEN (*forward*) Put3c(Bl, 0); Put1(Add, RH, LNK, x.type.len); x.type.len := pc-1  (*fixed up in CORP.Body*)
           ELSIF x.r > 0 THEN (*local*) ORS.Mark("not allowed")
-          ELSIF x.r = 0 THEN (*global*) Put3c(Bl, 0); Put1a(Sub, RH, LNK, pc*4 - x.a)
+          ELSIF x.r = 0 THEN (*global*) Put3c(Bl, 0); Put1a(Sub, RH, LNK, pc*4 - x.a, FALSE)
           ELSE (*imported*) PutPair(x.r, Add, RH, RH, x.a + C8, 1) (*mark as progbase-relative*)
           END
-        ELSE 
-          Put1a(Mov, RH, 0, x.a)
+        ELSE Put1a(Mov, RH, 0, x.a, TRUE)
         END ;
         x.r := RH; incR
       ELSIF x.mode = CORB.Var THEN
-        IF x.r > 0 THEN (*local*) Put2(op, RH, SP, x.a + frame) ELSE PutPair(x.r, op, RH, RH, x.a, 2) END ;
+        IF x.r > 0 THEN (*local*) 
+          IF x.a <= (currentParlbksize - 4) THEN (* x is parameter *) op := Ldw; END ;
+          Put2(op, RH, SP, x.a + frame) 
+        ELSE PutPair(x.r, op, RH, RH, x.a, 2) 
+        END ;
         x.r := RH; incR
       ELSIF x.mode = CORB.Par THEN Put2(Ldw, RH, SP, x.a + frame); Put2(op, RH, RH, x.b); x.r := RH; incR
       ELSIF x.mode = RegI THEN Put2(op, x.r, x.r, x.a)
@@ -323,13 +327,13 @@ MODULE CORG; (* N.Wirth, 16.4.2016 / 4.4.2017 / 31.5.2019  Oberon compiler; code
   PROCEDURE loadAdr(VAR x: Item);
   BEGIN
     IF x.mode = CORB.Var THEN
-      IF x.r > 0 THEN (*local*) Put1a(Add, RH, SP, x.a + frame) ELSE PutPair(x.r, Add, RH, RH, x.a, 1) END ;
+      IF x.r > 0 THEN (*local*) Put1a(Add, RH, SP, x.a + frame, FALSE) ELSE PutPair(x.r, Add, RH, RH, x.a, 1) END ;
       x.r := RH; incR
     ELSIF x.mode = CORB.Par THEN Put2(Ldw, RH, SP, x.a + frame);
-      IF x.b # 0 THEN Put1a(Add, RH, RH, x.b) END ;
+      IF x.b # 0 THEN Put1a(Add, RH, RH, x.b, FALSE) END ;
       x.r := RH; incR
     ELSIF x.mode = RegI THEN
-      IF x.a # 0 THEN Put1a(Add, x.r, x.r, x.a) END
+      IF x.a # 0 THEN Put1a(Add, x.r, x.r, x.a, FALSE) END
     ELSE ORS.Mark("address error")
     END ;
     x.mode := Reg
@@ -343,7 +347,7 @@ MODULE CORG; (* N.Wirth, 16.4.2016 / 4.4.2017 / 31.5.2019  Oberon compiler; code
         IF x.mode = CORB.Const THEN x.r := 15 - x.a*8
         ELSE load(x);
           GetPosCodeAndOp(pc - 1, codeAt, op);
-          IF (op-Ldw IN -{0,Ldb-Ldw,Stw-Ldw,Stb-Ldw}) & (op-Bc IN -{0..Blr-Bc}) THEN Put1(Cmp, x.r, x.r, 0); END ;
+          IF op-Ldw IN -{0,Ldb-Ldw,Stw-Ldw,Stb-Ldw} THEN Put1(Cmp, x.r, x.r, 0); END ;
           x.r := NE; DEC(RH)
         END ;
         x.mode := Cond; x.a := 0; x.b := 0
@@ -419,14 +423,14 @@ MODULE CORG; (* N.Wirth, 16.4.2016 / 4.4.2017 / 31.5.2019  Oberon compiler; code
       END
     ELSE load(y);
       IF check THEN  (*check array bounds*)
-        IF lim >= 0 THEN Put1a(Cmp, RH, y.r, lim)
+        IF lim >= 0 THEN Put1a(Cmp, RH, y.r, lim, FALSE)
         ELSIF x.mode IN {CORB.Var, CORB.Par} THEN (*open array param*) Put2(Ldw, RH, SP, x.a+4+frame); Put0(Cmp, RH, y.r, RH)
         ELSIF x.mode = RegI THEN (*dynamic open array*) Put2(Ldw, RH, x.r, -16); (*len*) Put0(Cmp, RH, y.r, RH)
         ELSE ORS.Mark("error in Index")
         END ;
         Trap(CC, 1)
       END ;
-      IF s = 4 THEN Put1(Lsl, y.r, y.r, 2) ELSIF s > 1 THEN Put1a(Mul, y.r, y.r, s) END ;
+      IF s = 4 THEN Put1(Lsl, y.r, y.r, 2) ELSIF s > 1 THEN Put1a(Mul, y.r, y.r, s, FALSE) END ;
       IF x.mode = CORB.Var THEN
         IF x.r > 0 THEN (*local*) Put0(Add, y.r, SP, y.r); INC(x.a, frame)
         ELSIF x.r = 0 THEN (*global*) PutPair(0, Add, RH, RH, 0, 1); Put0(Add, y.r, RH, y.r)
@@ -592,13 +596,13 @@ MODULE CORG; (* N.Wirth, 16.4.2016 / 4.4.2017 / 31.5.2019  Oberon compiler; code
     IF op = ORS.plus THEN
       IF (x.mode = CORB.Const) & (y.mode = CORB.Const) THEN x.a := x.a + y.a
       ELSIF y.mode = CORB.Const THEN load(x);
-        IF y.a # 0 THEN Put1a(Add, x.r, x.r, y.a) END
+        IF y.a # 0 THEN Put1a(Add, x.r, x.r, y.a, FALSE) END
       ELSE load(x); load(y); Put0(Add, RH-2, x.r, y.r); DEC(RH); x.r := RH-1
       END
     ELSE (*op = ORS.minus*)
       IF (x.mode = CORB.Const) & (y.mode = CORB.Const) THEN x.a := x.a - y.a
       ELSIF y.mode = CORB.Const THEN load(x);
-        IF y.a # 0 THEN Put1a(Sub, x.r, x.r, y.a) END
+        IF y.a # 0 THEN Put1a(Sub, x.r, x.r, y.a, FALSE) END
       ELSE load(x); load(y); Put0(Sub, RH-2, x.r, y.r); DEC(RH); x.r := RH-1
       END
     END
@@ -615,9 +619,9 @@ MODULE CORG; (* N.Wirth, 16.4.2016 / 4.4.2017 / 31.5.2019  Oberon compiler; code
   BEGIN
     IF (x.mode = CORB.Const) & (y.mode = CORB.Const) THEN x.a := x.a * y.a
     ELSIF (y.mode = CORB.Const) & (y.a >= 2) & (log2(y.a, e) = 1) THEN load(x); Put1(Lsl, x.r, x.r, e)
-    ELSIF y.mode = CORB.Const THEN load(x); Put1a(Mul, x.r, x.r, y.a)
+    ELSIF y.mode = CORB.Const THEN load(x); Put1a(Mul, x.r, x.r, y.a, FALSE)
     ELSIF (x.mode = CORB.Const) & (x.a >= 2) & (log2(x.a, e) = 1) THEN load(y); Put1(Lsl, y.r, y.r, e); x.mode := Reg; x.r := y.r
-    ELSIF x.mode = CORB.Const THEN load(y); Put1a(Mul, y.r, y.r, x.a); x.mode := Reg; x.r := y.r
+    ELSIF x.mode = CORB.Const THEN load(y); Put1a(Mul, y.r, y.r, x.a, FALSE); x.mode := Reg; x.r := y.r
     ELSE load(x); load(y); Put0(Mul, RH-2, x.r, y.r); DEC(RH); x.r := RH-1
     END
   END MulOp;
@@ -628,9 +632,9 @@ MODULE CORG; (* N.Wirth, 16.4.2016 / 4.4.2017 / 31.5.2019  Oberon compiler; code
     IF op = ORS.div THEN
       IF (x.mode = CORB.Const) & (y.mode = CORB.Const) THEN
         IF y.a > 0 THEN x.a := x.a DIV y.a ELSE ORS.Mark("bad divisor") END
-      ELSIF (y.mode = CORB.Const) & (y.a >= 2) & (log2(y.a, e) = 1) THEN load(x); Put1(Asr, x.r, x.r, e)
+      ELSIF (y.mode = CORB.Const) & (y.a >= 2) & (log2(y.a, e) = 1) THEN load(x); Put1(Sar, x.r, x.r, e)
       ELSIF y.mode = CORB.Const THEN
-        IF y.a > 0 THEN load(x); Put1a(Div, x.r, x.r, y.a) ELSE ORS.Mark("bad divisor") END
+        IF y.a > 0 THEN load(x); Put1a(Div, x.r, x.r, y.a, FALSE) ELSE ORS.Mark("bad divisor") END
       ELSE load(y);
         IF check THEN Trap(LE, 6) END ;
         load(x); Put0(Div, RH-2, x.r, y.r); DEC(RH); x.r := RH-1
@@ -640,7 +644,7 @@ MODULE CORG; (* N.Wirth, 16.4.2016 / 4.4.2017 / 31.5.2019  Oberon compiler; code
         IF y.a > 0 THEN x.a := x.a MOD y.a ELSE ORS.Mark("bad modulus") END
       (* we have the Rem instruction, we don't need shift left and right in this case *)
       ELSIF y.mode = CORB.Const THEN
-        IF y.a > 0 THEN load(x); Put1a(Remu, x.r, x.r, y.a) ELSE ORS.Mark("bad modulus") END
+        IF y.a > 0 THEN load(x); Put1a(Remu, x.r, x.r, y.a, FALSE) ELSE ORS.Mark("bad modulus") END
       ELSE load(y);
         IF check THEN Trap(LE, 6) END ;
         load(x); Put0(Remu, RH-2, x.r, y.r); DEC(RH); x.r := RH-1
@@ -688,7 +692,7 @@ MODULE CORG; (* N.Wirth, 16.4.2016 / 4.4.2017 / 31.5.2019  Oberon compiler; code
           DEC(RH);
 
           incR;
-          Put1a(Mov, RH-1, 0, x.a);
+          Put1a(Mov, RH-1, 0, x.a, TRUE);
           Put0(And, RH-2, y.r, RH-1);
           DEC(RH);
         END ;
@@ -698,12 +702,18 @@ MODULE CORG; (* N.Wirth, 16.4.2016 / 4.4.2017 / 31.5.2019  Oberon compiler; code
     END
   END Set;
 
-  PROCEDURE In*(VAR x, y: Item);  (* x := x IN y *)
-  BEGIN load(y);
-    IF x.mode = CORB.Const THEN Put1(Ror, y.r, y.r, (x.a + 1) MOD maxSet); DEC(RH)
-    ELSE load(x); Put1(Add, x.r, x.r, 1); Put0(Ror, y.r, y.r, x.r); DEC(RH, 2)
+  PROCEDURE CheckBit(VAR z, n: Item);
+    VAR na: LONGINT;
+  BEGIN
+    IF n.mode = CORB.Const THEN 
+      na := n.a MOD maxSet; IF na < 0 THEN na := na + maxSet END; 
+      Put1(Lsl, z.r, z.r, 31-na); DEC(RH)
+    ELSE load(n); Put1(Add, RH, 0, 31); Put0(Sub, n.r, RH, n.r); Put0(Lsl, z.r, z.r, n.r); DEC(RH, 2)
     END ;
-    SetCC(x, MI)
+  END CheckBit;
+
+  PROCEDURE In*(VAR x, y: Item);  (* x := x IN y *)
+  BEGIN load(y); CheckBit(y, x); SetCC(x, MI) 
   END In;
 
   PROCEDURE SetOp*(op: LONGINT; VAR x, y: Item);   (* x := x op y *)
@@ -719,10 +729,10 @@ MODULE CORG; (* N.Wirth, 16.4.2016 / 4.4.2017 / 31.5.2019  Oberon compiler; code
       x.a := SYSTEM.VAL(LONGINT, xset)
     ELSIF y.mode = CORB.Const THEN
       load(x);
-      IF op = ORS.plus THEN Put1a(Ior, x.r, x.r, y.a)
-      ELSIF op = ORS.minus THEN Put1a(Ann, x.r, x.r, y.a)
-      ELSIF op = ORS.times THEN Put1a(And, x.r, x.r, y.a)
-      ELSIF op = ORS.rdiv THEN Put1a(Xor, x.r, x.r, y.a)
+      IF op = ORS.plus THEN Put1a(Ior, x.r, x.r, y.a, FALSE)
+      ELSIF op = ORS.minus THEN Put1a(Ann, x.r, x.r, y.a, FALSE)
+      ELSIF op = ORS.times THEN Put1a(And, x.r, x.r, y.a, FALSE)
+      ELSIF op = ORS.rdiv THEN Put1a(Xor, x.r, x.r, y.a, FALSE)
       END ;
     ELSE load(x); load(y);
       IF op = ORS.plus THEN Put0(Ior, RH-2, x.r, y.r)
@@ -740,7 +750,7 @@ MODULE CORG; (* N.Wirth, 16.4.2016 / 4.4.2017 / 31.5.2019  Oberon compiler; code
   BEGIN
     IF (y.mode = CORB.Const) & (y.type.form # CORB.Proc) THEN
       load(x);
-      IF (y.a # 0) OR ~(op IN {ORS.eql, ORS.neq}) OR (code[pc-1] DIV C30 # F2) THEN Put1a(Cmp, x.r, x.r, y.a) END ;
+      IF (y.a # 0) OR ~(op IN {ORS.eql, ORS.neq}) OR (code[pc-1] DIV C30 # F2) THEN Put1a(Cmp, x.r, x.r, y.a, FALSE) END ;
       DEC(RH)
     ELSE
       IF (x.mode = Cond) OR (y.mode = Cond) THEN ORS.Mark("not implemented") END ;
@@ -781,7 +791,12 @@ MODULE CORG; (* N.Wirth, 16.4.2016 / 4.4.2017 / 31.5.2019  Oberon compiler; code
   BEGIN  load(y);
     IF x.type.size = 1 THEN op := Stb ELSE op := Stw END ;
     IF x.mode = CORB.Var THEN
-      IF x.r > 0 THEN (*local*) Put2(op, y.r, SP, x.a + frame) ELSE PutPair(x.r, op, y.r, RH, x.a, 2) END
+      IF x.r > 0 THEN (*local*)
+        IF x.a <= (currentParlbksize - 4) THEN (* x is parameter *) op := Stw; END ;
+        Put2(op, y.r, SP, x.a + frame)
+      ELSE
+        PutPair(x.r, op, y.r, RH, x.a, 2)
+      END
     ELSIF x.mode = CORB.Par THEN Put2(Ldw, RH, SP, x.a + frame); Put2(op, y.r, RH, x.b);
     ELSIF x.mode = RegI THEN Put2(op, y.r, x.r, x.a); DEC(RH);
     ELSE ORS.Mark("bad mode in Store")
@@ -794,22 +809,22 @@ MODULE CORG; (* N.Wirth, 16.4.2016 / 4.4.2017 / 31.5.2019  Oberon compiler; code
   BEGIN loadAdr(x); loadAdr(y);
     IF (x.type.form = CORB.Array) & (x.type.len > 0) THEN
       IF y.type.len >= 0 THEN
-        IF x.type.size = y.type.size THEN Put1a(Mov, RH, 0, (y.type.size+3) DIV 4)
+        IF x.type.size = y.type.size THEN Put1a(Mov, RH, 0, (y.type.size+3) DIV 4, TRUE)
         ELSE ORS.Mark("different length/size, not implemented")
         END
       ELSE (*y open array param or dynamic open array*)
         IF y.type.size > 0 THEN Put2(Ldw, RH, SP, y.a+4) ELSE Put2(Ldw, RH, y.r, -16) END ; (*len*)
         s := y.type.base.size;  (*element size*)
         pc0 := pc; PutBc(EQ, 0, TRUE);
-        IF s = 1 THEN Put1(Add, RH, RH, 3); Put1(Asr, RH, RH, 2)
-        ELSIF s # 4 THEN Put1a(Mul, RH, RH, s DIV 4)
+        IF s = 1 THEN Put1(Add, RH, RH, 3); Put1(Sar, RH, RH, 2)
+        ELSIF s # 4 THEN Put1a(Mul, RH, RH, s DIV 4, FALSE)
         END ;
         IF check THEN (*check array lengths*)
-          Put1a(Mov, RH+1, 0, (x.type.size+3) DIV 4); Put0(Cmp, RH+1, RH, RH+1); Trap(GT, 3)
+          Put1a(Mov, RH+1, 0, (x.type.size+3) DIV 4, TRUE); Put0(Cmp, RH+1, RH, RH+1); Trap(GT, 3)
         END ;
         fix(pc0, pc + 5 - pc0)
       END
-    ELSIF x.type.form = CORB.Record THEN Put1a(Mov, RH, 0, x.type.size DIV 4)
+    ELSIF x.type.form = CORB.Record THEN Put1a(Mov, RH, 0, x.type.size DIV 4, TRUE)
     ELSE ORS.Mark("inadmissible assignment")
     END ;
     Put2(Ldw, RH+1, y.r, 0); Put1(Add, y.r, y.r, 4);
@@ -829,14 +844,14 @@ MODULE CORG; (* N.Wirth, 16.4.2016 / 4.4.2017 / 31.5.2019  Oberon compiler; code
     loadStringAdr(y);
     Put2(Ldw, RH, y.r, 0); Put1(Add, y.r, y.r, 4);
     Put2(Stw, RH, x.r, 0); Put1(Add, x.r, x.r, 4);
-    Put1(Asr, RH, RH, 24); Put3(Bc, NE, RH, 0, -6, FALSE);  RH := 1
+    Put1(Sar, RH, RH, 24); Put3(Bc, NE, RH, 0, -6, FALSE);  RH := 1
   END CopyString;
 
   (* Code generation for parameters *)
 
   PROCEDURE OpenArrayParam*(VAR x: Item);
   BEGIN loadAdr(x);
-    IF x.type.len >= 0 THEN Put1a(Mov, RH, 0, x.type.len)
+    IF x.type.len >= 0 THEN Put1a(Mov, RH, 0, x.type.len, TRUE)
     ELSIF x.type.size > 0 THEN (*open array param*) Put2(Ldw, RH, SP, x.a+4+frame)
     ELSE (*dynamic open array*) Put2(Ldw, RH, x.r, -16) (*len*)
     END ;
@@ -847,7 +862,7 @@ MODULE CORG; (* N.Wirth, 16.4.2016 / 4.4.2017 / 31.5.2019  Oberon compiler; code
     VAR xmd: INTEGER;
   BEGIN xmd := x.mode; loadAdr(x);
     IF (ftype.form = CORB.Array) & (ftype.len < 0) THEN (*open array*)
-      IF x.type.len >= 0 THEN Put1a(Mov, RH, 0, x.type.len)
+      IF x.type.len >= 0 THEN Put1a(Mov, RH, 0, x.type.len, TRUE)
       ELSIF x.type.size > 0 THEN (*open array param*) Put2(Ldw, RH, SP, x.a+4+frame)
       ELSE (*dynamic open array*) Put2(Ldw, RH, x.r, -16) (*len*)
       END ;
@@ -880,7 +895,7 @@ MODULE CORG; (* N.Wirth, 16.4.2016 / 4.4.2017 / 31.5.2019  Oberon compiler; code
 
   PROCEDURE For1*(VAR x, y, z, w: Item; VAR L: LONGINT);
   BEGIN 
-    IF z.mode = CORB.Const THEN Put1a(Cmp, RH, y.r, z.a)
+    IF z.mode = CORB.Const THEN Put1a(Cmp, RH, y.r, z.a, FALSE)
     ELSE load(z); Put0(Cmp, RH-1, y.r, z.r); DEC(RH)
     END ;
     L := pc + 1;
@@ -892,7 +907,7 @@ MODULE CORG; (* N.Wirth, 16.4.2016 / 4.4.2017 / 31.5.2019  Oberon compiler; code
   END For1;
 
   PROCEDURE For2*(VAR x, y, w: Item);
-  BEGIN load(x); DEC(RH); Put1a(Add, x.r, x.r, w.a)
+  BEGIN load(x); DEC(RH); Put1a(Add, x.r, x.r, w.a, FALSE)
   END For2;
 
   (* Branches, procedure calls, procedure prolog and epilog *)
@@ -914,7 +929,7 @@ MODULE CORG; (* N.Wirth, 16.4.2016 / 4.4.2017 / 31.5.2019  Oberon compiler; code
   END BJump;
 
   PROCEDURE CBJump*(VAR x: Item; L: LONGINT);
-  BEGIN loadCond(x); PutBc(negated[x.r], L-pc-1, TRUE); FixLink(x.b); FixLinkWith(x.a, L)
+  BEGIN loadCond(x); PutBc(negated[x.r], L-pc-2, TRUE); FixLink(x.b); FixLinkWith(x.a, L)
   END CBJump;
 
   PROCEDURE Fixup*(VAR x: Item);
@@ -979,6 +994,7 @@ MODULE CORG; (* N.Wirth, 16.4.2016 / 4.4.2017 / 31.5.2019  Oberon compiler; code
       IF locblksize >= C16 THEN ORS.Mark("too many locals") END ;
       a := 4; r := 1;
       Put1(Sub, SP, SP, locblksize); Put2(Stw, LNK, SP, 0);
+      currentParlbksize := parblksize;
       WHILE a < parblksize DO Put2(Stw, r, SP, a); INC(r); INC(a, 4) END
     ELSE (*interrupt procedure*)
       Put1(Sub, SP, SP, locblksize); Put2(Stw, 1, SP, 0); Put2(Stw, 2, SP, 4); Put2(Stw, 3, SP, 8)
@@ -1039,11 +1055,15 @@ MODULE CORG; (* N.Wirth, 16.4.2016 / 4.4.2017 / 31.5.2019  Oberon compiler; code
     END ;
     IF y.type.form = CORB.NoTyp THEN y.mode := CORB.Const; y.a := 1 END ;
     IF (x.mode = CORB.Var) & (x.r > 0) THEN
+      IF x.a <= (currentParlbksize - 4) THEN (* x is parameter *)
+        ldOp := Ldw;
+        stOp := Stw;
+      END ;
       zr := RH; Put2(ldOp, zr, SP, x.a); incR;
-      IF y.mode = CORB.Const THEN Put1a(op, zr, zr, y.a) ELSE load(y); Put0(op, zr, zr, y.r); DEC(RH) END ;
+      IF y.mode = CORB.Const THEN Put1a(op, zr, zr, y.a, FALSE) ELSE load(y); Put0(op, zr, zr, y.r); DEC(RH) END ;
       Put2(stOp, zr, SP, x.a); DEC(RH)
     ELSE loadAdr(x); zr := RH; Put2(ldOp, RH, x.r, 0); incR;
-      IF y.mode = CORB.Const THEN Put1a(op, zr, zr, y.a) ELSE load(y); Put0(op, zr, zr, y.r); DEC(RH) END ;
+      IF y.mode = CORB.Const THEN Put1a(op, zr, zr, y.a, FALSE) ELSE load(y); Put0(op, zr, zr, y.r); DEC(RH) END ;
       Put2(stOp, zr, x.r, 0); DEC(RH, 2)
     END
   END Increment;
@@ -1052,7 +1072,7 @@ MODULE CORG; (* N.Wirth, 16.4.2016 / 4.4.2017 / 31.5.2019  Oberon compiler; code
     VAR op, zr: LONGINT;
   BEGIN loadAdr(x); zr := RH; Put2(Ldw, RH, x.r, 0); incR;
     IF inorex = 0 THEN op := Ior ELSE op := Ann END ;
-    IF y.mode = CORB.Const THEN Put1a(op, zr, zr, LSL(1, y.a))
+    IF y.mode = CORB.Const THEN Put1a(op, zr, zr, LSL(1, y.a), FALSE)
     ELSE load(y); Put1(Mov, RH, 0, 1); Put0(Lsl, y.r, RH, y.r); Put0(op, zr, zr, y.r); DEC(RH)
     END ;
     Put2(Stw, zr, x.r, 0); DEC(RH, 2)
@@ -1097,12 +1117,12 @@ MODULE CORG; (* N.Wirth, 16.4.2016 / 4.4.2017 / 31.5.2019  Oberon compiler; code
   PROCEDURE Unpk*(VAR x, y: Item);
     VAR z, e0: Item;
   BEGIN  z := x; load(x); e0.mode := Reg; e0.r := RH; e0.type := CORB.intType;
-    Put1(Asr, RH, x.r, 23); Put1(Sub, RH, RH, 127); Store(y, e0); incR;
+    Put1(Sar, RH, x.r, 23); Put1(Sub, RH, RH, 127); Store(y, e0); incR;
     Put1(Lsl, RH, RH, 23); Put0(Sub, x.r, x.r, RH); Store(z, x)
   END Unpk;
 
   PROCEDURE Led*(VAR x: Item);
-  BEGIN load(x); Put1a(Mov, RH, 0, boardIOAddr); Put2(Str, x.r, RH, 0); DEC(RH)
+  BEGIN load(x); Put1a(Mov, RH, 0, boardIOAddr, TRUE); Put2(Stw, x.r, RH, 0); DEC(RH)
   END Led;
 
   PROCEDURE Get*(VAR x, y: Item);
@@ -1133,7 +1153,7 @@ MODULE CORG; (* N.Wirth, 16.4.2016 / 4.4.2017 / 31.5.2019  Oberon compiler; code
   PROCEDURE LDREG*(VAR x, y: Item);
   BEGIN
     IF (x.a <= maxRegister) & (x.a >= 0) THEN 
-        IF y.mode = CORB.Const THEN Put1a(Mov, x.a, 0, y.a)
+        IF y.mode = CORB.Const THEN Put1a(Mov, x.a, 0, y.a, TRUE)
         ELSE load(y); Put0(Mov, x.a, 0, y.r); DEC(RH)
         END
     ELSE ORS.Mark("valid registers are 0 through 31")
@@ -1146,7 +1166,7 @@ MODULE CORG; (* N.Wirth, 16.4.2016 / 4.4.2017 / 31.5.2019  Oberon compiler; code
   BEGIN
     IF x.mode = CORB.Const THEN x.a := ABS(x.a)
     ELSE load(x);
-      IF x.type.form = CORB.Real THEN Put1(Lsl, x.r, x.r, 1); Put1(Ror, x.r, x.r, 1)
+      IF x.type.form = CORB.Real THEN Put1(Ldhi, RH, 0, 7FFFH); Put1(Ior, RH, RH, 0FFFFH); Put0(And, x.r, x.r, RH)
       ELSE Put1(Cmp, x.r, x.r, 0); Put3(Bc, GE, x.r, 0, 2, FALSE); Put1(Mov, RH, 0, 0); Put0(Sub, x.r, RH, x.r)
       END
     END
@@ -1181,11 +1201,27 @@ MODULE CORG; (* N.Wirth, 16.4.2016 / 4.4.2017 / 31.5.2019  Oberon compiler; code
   END Len;
 
   PROCEDURE Shift*(fct: LONGINT; VAR x, y: Item);
-    VAR op: LONGINT;
+    VAR op, ya, shift: LONGINT;
   BEGIN load(x);
-    IF fct = 0 THEN op := Lsl ELSIF fct = 1 THEN op := Asr ELSE op := Ror END ;
-    IF y.mode = CORB.Const THEN Put1(op, x.r, x.r, y.a MOD maxSet)
-    ELSE load(y); Put0(op, RH-2, x.r, y.r); DEC(RH); x.r := RH-1
+    IF fct = 0 THEN op := Lsl ELSIF fct = 1 THEN op := Sar ELSE op := Ror END ;
+    IF op = Ror THEN
+      (* ROR(x,n) := (x >> y) | (x << (32 - y)) *)
+      IF y.mode = CORB.Const THEN
+        ya := y.a MOD maxSet; IF ya < 0 THEN ya := ya + maxSet END ;
+        Put1(Lsl, RH, x.r, 32 - ya); (* x << (32 - y) *)
+        (* Slr fills the top bits in with zero *)
+        Put1(Slr, x.r, x.r, ya); (* x >> y *)
+        Put0(Ior, x.r, x.r, RH);
+      ELSE load(y); 
+        Put1(Add, RH, 0, 32); Put0(Sub, RH, RH, y.r); (* RH := 32 - y *)
+        Put0(Lsl, RH, x.r, RH); (* x << (32 - y) *)
+        Put0(Slr, x.r, x.r, y.r); (* x >> y *)
+        Put0(Ior, RH-2, x.r, RH); DEC(RH); x.r := RH-1
+      END
+    ELSE
+      IF y.mode = CORB.Const THEN Put1(op, x.r, x.r, y.a MOD maxSet)
+      ELSE load(y); Put0(op, RH-2, x.r, y.r); DEC(RH); x.r := RH-1
+      END
     END
   END Shift;
 
@@ -1204,11 +1240,7 @@ MODULE CORG; (* N.Wirth, 16.4.2016 / 4.4.2017 / 31.5.2019  Oberon compiler; code
   END UML;
 
   PROCEDURE Bit*(VAR x, y: Item);
-  BEGIN load(x); Put2(Ldw, x.r, x.r, 0);
-    IF y.mode = CORB.Const THEN Put1(Ror, x.r, x.r, y.a+1); DEC(RH)
-    ELSE load(y); Put1(Add, y.r, y.r, 1); Put0(Ror, x.r, x.r, y.r); DEC(RH, 2)
-    END ;
-    SetCC(x, MI)
+  BEGIN load(x); Put2(Ldw, x.r, x.r, 0); CheckBit(x, y); SetCC(x, MI)
   END Bit;
 
   PROCEDURE Register*(VAR x: Item);
@@ -1278,7 +1310,7 @@ MODULE CORG; (* N.Wirth, 16.4.2016 / 4.4.2017 / 31.5.2019  Oberon compiler; code
 
   PROCEDURE Header*;
   BEGIN entry := pc*4;
-    IF version = 0 THEN code[0] := BCT - 1 + pc;  Put1a(Mov, SP, 0, StkOrg0)  (*RISC-0*)
+    IF version = 0 THEN code[0] := BCT - 1 + pc;  Put1a(Mov, SP, 0, StkOrg0, TRUE)  (*RISC-0*)
     ELSE Put1(Sub, SP, SP, 4); Put2(Stw, LNK, SP, 0)
     END
   END Header;
@@ -1312,7 +1344,7 @@ MODULE CORG; (* N.Wirth, 16.4.2016 / 4.4.2017 / 31.5.2019  Oberon compiler; code
       name: ORS.Ident;
       F: Files.File; R: Files.Rider;
   BEGIN  (*exit code*)
-    IF version = 0 THEN Put1(Mov, 0, 0, 0); Put3b(Br, 0, 0)  (*RISC-0*)
+    IF version = 0 THEN Put1a(Mov, 1, 0, 0C0000000H, TRUE); Put3b(Br, 1, 0)  (*RISC-0*)
     ELSE Put2(Ldw, LNK, SP, 0); Put1(Add, SP, SP, 4); Put3b(Br, LNK, 0)
     END ;
     obj := CORB.topScope.next; nofimps := 0; comsize := 4; nofrefs := 0; tdx := varx + strx;
