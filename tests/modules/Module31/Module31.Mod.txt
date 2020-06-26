@@ -1,0 +1,21 @@
+(*
+ * string handling
+ *)
+
+MODULE Module31;
+
+  TYPE Str = ARRAY 33 OF CHAR;
+
+  VAR s1, s2, s3: Str; b1, b2, b3, b4, b5, b6: BOOLEAN;
+
+BEGIN
+  s1 := "This is a test string.";
+  s2 := "This is a second test string.";
+  s3 := "This is";
+  b1 := s1 = s1;
+  b2 := s1 = "This is a test string.";
+  b3 := s1 # s1;
+  b4 := s1 # "This is a test string.";
+  b5 := s1 = s2;
+  b6 := s1 = s3;
+END Module31.

@@ -52,3 +52,8 @@ h2o Module30.Mod
 calln ORP.Compile Module30.Mod
 o2h Module30.smb
 o2h Module30.rsc
+
+h2o Module31.Mod
+calln ORP.Compile Module31.Mod
+o2h Module31.smb
+o2h Module31.rsc
