@@ -13,13 +13,13 @@ MODULE CORG; (* N.Wirth, 16.4.2016 / 4.4.2017 / 31.5.2019  Oberon compiler; code
     Zero = 0; D = 4B00H; (*denormalized zero with an exponent of 127 + 24 = 151, used for FLOOR/FLT conversions*)
     F2 = -2;  (*F2 memory instruction*)
     F3 = -3; BCT = 0A8000000H; RTI = 10H; STI = 20H;  (*F3 branch instructions*)
-    C4 = 10H; C5 = 20H; C6 = 40H; C8 = 100H; C10 = 400H; C11 = 800H; C12 = 1000H; C14 = 4000H; C16 = 10000H; C18 = 40000H; 
+    C4 = 10H; C5 = 20H; C6 = 40H; C8 = 100H; C10 = 400H; C11 = 800H; C12 = 1000H; C14 = 4000H; C15 = 8000H; C16 = 10000H; C18 = 40000H; 
     C20 = 100000H; C21 = 200000H; C22 = 400000H; C24 = 1000000H; C26 = 4000000H; C28 = 10000000H; C30 = 40000000H; C31 = 80000000H;
     boardIOAddr = 0F1000000H;
 
   (*frequently used opcodes*)  U = 2000H; V = 1000H;
     Mov = 0; Lsl = 24; Slr = 26; Sar = 28; Ror= 3; And = 16; Ann = 5; Ior = 18; Xor = 20;
-    Add = 0; Sub = 2; Cmp = 2; Mul = 4; Mulu = 6; Div = 6; Remu = 14;
+    Add = 0; Sub = 2; Cmp = 2; Mul = 4; Mulu = 6; Div = 8; Remu = 14;
     Ldw = 48; Ldb = 52; Stw = 53; Stb = 55;
 
     Fpar = 59;
@@ -104,7 +104,9 @@ MODULE CORG; (* N.Wirth, 16.4.2016 / 4.4.2017 / 31.5.2019  Oberon compiler; code
   PROCEDURE Put1a(op, a, b, im: LONGINT; isMove: BOOLEAN);
     VAR r: INTEGER;
   BEGIN (*same as Put1, but with range test -C16 <= im < C16*)
-    IF (im >= -C16) & (im < C16) THEN Put1(op, a, b, im)
+    (* TODO: check for every instruction if is signextended *)
+    IF (im >= -C16) & (im < C15) THEN 
+      Put1(op, a, b, im)
     ELSIF isMove THEN
       Put1(Ldhi, a, 0, im DIV C16 MOD C16);
       IF im MOD C16 # 0 THEN Put1(Ior, a, a, im MOD C16) END
