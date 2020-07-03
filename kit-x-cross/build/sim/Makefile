@@ -89,6 +89,7 @@ prologue:
 		#
 		mkdir -p $(NEW)/InnerCore/txt
 		cp $(SRC)/InnerCore/txt/* $(NEW)/InnerCore/txt
+		cp $(PATCHES)/InnerCore/txt/* $(NEW)/InnerCore/txt
 		$(D2O) $(NEW)/InnerCore/txt/Disk.Mod.txt Disk.Mod
 		$(D2O) $(NEW)/InnerCore/txt/FileDir.Mod.txt FileDir.Mod
 		$(D2O) $(NEW)/InnerCore/txt/Files.Mod.txt Files.Mod

@@ -22,7 +22,7 @@ calln CORP.Compile Disk.Mod
 o2h Disk.rsc
 
 h2o Kernel.Mod
-calln CORP.Compile Kernel.Mod
+calln CORP.Compile Kernel.Mod/s
 o2h Kernel.rsc
 
 h2o FileDir.Mod
