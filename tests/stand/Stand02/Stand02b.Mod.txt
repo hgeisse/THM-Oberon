@@ -1,0 +1,12 @@
+MODULE Stand02b;
+
+  IMPORT Stand02a;
+
+  VAR t: Stand02a.STR;
+
+BEGIN
+  Stand02a.P();
+  t := Stand02a.s;
+  REPEAT
+  UNTIL FALSE
+END Stand02b.

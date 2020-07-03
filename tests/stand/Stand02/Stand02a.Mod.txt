@@ -1,0 +1,14 @@
+MODULE Stand02a;
+
+  CONST c* = "This is a string.";
+
+  TYPE STR* = ARRAY 32 OF CHAR;
+
+  VAR s*: STR;
+
+  PROCEDURE P*();
+  BEGIN
+    s := c;
+  END P;
+
+END Stand02a.

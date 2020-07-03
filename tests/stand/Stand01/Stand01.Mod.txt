@@ -1,0 +1,10 @@
+(*
+ *
+ *)
+
+MODULE Stand01;
+
+BEGIN
+  REPEAT
+  UNTIL FALSE
+END Stand01.

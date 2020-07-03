@@ -1,0 +1,23 @@
+#!/bin/bash
+set +h
+set -e
+umask 022
+export LC_ALL=POSIX
+BUILD=../../../build
+
+function do_help
+{
+	echo "usage: $1 <binfile>"
+}
+
+function do_load
+{
+	$BUILD/bin/sim-ECO32 -i -l $1
+}
+
+if [[ $# < 1 ]]
+then
+	do_help $0
+else
+	do_load $1
+fi

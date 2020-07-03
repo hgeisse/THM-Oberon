@@ -1,0 +1,17 @@
+h2o Stand01.Mod
+calln CORP.Compile Stand01.Mod
+o2h Stand01.smb
+o2h Stand01.rsc
+calln CORL.Link Stand01
+o2h Stand01.bin
+
+h2o Stand02a.Mod
+calln CORP.Compile Stand02a.Mod
+o2h Stand02a.smb
+o2h Stand02a.rsc
+h2o Stand02b.Mod
+calln CORP.Compile Stand02b.Mod
+o2h Stand02b.smb
+o2h Stand02b.rsc
+calln CORL.Link Stand02b
+o2h Stand02b.bin
