@@ -231,6 +231,8 @@ MODULE CORG; (* N.Wirth, 16.4.2016 / 4.4.2017 / 31.5.2019  Oberon compiler; code
   BEGIN info := ORS.Pos() * C4 + num; GetCodeInfo(pc - 1, a, b, isFloatOp);
     IF isFloatOp THEN op := Bcf; lt := LTF ELSE op := Bc; lt := LT END ;
     IF cond = CC THEN Put3(op, lt, b, 0, 1, isFloatOp); Put3(op, lt, a, 0, 1, isFloatOp); 
+    ELSIF cond = 7 THEN  Put3(op, NE, 0, 0, 1, isFloatOp);
+    ELSIF cond = 15 THEN Put3(op, EQ, 0, 0, 1, isFloatOp);
     ELSE Put3(op, negated[cond], a, 0, 1, isFloatOp);
     END;
     Put3b(Blr, TR, info)
@@ -1262,7 +1264,9 @@ MODULE CORG; (* N.Wirth, 16.4.2016 / 4.4.2017 / 31.5.2019  Oberon compiler; code
   *)
   PROCEDURE H*(VAR x: Item);
   BEGIN (*x.mode = Const*)
-    Put0(Mov + U + x.a MOD 2 * V, RH, 0, 0); x.mode := Reg; x.r := RH; incR
+    (*Put0(Mov + U + x.a MOD 2 * V, RH, 0, 0);*) 
+    Put0(Mov, RH, 0, 0);
+    x.mode := Reg; x.r := RH; incR;
   END H;
 
   PROCEDURE Adr*(VAR x: Item);

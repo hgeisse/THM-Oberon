@@ -323,21 +323,21 @@ MODULE CORL;  (*Oberon boot linker/loader for RISC / AP 5.5.20 Extended Oberon*)
             M.next := SYSTEM.VAL(Module, SYSTEM.VAL(INTEGER, p)
                                          - Start + EcoVirtStart)
           END ;
-          M.data := M.data - Start;
-          M.str := M.str - Start;
-          M.tdx := M.tdx - Start;
-          M.code := M.code - Start;
+          M.data := M.data - Start + EcoVirtStart;
+          M.str := M.str - Start + EcoVirtStart;
+          M.tdx := M.tdx - Start + EcoVirtStart;
+          M.code := M.code - Start + EcoVirtStart;
           i := M.imp;
           WHILE i < M.cmd DO
             SYSTEM.GET(i, x);
-            SYSTEM.PUT(i, x - Start);
+            SYSTEM.PUT(i, x - Start + EcoVirtStart);
             INC(i, 4)
           END ;
-          M.imp := M.imp - Start;
-          M.cmd := M.cmd - Start;
-          M.ent := M.ent - Start;
-          M.ptr := M.ptr - Start;
-          M.pvr := M.pvr - Start
+          M.imp := M.imp - Start + EcoVirtStart;
+          M.cmd := M.cmd - Start + EcoVirtStart;
+          M.ent := M.ent - Start + EcoVirtStart;
+          M.ptr := M.ptr - Start + EcoVirtStart;
+          M.pvr := M.pvr - Start + EcoVirtStart
         END ;
         SYSTEM.GET(Start, x);  (* address of initialization body of the top module relative to Start *)
         SYSTEM.PUT(Start, J + (x DIV 4) - 1);  (* branch instruction to the initialization body of the top module *)
