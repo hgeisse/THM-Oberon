@@ -4,20 +4,27 @@ MODULE* BootLoad;
      HG 09.06.2018: re-definition of switches
      HG 24.11.2019: send ACK at end of load from serial line
      AP 13.03.2020: eliminate MT and MTOrg, set TR to TrapAdr
-     HG 30.05.2020: set file system offset to zero *)
+     HG 30.05.2020: set file system offset to zero
+     HG 28.06.2020: modify for use on ECO32 *)
   IMPORT SYSTEM;
   (* sw1: boot from serial line/not SDHC disk
      sw0: enforce cold boot *)
   CONST
-    TR = 28; SP = 29; LNK = 31;
-    TrapAdr = 0C0000004H; MemLim = 0C00E7EF0H; stackOrg = 0C0080000H; (* TODO: MemLim: absolut or relative *)
+    TR = 28;
+    SP = 29;
+    LNK = 31;
+    TrapAdr = 0C0000008H;
+    MemLim = 0C00E7EF0H;
+    stackOrg = 0C0080000H;
     swi = 0F1000000H;
     RxStatus = 0F0300000H;
     RxData = 0F0300004H;
     TxStatus = 0F0300008H;
     TxData = 0F030000CH;
-    spiData = -48; spiCtrl = -44;
-    CARD0 = 1; SPIFAST = 4;
+    spiData = -48;
+    spiCtrl = -44;
+    CARD0 = 1;
+    SPIFAST = 4;
     FSoffset = 0H;  (* file system offset, in 512-byte SD card blocks *)
     ACK = 10H;
 
@@ -26,7 +33,8 @@ MODULE* BootLoad;
   PROCEDURE RecByte(VAR x: BYTE);
     VAR y: INTEGER;
   BEGIN
-    REPEAT UNTIL SYSTEM.BIT(RxStatus, 0);
+    REPEAT
+    UNTIL SYSTEM.BIT(RxStatus, 0);
     SYSTEM.GET(RxData, y);
     x := y;
   END RecByte;
@@ -69,7 +77,6 @@ MODULE* BootLoad;
       UNTIL len = 0;
       RecInt(len)
     END;
-    SYSTEM.CCTL(7);(* We need to flush/sync caches! *)
     SndByte(ACK)
   END LoadFromLine;
 
@@ -82,7 +89,8 @@ MODULE* BootLoad;
     WHILE n > 0 DO
       DEC(n);
       SYSTEM.PUT(spiData, -1);
-      REPEAT UNTIL SYSTEM.BIT(spiCtrl, 0)
+      REPEAT
+      UNTIL SYSTEM.BIT(spiCtrl, 0)
     END
   END SPIIdle;
 
@@ -91,7 +99,8 @@ MODULE* BootLoad;
   BEGIN
     SYSTEM.PUT(spiCtrl, CARD0);
     SYSTEM.PUT(spiData, n);
-    REPEAT UNTIL SYSTEM.BIT(spiCtrl, 0)
+    REPEAT
+    UNTIL SYSTEM.BIT(spiCtrl, 0)
   END SPI;
 
   PROCEDURE SPICmd(n, arg: INTEGER);
@@ -224,9 +233,11 @@ BEGIN
       (* loading from disk requested *)
       LED(82H);
       LoadFromDisk
-    END;
+    END
   END;
   SYSTEM.PUT(0C000000CH, MemLim);
   SYSTEM.PUT(0C0000018H, stackOrg);
-  LED(84H)
+  LED(84H);
+  (* sync caches *)
+  SYSTEM.CCTL(7)
 END BootLoad.

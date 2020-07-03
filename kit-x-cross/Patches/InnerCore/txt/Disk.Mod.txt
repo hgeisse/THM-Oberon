@@ -1,0 +1,122 @@
+MODULE Disk;
+
+  IMPORT SYSTEM;
+
+  CONST
+    SectorLength* = 1024;
+    mapsize = 4000H; (* 1K sectors, 16MB *)
+    ramDiskStart = 200000H; (* RAM disk start: 2MB *)
+    ramDiskSize = 1000000H; (* RAM disk size: 16MB *)
+
+  TYPE
+    Sector* = ARRAY SectorLength OF BYTE;
+
+  VAR
+    NofSectors*: INTEGER;
+    sectorMap: ARRAY mapsize DIV 32 OF SET;
+
+  PROCEDURE Read512(src, dst: INTEGER);
+    (* src: block #, dst: address of buffer *)
+    VAR
+      dskAddr: INTEGER;
+      i: INTEGER;
+      data: INTEGER;
+  BEGIN
+    dskAddr := ramDiskStart + src * 512;
+    dskAddr := dskAddr + 0C0000000H;
+    FOR i := 0 TO 511 BY 4 DO
+      SYSTEM.GET(dskAddr, data);
+      INC(dskAddr, 4);
+      SYSTEM.PUT(dst, data);
+      INC(dst, 4);
+    END;
+  END Read512;
+
+  PROCEDURE Write512(dst, src: INTEGER);
+    (* dst: block #, src: address of buffer *)
+    VAR
+      dskAddr: INTEGER;
+      i: INTEGER;
+      data: INTEGER;
+  BEGIN
+    dskAddr := ramDiskStart + dst * 512;
+    dskAddr := dskAddr + 0C0000000H;
+    FOR i := 0 TO 511 BY 4 DO
+      SYSTEM.GET(src, data);
+      INC(src, 4);
+      SYSTEM.PUT(dskAddr, data);
+      INC(dskAddr, 4);
+    END;
+  END Write512;
+
+  PROCEDURE InitSecMap*;
+    VAR
+      i: INTEGER;
+  BEGIN
+    NofSectors := 0;
+    sectorMap[0] := {0 .. 31};
+    sectorMap[1] := {0 .. 31};
+    FOR i := 2 TO mapsize DIV 32 - 1 DO
+      sectorMap[i] := {}
+    END
+  END InitSecMap;
+
+  PROCEDURE MarkSector*(sec: INTEGER);
+  BEGIN
+    ASSERT((sec MOD 29) = 0);
+    sec := sec DIV 29;
+    INCL(sectorMap[sec DIV 32], sec MOD 32);
+    INC(NofSectors)
+  END MarkSector;
+
+  PROCEDURE FreeSector*(sec: INTEGER);
+  BEGIN
+    ASSERT((sec MOD 29) = 0);
+    sec := sec DIV 29;
+    EXCL(sectorMap[sec DIV 32], sec MOD 32);
+    DEC(NofSectors)
+  END FreeSector;
+
+  PROCEDURE AllocSector*(hint: INTEGER; VAR sec: INTEGER);
+    VAR
+      s: INTEGER;
+  BEGIN
+    (* find free sector, starting after hint *)
+    ASSERT((hint MOD 29) = 0);
+    hint := hint DIV 29;
+    s := hint;
+    REPEAT
+      INC(s);
+      IF s = mapsize THEN
+        s := 1
+      END;
+    UNTIL ~(s MOD 32 IN sectorMap[s DIV 32]);
+    INCL(sectorMap[s DIV 32], s MOD 32);
+    INC(NofSectors);
+    sec := s * 29
+  END AllocSector;
+
+  PROCEDURE GetSector*(src: INTEGER; VAR dst: Sector);
+  BEGIN
+    ASSERT((src MOD 29) = 0);
+    src := src DIV 29;
+    src := src * 2;
+    Read512(src, SYSTEM.ADR(dst));
+    Read512(src + 1, SYSTEM.ADR(dst) + 512)
+  END GetSector;
+
+  PROCEDURE PutSector*(dst: INTEGER; VAR src: Sector);
+  BEGIN
+    ASSERT((dst MOD 29) = 0);
+    dst := dst DIV 29;
+    dst := dst * 2;
+    Write512(dst, SYSTEM.ADR(src));
+    Write512(dst + 1, SYSTEM.ADR(src) + 512)
+  END PutSector;
+
+  PROCEDURE Init*;
+  BEGIN
+    InitSecMap
+  END Init;
+
+END Disk.
