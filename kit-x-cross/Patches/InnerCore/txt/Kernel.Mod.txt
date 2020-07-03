@@ -256,7 +256,7 @@ MODULE Kernel;  (*NW/PR  11.4.86 / 27.12.95 / 4.2.2014 / AP 15.5.20 Extended Obe
 
   PROCEDURE Trap(VAR a: INTEGER; b, c, d: INTEGER);
     VAR u, v, w: INTEGER;
-  BEGIN u := SYSTEM.REG(15); SYSTEM.GET(u - 4, v); w := v DIV 10H MOD 10H; (*trap number*)
+  BEGIN u := SYSTEM.REG(31); SYSTEM.GET(u - 4, v); w := v MOD 10H; (*trap number*)
     IF w = 0 THEN New(a, b, c, d)
     ELSE (*stop*) LED(w + 192); REPEAT UNTIL FALSE
     END

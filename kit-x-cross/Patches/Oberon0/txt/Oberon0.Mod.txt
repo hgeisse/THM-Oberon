@@ -3,7 +3,7 @@ MODULE Oberon0; (*Oberon-0 command interpreter / AP 7.4.20 Extended Oberon*)
   CONST swi = 0F1000000H; (*switches*)
     RxStatus = 0F0300000H; (*RS-232*)
     REQ = 20H; REC = 21H; SND = 22H; ACK = 10H;
-    screenbase = 0E7F00H; screensize = 1024 * 768 DIV 8; (*1024 x 768 pixel monocolor display*)
+    screenbase = 0F5000000H; screensize = 1024 * 768 DIV 8; (*1024 x 768 pixel monocolor display*)
     BootSec = 2; maxCode = 8000; TR = 28;
 
   VAR pat: ARRAY 32 OF CHAR;
@@ -24,9 +24,19 @@ MODULE Oberon0; (*Oberon-0 command interpreter / AP 7.4.20 Extended Oberon*)
   END Inspect;
 
   PROCEDURE FillDisplay; (*w - fill display with words w*)
-    VAR w, adr: INTEGER;
+    VAR w, adr, bitCounter, pixECO: INTEGER;
   BEGIN RS232.RecInt(w); RS232.SendStr("FillDisplay");
-    FOR adr := screenbase TO screenbase + screensize BY 4 DO SYSTEM.PUT(adr, w) END
+
+    FOR bitCounter := 0H TO 20H - 1H BY 1H DO
+      IF ODD(w) THEN
+        pixECO := LSL(pixECO, 1H) + 1H
+      ELSE
+        pixECO := LSL(pixECO, 1H)
+      END;
+      w := ROR(w, 1H)
+    END;
+
+    FOR adr := screenbase TO screenbase + screensize - 4 BY 4 DO SYSTEM.PUT(adr, pixECO) END
   END FillDisplay;
 
   PROCEDURE Sector; (*secno - show disk sector*)
