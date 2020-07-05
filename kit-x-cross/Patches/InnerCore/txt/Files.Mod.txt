@@ -360,7 +360,7 @@ MODULE Files;  (*NW 11.1.86 / 22.9.93 / 25.5.95 / 25.12.95 / 15.8.2013 / AP 22.3
     END
   END Read;
 
-  (* Read in big endian*)
+  (* Read in big endian *)
   PROCEDURE ReadInt*(VAR R: Rider; VAR x: INTEGER);
     VAR x0, x1, x2, x3: BYTE;
   BEGIN ReadByte(R, x0); ReadByte(R, x1); ReadByte(R, x2); ReadByte(R, x3);
@@ -451,13 +451,13 @@ MODULE Files;  (*NW 11.1.86 / 22.9.93 / 25.5.95 / 25.12.95 / 15.8.2013 / AP 22.3
     r.buf.data[r.bpos] := ORD(ch); INC(r.bpos); r.buf.mod := TRUE
   END Write;
 
-  (* Write in big endian*)
+  (* Write in big endian *)
   PROCEDURE WriteInt*(VAR R: Rider; x: INTEGER);
   BEGIN 
-    WriteByte(R, x DIV 1000000H MOD 100H)
+    WriteByte(R, x DIV 1000000H MOD 100H);
     WriteByte(R, x DIV 10000H MOD 100H);
     WriteByte(R, x DIV 100H MOD 100H);
-    WriteByte(R, x MOD 100H);
+    WriteByte(R, x MOD 100H)
   END WriteInt;
 
   PROCEDURE WriteSet*(VAR R: Rider; s: SET);
