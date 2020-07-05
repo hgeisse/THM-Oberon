@@ -18,7 +18,7 @@ o2h BootLoad.prm
 #
 
 h2o Disk.Mod
-calln CORP.Compile Disk.Mod
+calln CORP.Compile Disk.Mod/s
 o2h Disk.rsc
 
 h2o Kernel.Mod
@@ -26,15 +26,15 @@ calln CORP.Compile Kernel.Mod/s
 o2h Kernel.rsc
 
 h2o FileDir.Mod
-calln CORP.Compile FileDir.Mod
+calln CORP.Compile FileDir.Mod/s
 o2h FileDir.rsc
 
 h2o Files.Mod
-calln CORP.Compile Files.Mod
+calln CORP.Compile Files.Mod/s
 o2h Files.rsc
 
 h2o Modules.Mod
-calln CORP.Compile Modules.Mod
+calln CORP.Compile Modules.Mod/s
 o2h Modules.rsc
 
 calln CORL.Link Modules
