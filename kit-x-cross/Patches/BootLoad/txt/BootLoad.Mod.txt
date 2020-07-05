@@ -97,15 +97,15 @@ MODULE* BootLoad;
   END Read512;
 
   PROCEDURE LoadFromDisk;
-    VAR src, dst, lim: INTEGER;
+    VAR src, dst, allocLimit: INTEGER;
   BEGIN
     src := FSoffset + 4;  (* start at boot block *)
     dst := ramStart;
     Read512(src, dst);
-    SYSTEM.GET(16, lim);
+    SYSTEM.GET(ramStart + 16, allocLimit);
     INC(src);
     INC(dst, 512);
-    WHILE dst < lim DO
+    WHILE dst < allocLimit DO
       Read512(src, dst);
       INC(src);
       INC(dst, 512)
@@ -124,7 +124,6 @@ BEGIN
   IF SYSTEM.REG(LNK) = 0 THEN
     (* cold start *)
     LED(80H);
-    (*InitSPI;!!!!! HG !!!!!*)
     IF SYSTEM.BIT(swi, 1) THEN
       (* loading from serial line requested *)
       LED(81H);
