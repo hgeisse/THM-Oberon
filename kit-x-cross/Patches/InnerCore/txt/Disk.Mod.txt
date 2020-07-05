@@ -4,9 +4,12 @@ MODULE Disk;
 
   CONST
     SectorLength* = 1024;
-    mapsize = 4000H; (* 1K sectors, 16MB *)
-    ramDiskStart = 200000H; (* RAM disk start: 2MB *)
-    ramDiskSize = 1000000H; (* RAM disk size: 16MB *)
+    mapsize = 1000H; (* 4K * 1K sectors = 4MB *)
+    ramDiskStart = 0C0200000H; (* RAM disk start: 2MB *)
+    ramDiskSize = 400000H; (* RAM disk size: 4MB *)
+    romStart = 0E0000000H; romSize = 0800H;
+    outputDevice = 0FF000000H;
+    shutdownDevice = 0FF100000H;
 
   TYPE
     Sector* = ARRAY SectorLength OF BYTE;
@@ -14,6 +17,41 @@ MODULE Disk;
   VAR
     NofSectors*: INTEGER;
     sectorMap: ARRAY mapsize DIV 32 OF SET;
+
+  (*----------------------------------------------------------*)
+
+  PROCEDURE Shutdown*;
+    VAR i, w: INTEGER;
+  BEGIN
+    (* if ROM is present, copy the bootstrap loader to RAM *)
+    SYSTEM.GET(romStart, w);
+    IF w # 0FFFFFFFFH THEN
+      FOR i := 0 TO romSize - 4 BY 4 DO
+        SYSTEM.GET(romStart + i, w);
+        SYSTEM.PUT(ramDiskStart - romSize + i, w)
+      END
+    END;
+    (* dump bootstrap loader from RAM, just below RAM disk *)
+    FOR i := 0 TO romSize - 4 BY 4 DO
+      SYSTEM.GET(ramDiskStart - romSize + i, w);
+      SYSTEM.PUT(outputDevice, w DIV 1000000H);
+      SYSTEM.PUT(outputDevice, w DIV 10000H);
+      SYSTEM.PUT(outputDevice, w DIV 100H);
+      SYSTEM.PUT(outputDevice, w DIV 1H)
+    END;
+    (* dump RAM disk contents *)
+    FOR i := 0 TO ramDiskSize - 4 BY 4 DO
+      SYSTEM.GET(ramDiskStart + i, w);
+      SYSTEM.PUT(outputDevice, w DIV 1000000H);
+      SYSTEM.PUT(outputDevice, w DIV 10000H);
+      SYSTEM.PUT(outputDevice, w DIV 100H);
+      SYSTEM.PUT(outputDevice, w DIV 1H)
+    END;
+    (* shutdown *)
+    (* SYSTEM.PUT(shutdownDevice, 0) *)
+  END Shutdown;
+
+  (*----------------------------------------------------------*)
 
   PROCEDURE Read512(src, dst: INTEGER);
     (* src: block #, dst: address of buffer *)
@@ -23,7 +61,6 @@ MODULE Disk;
       data: INTEGER;
   BEGIN
     dskAddr := ramDiskStart + src * 512;
-    dskAddr := dskAddr + 0C0000000H;
     FOR i := 0 TO 511 BY 4 DO
       SYSTEM.GET(dskAddr, data);
       INC(dskAddr, 4);
@@ -40,7 +77,6 @@ MODULE Disk;
       data: INTEGER;
   BEGIN
     dskAddr := ramDiskStart + dst * 512;
-    dskAddr := dskAddr + 0C0000000H;
     FOR i := 0 TO 511 BY 4 DO
       SYSTEM.GET(src, data);
       INC(src, 4);
@@ -48,6 +84,8 @@ MODULE Disk;
       INC(dskAddr, 4);
     END;
   END Write512;
+
+  (*----------------------------------------------------------*)
 
   PROCEDURE InitSecMap*;
     VAR
