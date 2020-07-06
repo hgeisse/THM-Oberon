@@ -942,7 +942,7 @@ MODULE CORG; (* N.Wirth, 16.4.2016 / 4.4.2017 / 31.5.2019  Oberon compiler; code
 
   PROCEDURE SaveRegs(r: LONGINT);  (* R[0 .. r-1]*)
     VAR r0: LONGINT;
-  BEGIN (*r > 0*) r0 := 0;
+  BEGIN (*r > 0*) r0 := 1;
     Put1(Sub, SP, SP, r*4); INC(frame, 4*r);
     REPEAT Put2(Stw, r0, SP, (r-r0-1)*4); INC(r0) UNTIL r0 = r
   END SaveRegs;
@@ -950,7 +950,7 @@ MODULE CORG; (* N.Wirth, 16.4.2016 / 4.4.2017 / 31.5.2019  Oberon compiler; code
   PROCEDURE RestoreRegs(r: LONGINT); (*R[0 .. r-1]*)
     VAR r0: LONGINT;
   BEGIN (*r > 0*) r0 := r;
-    REPEAT DEC(r0); Put2(Ldw, r0, SP, (r-r0-1)*4) UNTIL r0 = 0;
+    REPEAT DEC(r0); Put2(Ldw, r0, SP, (r-r0-1)*4) UNTIL r0 = 1;
     Put1(Add, SP, SP, r*4); DEC(frame, 4*r)
   END RestoreRegs;
 
@@ -986,7 +986,7 @@ MODULE CORG; (* N.Wirth, 16.4.2016 / 4.4.2017 / 31.5.2019  Oberon compiler; code
     END ;
     IF x.type.base.form = CORB.NoTyp THEN (*procedure*) RH := 1
     ELSE (*function*)
-      IF r > 1 THEN Put0(Mov, r, 0, 0); RestoreRegs(r) END ;
+      IF r > 1 THEN Put0(Mov, r, 0, 1); RestoreRegs(r) END ;
       x.mode := Reg; x.r := r; RH := r+1
     END
   END Call;
