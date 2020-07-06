@@ -5,6 +5,7 @@ MODULE Oberon0; (*Oberon-0 command interpreter / AP 7.4.20 Extended Oberon*)
     REQ = 20H; REC = 21H; SND = 22H; ACK = 10H;
     screenbase = 0F5000000H; screensize = 1024 * 768 DIV 8; (*1024 x 768 pixel monocolor display*)
     BootSec = 2; maxCode = 8000; TR = 28;
+    RamStart = 0C0000000H; DiskSize = 1000H; (* disk size in sectors of 1024 bytes*)
 
   VAR pat: ARRAY 32 OF CHAR;
 
@@ -69,16 +70,16 @@ MODULE Oberon0; (*Oberon-0 command interpreter / AP 7.4.20 Extended Oberon*)
   PROCEDURE Watch; (*show allocation, nof sectors, switches, and timer*)
     VAR s: LONGINT;
   BEGIN RS232.SendStr("Watch"); RS232.Line;
-    RS232.SendStr("  Modules space (bytes)"); RS232.SendInt(Modules.AllocPtr);
-    RS232.SendInt(Modules.AllocPtr * 100 DIV Kernel.heapOrg); RS232.SendStr("%"); RS232.Line;
-    RS232.SendStr("  Heap speace"); RS232.SendInt(Kernel.allocated);
+    RS232.SendStr("  Modules space (bytes)"); RS232.SendInt(Modules.AllocPtr - RamStart);
+    RS232.SendInt((Modules.AllocPtr - RamStart)* 100 DIV (Kernel.heapOrg - RamStart)); RS232.SendStr("%"); RS232.Line;
+    RS232.SendStr("  Heap space"); RS232.SendInt(Kernel.allocated);
     RS232.SendInt(Kernel.allocated * 100 DIV (Kernel.heapLim - Kernel.heapOrg)); RS232.SendStr("%"); RS232.Line;
     RS232.SendStr("  Disk sectors "); RS232.SendInt(Disk.NofSectors);
-    RS232.SendInt(Disk.NofSectors * 100 DIV 10000H); RS232.SendStr("%"); RS232.Line;
+    RS232.SendInt(Disk.NofSectors * 100 DIV DiskSize); RS232.SendStr("%"); RS232.Line;
     RS232.SendStr("  Switches: swi0 = "); SYSTEM.GET(swi, s); RS232.Send(5);
-    IF SYSTEM.BIT(swi, 0) THEN RS232.Send(ORD("0")) ELSE RS232.Send(ORD("1")) END ;
+    IF SYSTEM.BIT(swi, 0) THEN RS232.Send(ORD("1")) ELSE RS232.Send(ORD("0")) END ;
     RS232.SendStr(",  swi1 = "); RS232.Send(5);
-    IF SYSTEM.BIT(swi, 1) THEN RS232.Send(ORD("0")) ELSE RS232.Send(ORD("1")) END ;
+    IF SYSTEM.BIT(swi, 1) THEN RS232.Send(ORD("1")) ELSE RS232.Send(ORD("0")) END ;
     RS232.Line;  RS232.SendStr("  Time "); s := Kernel.Time(); RS232.SendInt(s)
   END Watch;
 

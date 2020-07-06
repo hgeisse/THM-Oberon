@@ -1,13 +1,14 @@
 MODULE Kernel;  (*NW/PR  11.4.86 / 27.12.95 / 4.2.2014 / AP 15.5.20 Extended Oberon*)
   IMPORT SYSTEM;
-  CONST TrapAdr* = 0C0000008H; J = 0A8000000H;
-    timer = -64;
+  CONST InterruptAdr* = 0C0000004H; TrapAdr* = 0C0000008H; J = 0A8000000H;
+    timerBase = 0F0000000H;
 
   TYPE Handler* = PROCEDURE(src, dst: LONGINT; s: ARRAY OF CHAR; VAR continue: BOOLEAN): INTEGER;
 
   VAR allocated*: INTEGER;
     heapOrg*, heapLim*: INTEGER;
     stackOrg*, stackSize*, MemLim*: INTEGER;
+    millisecondCounter: INTEGER;
     clock: INTEGER;
     list0, list1, list2, list3: INTEGER;  (*lists of free blocks of size n*256, 128, 64, 32 bytes*)
     
@@ -235,10 +236,14 @@ MODULE Kernel;  (*NW/PR  11.4.86 / 27.12.95 / 4.2.2014 / AP 15.5.20 Extended Obe
   END Scan;
 
 (*-------- Miscellaneous procedures----------*)
+  PROCEDURE* TimerInterrupt;
+    VAR v: INTEGER;
+  BEGIN SYSTEM.GET(timerBase, v);
+    INC(millisecondCounter)
+  END TimerInterrupt;
 
   PROCEDURE Time*(): INTEGER;
-    VAR t: INTEGER;
-  BEGIN SYSTEM.GET(timer, t); RETURN t
+  BEGIN RETURN millisecondCounter
   END Time;
 
   PROCEDURE Clock*(): INTEGER;
@@ -268,7 +273,12 @@ MODULE Kernel;  (*NW/PR  11.4.86 / 27.12.95 / 4.2.2014 / AP 15.5.20 Extended Obe
     stackOrg := heapOrg; stackSize := 8000H; heapLim := MemLim;
     list1 := 0; list2 := 0; list3 := 0; list0 := heapOrg;
     SYSTEM.PUT(list0, heapLim - heapOrg); SYSTEM.PUT(list0+4, -1); SYSTEM.PUT(list0+8, 0);
-    allocated := 0; clock := 0
+    allocated := 0; clock := 0;
+    (*initialize timer*)
+    Install(SYSTEM.ADR(TimerInterrupt), InterruptAdr);
+    SYSTEM.PUT(timerBase + 4, 50000);
+    SYSTEM.PUT(timerBase, 2);
+    SYSTEM.SETPSW(08804000H);
   END Init;
 
 END Kernel.
