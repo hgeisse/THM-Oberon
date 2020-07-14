@@ -1,0 +1,41 @@
+
+There are at least three different methods to define
+division (DIV) and remainder (MOD) with negative
+operands. For all of them the following implication
+must hold:
+
+(q = a DIV b) AND (r = a MOD b)  =>  (a = q * b + r)
+
+
+Method 1
+--------
+
+ 14 :  3 =  4 R  2		 12 :  3 =  4 R 0
+-14 :  3 = -4 R -2		-12 :  3 = -4 R 0
+ 14 : -3 = -4 R  2		 12 : -3 = -4 R 0
+-14 : -3 =  4 R -2		-12 : -3 =  4 R 0
+
+(Remainder has the same sign as the dividend.)
+
+
+Method 2
+--------
+
+ 14 :  3 =  4 R  2		 12 :  3 =  4 R 0
+-14 :  3 = -5 R  1		-12 :  3 = -4 R 0
+ 14 : -3 = -5 R -1		 12 : -3 = -4 R 0
+-14 : -3 =  4 R -2		-12 : -3 =  4 R 0
+
+(Remainder has the same sign as the divisor.)
+
+
+Method 3
+--------
+
+ 14 :  3 =  4 R  2		 12 :  3 =  4 R 0
+-14 :  3 = -5 R  1		-12 :  3 = -4 R 0
+ 14 : -3 = -4 R  2		 12 : -3 = -4 R 0
+-14 : -3 =  5 R  1		-12 : -3 =  4 R 0
+
+(Remainder is always non-negative.)
+
