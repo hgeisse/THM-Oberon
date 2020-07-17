@@ -8,7 +8,7 @@ MODULE CORG; (* N.Wirth, 16.4.2016 / 4.4.2017 / 31.5.2019  Oberon compiler; code
     StkOrg0 = 0C0010000H; VarOrg0 = 0;  (*for RISC-0 only*)
     TR = 28; SP = 29; LNK = 31;   (*dedicated registers*)
     maxRegister = 31;
-    maxCode = 8800; maxStrx = 3200; maxTD = 160; maxSet = WordSize*8;
+    maxCode = 10000; maxStrx = 3500; maxTD = 160; maxSet = WordSize*8;
     Reg = 10; RegI = 11; Cond = 12;  (*internal item modes*)
     Zero = 0; D = 4B00H; (*denormalized zero with an exponent of 127 + 24 = 151, used for FLOOR/FLT conversions*)
     F2 = -2;  (*F2 memory instruction*)
@@ -19,7 +19,7 @@ MODULE CORG; (* N.Wirth, 16.4.2016 / 4.4.2017 / 31.5.2019  Oberon compiler; code
 
   (*frequently used opcodes*)  U = 2000H; V = 1000H;
     Mov = 0; Lsl = 24; Slr = 26; Sar = 28; Ror= 3; And = 16; Ann = 5; Ior = 18; Xor = 20;
-    Add = 0; Sub = 2; Cmp = 2; Mul = 4; Mulu = 6; Div = 8; Remu = 14;
+    Add = 0; Sub = 2; Cmp = 2; Mul = 4; Mulu = 6; Div = 8; Rem = 12; Remu = 14;
     Ldw = 48; Ldb = 52; Stw = 53; Stb = 55;
 
     Fpar = 59;
@@ -126,7 +126,7 @@ MODULE CORG; (* N.Wirth, 16.4.2016 / 4.4.2017 / 31.5.2019  Oberon compiler; code
 
   PROCEDURE Put2(op, a, b, off: LONGINT);
   BEGIN (*emit load/store instruction*)
-    code[pc] := ((op * 20H + b) * 20H + a) * C16 + off MOD C20; INC(pc)
+    code[pc] := ((op * 20H + b) * 20H + a) * C16 + off MOD C16; INC(pc)
   END Put2;
 
   PROCEDURE Put3(op, cond, a, b, off: LONGINT; isFloatOp: BOOLEAN);
@@ -631,27 +631,58 @@ MODULE CORG; (* N.Wirth, 16.4.2016 / 4.4.2017 / 31.5.2019  Oberon compiler; code
   END MulOp;
 
   PROCEDURE DivOp*(op: LONGINT; VAR x, y: Item);   (* x := x op y *)
-    VAR e: LONGINT;
+    VAR e, pc0: LONGINT;
   BEGIN
     IF op = ORS.div THEN
       IF (x.mode = CORB.Const) & (y.mode = CORB.Const) THEN
         IF y.a > 0 THEN x.a := x.a DIV y.a ELSE ORS.Mark("bad divisor") END
       ELSIF (y.mode = CORB.Const) & (y.a >= 2) & (log2(y.a, e) = 1) THEN load(x); Put1(Sar, x.r, x.r, e)
       ELSIF y.mode = CORB.Const THEN
-        IF y.a > 0 THEN load(x); Put1a(Div, x.r, x.r, y.a, FALSE) ELSE ORS.Mark("bad divisor") END
+        IF y.a > 0 THEN
+          load(x);
+          incR;
+          Put1a(Rem, RH-1, x.r, y.a, FALSE);
+          Put1a(Div, x.r, x.r, y.a, FALSE);
+          Put3(Bc, LE, 0, RH-1, 1, FALSE);
+          Put1(Sub, x.r, x.r, 1);
+          DEC(RH)
+        ELSE
+          ORS.Mark("bad divisor")
+        END
       ELSE load(y);
         IF check THEN Trap(LE, 6) END ;
-        load(x); Put0(Div, RH-2, x.r, y.r); DEC(RH); x.r := RH-1
+        load(x);
+        incR;
+        Put0(Rem, RH-1, x.r, y.r);
+        Put0(Div, RH-3, x.r, y.r);
+        Put3(Bc, LE, 0, RH-1, 1, FALSE);
+        Put1(Sub, RH-3, RH-3, 1);
+        DEC(RH, 2); x.r := RH-1
       END
     ELSE (*op = ORS.mod*)
       IF (x.mode = CORB.Const) & (y.mode = CORB.Const) THEN
         IF y.a > 0 THEN x.a := x.a MOD y.a ELSE ORS.Mark("bad modulus") END
       (* we have the Rem instruction, we don't need shift left and right in this case *)
       ELSIF y.mode = CORB.Const THEN
-        IF y.a > 0 THEN load(x); Put1a(Remu, x.r, x.r, y.a, FALSE) ELSE ORS.Mark("bad modulus") END
+        IF y.a > 0 THEN
+          load(x);
+          Put1a(Rem, x.r, x.r, y.a, FALSE);
+          pc0 := pc;
+          Put3(Bc, LE, 0, x.r, (* to be fixed *) 0, FALSE);
+          Put1a(Add, x.r, x.r, y.a, FALSE);
+          fix(pc0, x.r * C16 + (pc-pc0-1)) (* fix jump over add *)
+        ELSE
+          ORS.Mark("bad modulus")
+        END
       ELSE load(y);
         IF check THEN Trap(LE, 6) END ;
-        load(x); Put0(Remu, RH-2, x.r, y.r); DEC(RH); x.r := RH-1
+        load(x);
+        incR;
+        Put0(Rem, RH-1, x.r, y.r);
+        Put3(Bc, LE, 0, RH-1, 1, FALSE);
+        Put0(Add, RH-1, RH-1, y.r);
+        x.r := RH-1;
+        DEC(RH, 2);
       END
     END
   END DivOp;
@@ -771,7 +802,6 @@ MODULE CORG; (* N.Wirth, 16.4.2016 / 4.4.2017 / 31.5.2019  Oberon compiler; code
     SetCC(x, relmap[op - ORS.eql])
   END RealRelation;
 
-  (*TODO: Pattern16 not compiling...*)
   PROCEDURE StringRelation*(op: INTEGER; VAR x, y: Item);   (* x := x < y *)
     (*x, y are char arrays or strings*)
   BEGIN
@@ -940,18 +970,18 @@ MODULE CORG; (* N.Wirth, 16.4.2016 / 4.4.2017 / 31.5.2019  Oberon compiler; code
   BEGIN FixLink(x.a)
   END Fixup;
 
-  PROCEDURE SaveRegs(r: LONGINT);  (* R[0 .. r-1]*)
+  PROCEDURE SaveRegs(r: LONGINT);  (* R[1 .. r-1]*)
     VAR r0: LONGINT;
   BEGIN (*r > 0*) r0 := 1;
-    Put1(Sub, SP, SP, r*4); INC(frame, 4*r);
+    Put1(Sub, SP, SP, (r-1)*4); INC(frame, 4*(r-1));
     REPEAT Put2(Stw, r0, SP, (r-r0-1)*4); INC(r0) UNTIL r0 = r
   END SaveRegs;
 
-  PROCEDURE RestoreRegs(r: LONGINT); (*R[0 .. r-1]*)
+  PROCEDURE RestoreRegs(r: LONGINT); (*R[1 .. r-1]*)
     VAR r0: LONGINT;
   BEGIN (*r > 0*) r0 := r;
     REPEAT DEC(r0); Put2(Ldw, r0, SP, (r-r0-1)*4) UNTIL r0 = 1;
-    Put1(Add, SP, SP, r*4); DEC(frame, 4*r)
+    Put1(Add, SP, SP, (r-1)*4); DEC(frame, 4*(r-1))
   END RestoreRegs;
 
   PROCEDURE PrepCall*(VAR x: Item; VAR r: LONGINT);
@@ -1024,9 +1054,9 @@ MODULE CORG; (* N.Wirth, 16.4.2016 / 4.4.2017 / 31.5.2019  Oberon compiler; code
   BEGIN load(x);  (*value of case expression*)
     L0 := pc; Put1(Cmp, RH, x.r, 0);  (*higher bound, fixed up in CaseTail*)
     PutBc(CC, 0, TRUE);  (*branch to else, fixed up in CaseTail*)
-    Put1(Add, x.r, x.r, 0);  (*nof words between Bl instruction at L0+4 and jump table, fixed up in CaseTail*)
+    Put1(Add, x.r, x.r, 0);  (*nof words between Bl instruction at L0+6 and jump table, fixed up in CaseTail*)
     Put1(Lsl, x.r, x.r, 2);
-    (*L0+4*) Put3c(Bl, 0);  (*LNK := PC+1*)
+    (*L0+6*) Put3c(Bl, 0);  (*LNK := PC+1*)
     Put0(Add, LNK, LNK, x.r); Put3b(Br, LNK, 0); DEC(RH)
   END CaseHead;
 
@@ -1035,8 +1065,8 @@ MODULE CORG; (* N.Wirth, 16.4.2016 / 4.4.2017 / 31.5.2019  Oberon compiler; code
   BEGIN
     IF n > 0 THEN fix1(L0, tab[n-1].high + 1) (*higher bound*) ELSIF L1 = 0 THEN ORS.Mark("empty case") END ;
     IF L1 = 0 THEN L1 := pc; Trap(7, 1) END ;  (*create else*)
-    fix(L0+1, L1-L0-2);  (*branch to else*)
-    fix1(L0+2, pc-L0-5);  (*nof words between Bl instruction at L0+4 and jump table*)
+    fix(L0+3, L1-L0-4);  (*branch to else*)
+    fix1(L0+4, pc-L0-7);  (*nof words between Bl instruction at L0+6 and jump table*)
     j := 0;
     FOR i := 0 TO n-1 DO  (*construct jump table*)
       WHILE j < tab[i].low DO BJump(L1); INC(j) END ;  (*else*)
