@@ -168,11 +168,11 @@ MODULE CORL;  (*Oberon boot linker/loader for RISC / AP 5.5.20 Extended Oberon*)
         WHILE n > 0 DO CrossUtil.ReadIntBE(R, w); SYSTEM.PUT(p, w); INC(p, 4); DEC(n) END ;
         mod.ptr := p;  (*pointer references*)
         CrossUtil.ReadIntBE(R, w);
-        WHILE w >= 0 DO SYSTEM.PUT(p, mod.data + w - Start); INC(p, 4); CrossUtil.ReadIntBE(R, w) END ;
+        WHILE w >= 0 DO SYSTEM.PUT(p, mod.data + w - Start + EcoVirtStart); INC(p, 4); CrossUtil.ReadIntBE(R, w) END ;
         SYSTEM.PUT(p, 0); INC(p, 4);
         mod.pvr := p;  (*procedure variable references*)
         CrossUtil.ReadIntBE(R, w);
-        WHILE w >= 0 DO SYSTEM.PUT(p, mod.data + w - Start); INC(p, 4); CrossUtil.ReadIntBE(R, w) END ;
+        WHILE w >= 0 DO SYSTEM.PUT(p, mod.data + w - Start + EcoVirtStart); INC(p, 4); CrossUtil.ReadIntBE(R, w) END ;
         SYSTEM.PUT(p, 0); INC(p, 4);
         CrossUtil.ReadIntBE(R, fixorgP); CrossUtil.ReadIntBE(R, fixorgD);
         CrossUtil.ReadIntBE(R, fixorgT); CrossUtil.ReadIntBE(R, fixorgM);
