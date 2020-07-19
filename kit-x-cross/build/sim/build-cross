@@ -59,11 +59,49 @@ o2h Oberon0.rsc
 calln CORL.Link Oberon0
 o2h Oberon0.bin
 
-#--------------------------------------
-
 #
 # OuterCore
 #
+
+h2o Input.Mod
+calln CORP.Compile Input.Mod
+o2h Input.rsc
+
+h2o Fonts.Mod
+calln CORP.Compile Fonts.Mod
+o2h Fonts.rsc
+
+h2o Display.Mod
+calln CORP.Compile Display.Mod
+o2h Display.rsc
+
+h2o Viewers.Mod
+calln CORP.Compile Viewers.Mod
+o2h Viewers.rsc
+
+h2o Texts.Mod
+calln CORP.Compile Texts.Mod
+o2h Texts.rsc
+
+h2o Oberon.Mod
+calln CORP.Compile Oberon.Mod
+o2h Oberon.rsc
+
+h2o MenuViewers.Mod
+calln CORP.Compile MenuViewers.Mod
+o2h MenuViewers.rsc
+
+h2o TextFrames.Mod
+calln CORP.Compile TextFrames.Mod
+o2h TextFrames.rsc
+
+h2o System.Mod
+calln CORP.Compile System.Mod
+o2h System.rsc
+
+#h2o System.Tool
+
+#--------------------------------------
 
 #
 # BootLink

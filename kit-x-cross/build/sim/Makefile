@@ -117,6 +117,7 @@ prologue:
 		#
 		mkdir -p $(NEW)/OuterCore/txt
 		cp $(SRC)/OuterCore/txt/* $(NEW)/OuterCore/txt
+		cp $(PATCHES)/OuterCore/txt/* $(NEW)/OuterCore/txt
 		$(D2O) $(NEW)/OuterCore/txt/Display.Mod.txt Display.Mod
 		$(D2O) $(NEW)/OuterCore/txt/Fonts.Mod.txt Fonts.Mod
 		$(D2O) $(NEW)/OuterCore/txt/Input.Mod.txt Input.Mod
@@ -211,16 +212,16 @@ epilogue:
 		#mkdir -p $(NEW)/Out/rsc
 		#mv Out.rsc $(NEW)/Out/rsc
 		#
-		#mkdir -p $(NEW)/OuterCore/rsc
-		#mv Display.rsc $(NEW)/OuterCore/rsc
-		#mv Fonts.rsc $(NEW)/OuterCore/rsc
-		#mv Input.rsc $(NEW)/OuterCore/rsc
-		#mv MenuViewers.rsc $(NEW)/OuterCore/rsc
-		#mv Oberon.rsc $(NEW)/OuterCore/rsc
-		#mv System.rsc $(NEW)/OuterCore/rsc
-		#mv TextFrames.rsc $(NEW)/OuterCore/rsc
-		#mv Texts.rsc $(NEW)/OuterCore/rsc
-		#mv Viewers.rsc $(NEW)/OuterCore/rsc
+		mkdir -p $(NEW)/OuterCore/rsc
+		mv Display.rsc $(NEW)/OuterCore/rsc
+		mv Fonts.rsc $(NEW)/OuterCore/rsc
+		mv Input.rsc $(NEW)/OuterCore/rsc
+		mv MenuViewers.rsc $(NEW)/OuterCore/rsc
+		mv Oberon.rsc $(NEW)/OuterCore/rsc
+		mv System.rsc $(NEW)/OuterCore/rsc
+		mv TextFrames.rsc $(NEW)/OuterCore/rsc
+		mv Texts.rsc $(NEW)/OuterCore/rsc
+		mv Viewers.rsc $(NEW)/OuterCore/rsc
 		#
 		#mkdir -p $(NEW)/PCLink2/rsc
 		#mv PCLink2.rsc $(NEW)/PCLink2/rsc
