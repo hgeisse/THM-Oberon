@@ -99,7 +99,7 @@ MODULE Kernel;  (*NW/PR  11.4.86 / 27.12.95 / 4.2.2014 / AP 15.5.20 Extended Obe
     VAR pvadr, offadr, offset, tag, p, q, r, pos, len, elemsize, blktyp: LONGINT;
   BEGIN SYSTEM.GET(pref, pvadr); (*pointers < heapOrg considered NIL*)
     WHILE pvadr # 0 DO SYSTEM.GET(pvadr, p);
-      IF p >= heapOrg THEN SYSTEM.GET(p-4, offadr);
+      IF (p < 0) & (p >= heapOrg) THEN SYSTEM.GET(p-4, offadr);
         IF offadr = 0 THEN q := p;  (*mark elements in data structure with root p*)
           REPEAT SYSTEM.GET(p-4, offadr); SYSTEM.GET(p-8, tag); blktyp := tag MOD 4;
             IF blktyp = 0 THEN (*record*) pos := p;
@@ -123,7 +123,7 @@ MODULE Kernel;  (*NW/PR  11.4.86 / 27.12.95 / 4.2.2014 / AP 15.5.20 Extended Obe
             END ;
             IF offset # -1 THEN (*down*)
               SYSTEM.GET(pos+offset, r);
-              IF r >= heapOrg THEN SYSTEM.GET(r-4, offadr);
+              IF (r < 0) & (r >= heapOrg) THEN SYSTEM.GET(r-4, offadr);
                 IF offadr = 0 THEN SYSTEM.PUT(pos+offset, q); q := p; p := r END
               END
             ELSE (*up*) SYSTEM.GET(q-4, offadr); SYSTEM.GET(offadr, offset);
@@ -162,10 +162,12 @@ MODULE Kernel;  (*NW/PR  11.4.86 / 27.12.95 / 4.2.2014 / AP 15.5.20 Extended Obe
           SYSTEM.PUT(q, size); SYSTEM.PUT(q+4, -1); SYSTEM.PUT(q+8, list0); list0 := q; INC(q, size)
         END
       END ;
-      IF mark > 0 THEN SYSTEM.GET(p, tag);
+      IF mark < -1 THEN
+        SYSTEM.GET(p, tag);
         IF tag MOD 4 = 0 THEN (*record*) SYSTEM.GET(tag, size) ELSE (*array*) SYSTEM.GET(p+16, size) END ;
         SYSTEM.PUT(p+4, 0); INC(p, size);
-      ELSE (*free*) SYSTEM.GET(p, size); INC(p, size)
+      ELSE (*free*)
+        SYSTEM.GET(p, size); INC(p, size)
       END
     UNTIL p >= heapLim
   END Collect;
