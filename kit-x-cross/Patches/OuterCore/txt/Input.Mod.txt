@@ -1,7 +1,13 @@
 MODULE Input;
+  (* NW 05.10.86
+     NW 15.11.90 Ceres-2
+     PR 21.04.12
+     NW 15.05.13 Ceres-4
+     AP 09.03.20 Extended Oberon
+     HG 19.05.20 Alt modifier *)
   IMPORT SYSTEM;
 
-  CONST msAdr = -40; kbdAdr = -36;
+  CONST keyboardControl = 0F0200000H; keyboardData = 0F0200004H; mouseControl = 0F0201000H; mouseData = 0F0201004H; ps2ENABLE = 0F4H;
    (*ascii codes*) NUL* = 0X; BS* = 08X; TAB* = 09X; LF* = 0AX; CR* = 0DX;
                    SUB* = 1AX; ESC* = 1BX; SPC* = 20X; DEL* = 7FX;
    (*text control*) CtrlA* = 1X; CtrlC* = 03X; CtrlV* = 16X; CtrlX* = 18X;
@@ -13,10 +19,27 @@ MODULE Input;
     KTabAdr1: INTEGER;  (*non-alt keyboard code translation table*)
     KTabAdr2: INTEGER;  (*alt keyboard code translation table*)
     MW, MH, MX, MY: INTEGER; (*mouse limits and coords*)
-    MK: SET; (*mouse keys*)
+    MK, retMouseKeys: SET; (*mouse keys*)
+    screenX, screenY, xMovement, yMovement, retScreenX, retScreenY, keysAndFlags, state: INTEGER;
 
+(*FIFO implemented in hardware, because every read must be handled,
+  including tracking the state of the Shift and Ctrl keys*)
+  
   PROCEDURE Peek();
   BEGIN
+    IF SYSTEM.BIT(keyboardControl, 0) THEN
+      SYSTEM.GET(keyboardData, kbdCode);
+      IF kbdCode = 0F0H THEN Up := TRUE
+      ELSIF kbdCode = 0E0H THEN Ext := TRUE
+      ELSE
+        IF (kbdCode = 12H) OR (kbdCode = 59H) THEN (*shift*) Shift := ~Up
+        ELSIF kbdCode = 14H THEN (*ctrl*) Ctrl := ~Up
+        ELSIF kbdCode = 11H THEN (*alt*) Alt := ~Up
+        ELSIF ~Up THEN Recd := TRUE (*real key going down*)
+        END ;
+        Up := FALSE; Ext := FALSE
+      END
+    END;
   END Peek;
 
   PROCEDURE Available*(): INTEGER;
@@ -38,16 +61,118 @@ MODULE Input;
     Recd := FALSE
   END Read;
 
+  (* Adresse: 0xB7D4 - 0xB7F8, 0xBF28, 0xB9A4 *)
   PROCEDURE Mouse*(VAR keys: SET; VAR x, y: INTEGER);
+    VAR oberonKeys: SET;
   BEGIN
-    keys := {};
-    x := 30;
-    y := 30;
+    IF (SYSTEM.BIT(mouseControl, 0)) THEN
+      IF state = 0 THEN
+        SYSTEM.GET(mouseData, keysAndFlags);
+
+        state := 1;
+      ELSIF state = 1 THEN
+        SYSTEM.GET(mouseData, xMovement);
+
+        (* check for X sign bit *)
+        IF(ODD(keysAndFlags DIV 10H)) THEN
+            xMovement := (256 - xMovement) MOD 256;
+            IF(screenX - xMovement >= 0) THEN
+                screenX := screenX - xMovement;
+            ELSE
+                screenX := 0;
+            END;
+        ELSE
+            IF(screenX + xMovement <= 1023) THEN
+                screenX := screenX + xMovement;
+            ELSE
+                screenX := 1023;
+            END;
+        END;
+
+        state := 2;
+      ELSIF state = 2 THEN
+        SYSTEM.GET(mouseData, yMovement);
+
+        (* check for Y sign bit *)
+        IF(keysAndFlags DIV 20H = 1) THEN
+            yMovement := (256 - yMovement) MOD 256;
+            IF(screenY - yMovement >= 0) THEN
+                screenY := screenY - yMovement;
+            ELSE
+                screenY := 0;
+            END;
+        ELSE
+            IF(screenY + yMovement <= 767) THEN
+                screenY := screenY + yMovement;
+            ELSE
+                screenY := 767;
+            END;
+        END;
+
+        IF (keysAndFlags MOD 10H = 9H) THEN
+          oberonKeys := {2}
+        ELSIF (keysAndFlags MOD 10H = 0AH) THEN
+          oberonKeys := {0}
+        ELSIF (keysAndFlags MOD 10H = 0CH) THEN
+          oberonKeys := {1}
+        ELSIF (keysAndFlags MOD 10H = 0DH) THEN
+          oberonKeys := {2, 1}
+        ELSIF (keysAndFlags MOD 10H = 0BH) THEN
+          oberonKeys := {2, 0}
+        ELSIF (keysAndFlags MOD 10H = 0EH) THEN
+          oberonKeys := {1, 0}
+        ELSE
+          oberonKeys := {}
+        END;
+
+        retMouseKeys := oberonKeys;
+        retScreenX := screenX;
+        retScreenY := screenY;
+
+        state := 0;
+      ELSE
+        state := 0;
+      END;
+    END;
+
+    keys := retMouseKeys;
+    x := retScreenX;
+    y := retScreenY;
+
+    IF y >= MH THEN y := MH-1 END
   END Mouse;
 
   PROCEDURE SetMouseLimits*(w, h: INTEGER);
   BEGIN MW := w; MH := h
   END SetMouseLimits;
+
+  PROCEDURE InitMouse;
+        VAR inputData: INTEGER;
+  BEGIN
+      (* BAT Test abrufen 0xAA *)
+      REPEAT UNTIL SYSTEM.BIT(mouseControl, 0);
+      SYSTEM.GET(mouseData, inputData);
+
+      (* MouseID abrufen 0x00 *)
+      REPEAT UNTIL SYSTEM.BIT(mouseControl, 0);
+      SYSTEM.GET(mouseData, inputData);
+
+      (* Mouse Enable senden 0xF4 *)
+      REPEAT UNTIL SYSTEM.BIT(mouseControl, 4);
+      SYSTEM.PUT(mouseData, ps2ENABLE);
+
+      (* ACK empfangen 0xFA *)
+      REPEAT UNTIL SYSTEM.BIT(mouseControl, 0);
+      SYSTEM.GET(mouseData, inputData);
+  END InitMouse;
+
+  PROCEDURE InitKeyboard;
+    VAR keyboardInput: INTEGER;
+  BEGIN
+    (* BAT Test abrufen 0xAA *)
+    REPEAT UNTIL SYSTEM.BIT(keyboardControl, 0);
+    SYSTEM.GET(keyboardData, keyboardInput);
+  END InitKeyboard;
 
   PROCEDURE Init*;
   BEGIN Up := FALSE; Shift := FALSE;
@@ -104,7 +229,9 @@ MODULE Input;
       00 00 00 00 00 00 00 00  00 00 00 00 00 00 00 00
       00 00 00 00 00 00 00 00  00 00 00 00 00 00 00 00
       00 00 00 00 00 00 00 00  00 00 00 00 00 00 00 00
-      00 00 00 00 00 00 00 00  00 00 00 00 00 00 00 00$)
+      00 00 00 00 00 00 00 00  00 00 00 00 00 00 00 00$);
+
+      InitKeyboard(); InitMouse()
   END Init;
 
 BEGIN Init
