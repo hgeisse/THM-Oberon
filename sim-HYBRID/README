@@ -152,5 +152,5 @@ the buffer is 0x800000. The display occupies 0x18000 bytes, which
 is 0x6000 (24576) words. This equals a total of 786432 bits, each
 bit representing a single pixel of the 1024x768 pixel display.
 Bit value 0 means 'background color'; bit value 1 is 'foreground
-color'. Bit 31 (MSB) of a word is the leftmost pixel of this word
-on the screen, bit 0 (LSB) of a word is the rightmost pixel.
+color'. Bit 0 (LSB) of a word is the leftmost pixel of this word
+on the screen, bit 31 (MSB) of a word is the rightmost pixel.
