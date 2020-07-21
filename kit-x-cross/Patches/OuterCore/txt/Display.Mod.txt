@@ -33,6 +33,8 @@ MODULE Display;  (*NW 5.11.2013 / 17.1.2019 / AP 9.3.20 Extended Oberon*)
 
     pixRISC := SYSTEM.VAL(INTEGER, pixOberon);
 
+    pixECO := pixRISC;
+(*
     FOR bitCounter := 0H TO 20H - 1H BY 1H DO
       IF ODD(pixRISC) THEN
         pixECO := LSL(pixECO, 1H) + 1H
@@ -41,6 +43,7 @@ MODULE Display;  (*NW 5.11.2013 / 17.1.2019 / AP 9.3.20 Extended Oberon*)
       END;
       pixRISC := ROR(pixRISC, 1H)
     END;
+*)
 
     SYSTEM.PUT(ecoAdr, pixECO)
   END WriteECO;
@@ -53,6 +56,9 @@ MODULE Display;  (*NW 5.11.2013 / 17.1.2019 / AP 9.3.20 Extended Oberon*)
     ecoAdr := base + (x DIV 32)*4 + (767-y)*128;
 
     SYSTEM.GET(ecoAdr, pixECO);
+
+    pixRISC := pixECO;
+(*
     FOR bitCounter := 0H TO 20H - 1H BY 1H DO
       IF ODD(pixECO) THEN
         pixRISC := LSL(pixRISC, 1H) + 1H
@@ -61,6 +67,7 @@ MODULE Display;  (*NW 5.11.2013 / 17.1.2019 / AP 9.3.20 Extended Oberon*)
       END;
       pixECO := ROR(pixECO, 1H)
     END;
+*)
 
     pixOberon := SYSTEM.VAL(SET, pixRISC)
   END ReadECO;
