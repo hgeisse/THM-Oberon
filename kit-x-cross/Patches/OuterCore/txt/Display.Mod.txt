@@ -25,51 +25,25 @@ MODULE Display;  (*NW 5.11.2013 / 17.1.2019 / AP 9.3.20 Extended Oberon*)
   (* raster ops *)
 
   PROCEDURE WriteECO(a: INTEGER; pixOberon: SET);
-    VAR x, y, ecoAdr, pixECO, pixRISC, bitCounter: INTEGER;
+    VAR x, y, ecoAdr, pix: INTEGER;
   BEGIN
     y := (a - base) DIV 128;
-    x := 32 * (((a - base) DIV 4) - 32 * y);
-    ecoAdr := base + (x DIV 32)*4 + (767-y)*128;
+    x := (a - base) MOD 128;
+    ecoAdr := base + (767 - y) * 128 + x;
 
-    pixRISC := SYSTEM.VAL(INTEGER, pixOberon);
-
-    pixECO := pixRISC;
-(*
-    FOR bitCounter := 0H TO 20H - 1H BY 1H DO
-      IF ODD(pixRISC) THEN
-        pixECO := LSL(pixECO, 1H) + 1H
-      ELSE
-        pixECO := LSL(pixECO, 1H)
-      END;
-      pixRISC := ROR(pixRISC, 1H)
-    END;
-*)
-
-    SYSTEM.PUT(ecoAdr, pixECO)
+    pix := SYSTEM.VAL(INTEGER, pixOberon);
+    SYSTEM.PUT(ecoAdr, pix)
   END WriteECO;
 
   PROCEDURE ReadECO(a: INTEGER; VAR pixOberon: SET);
-    VAR pixECO, pixRISC, bitCounter, x, y, ecoAdr: INTEGER;
+    VAR x, y, ecoAdr, pix: INTEGER;
   BEGIN
     y := (a - base) DIV 128;
-    x := 32 * (((a - base) DIV 4) - 32 * y);
-    ecoAdr := base + (x DIV 32)*4 + (767-y)*128;
+    x := (a - base) MOD 128;
+    ecoAdr := base + (767 - y) * 128 + x;
 
-    SYSTEM.GET(ecoAdr, pixECO);
-
-    pixRISC := pixECO;
-(*
-    FOR bitCounter := 0H TO 20H - 1H BY 1H DO
-      IF ODD(pixECO) THEN
-        pixRISC := LSL(pixRISC, 1H) + 1H
-      ELSE
-        pixRISC := LSL(pixRISC, 1H)
-      END;
-      pixECO := ROR(pixECO, 1H)
-    END;
-*)
-
-    pixOberon := SYSTEM.VAL(SET, pixRISC)
+    SYSTEM.GET(ecoAdr, pix);
+    pixOberon := SYSTEM.VAL(SET, pix)
   END ReadECO;
 
   PROCEDURE Dot*(col, x, y, mode: INTEGER);
