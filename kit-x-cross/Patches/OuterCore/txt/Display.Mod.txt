@@ -3,7 +3,8 @@ MODULE Display;  (*NW 5.11.2013 / 17.1.2019 / AP 9.3.20 Extended Oberon*)
 
   CONST black* = 0; white* = 1;  (*black = background*)
     replace* = 0; paint* = 1; invert* = 2;  (*modes*)
-    base = 0F5000000H;  (*adr of 1024 x 768 pixel, monocolor display frame*)
+    baseE = 0F5000000H;  (*adr of 1024 x 768 pixel, monocolor display frame*)
+    baseR = 0E7F00H;  (*adr of 1024 x 768 pixel, monocolor display frame*)
 
   TYPE Frame* = POINTER TO FrameDesc;
     FrameMsg* = RECORD END ;
@@ -27,9 +28,9 @@ MODULE Display;  (*NW 5.11.2013 / 17.1.2019 / AP 9.3.20 Extended Oberon*)
   PROCEDURE WriteECO(a: INTEGER; pixOberon: SET);
     VAR x, y, ecoAdr, pix: INTEGER;
   BEGIN
-    y := (a - base) DIV 128;
-    x := (a - base) MOD 128;
-    ecoAdr := base + (767 - y) * 128 + x;
+    y := (a - baseR) DIV 128;
+    x := (a - baseR) MOD 128;
+    ecoAdr := baseE + (767 - y) * 128 + x;
 
     pix := SYSTEM.VAL(INTEGER, pixOberon);
     SYSTEM.PUT(ecoAdr, pix)
@@ -38,9 +39,9 @@ MODULE Display;  (*NW 5.11.2013 / 17.1.2019 / AP 9.3.20 Extended Oberon*)
   PROCEDURE ReadECO(a: INTEGER; VAR pixOberon: SET);
     VAR x, y, ecoAdr, pix: INTEGER;
   BEGIN
-    y := (a - base) DIV 128;
-    x := (a - base) MOD 128;
-    ecoAdr := base + (767 - y) * 128 + x;
+    y := (a - baseR) DIV 128;
+    x := (a - baseR) MOD 128;
+    ecoAdr := baseE + (767 - y) * 128 + x;
 
     SYSTEM.GET(ecoAdr, pix);
     pixOberon := SYSTEM.VAL(SET, pix)
@@ -48,7 +49,7 @@ MODULE Display;  (*NW 5.11.2013 / 17.1.2019 / AP 9.3.20 Extended Oberon*)
 
   PROCEDURE Dot*(col, x, y, mode: INTEGER);
     VAR a: INTEGER; u, s: SET;
-  BEGIN a := base + (x DIV 32)*4 + y*128;
+  BEGIN a := baseR + (x DIV 32)*4 + y*128;
     s := {x MOD 32}; ReadECO(a, u);
     IF mode = paint THEN WriteECO(a, u + s)
     ELSIF mode = invert THEN WriteECO(a, u / s)
@@ -59,7 +60,7 @@ MODULE Display;  (*NW 5.11.2013 / 17.1.2019 / AP 9.3.20 Extended Oberon*)
 
   PROCEDURE ReplConst*(col, x, y, w, h, mode: INTEGER);
     VAR al, ar, a0, a1: INTEGER; left, right, mid, pix, pixl, pixr: SET;
-  BEGIN al := base + y*128;
+  BEGIN al := baseR + y*128;
     ar := ((x+w-1) DIV 32)*4 + al; al := (x DIV 32)*4 + al;
     IF ar = al THEN
       mid := {(x MOD 32) .. ((x+w-1) MOD 32)};
@@ -97,7 +98,7 @@ MODULE Display;  (*NW 5.11.2013 / 17.1.2019 / AP 9.3.20 Extended Oberon*)
       w, h, pbt: BYTE; pix, mask: SET;
   BEGIN (*0 <= top < h, 0 <= bot < h, top + bot < h, 0 <= right < w, 0 <= left < w, left + right < w*)
     SYSTEM.GET(patadr, w); SYSTEM.GET(patadr+1, h); INC(patadr, 2 + bot*((w + 7) DIV 8)); h := h - top - bot;
-    a := base + (x DIV 32)*4 + (y+bot)*128; x := x MOD 32; mask := -LSL({0 .. 31}, x);
+    a := baseR + (x DIV 32)*4 + (y+bot)*128; x := x MOD 32; mask := -LSL({0 .. 31}, x);
     FOR a0 := a TO a + (h-1)*128 BY 128 DO
       (*build pattern line; w <= 32*)
       SYSTEM.GET(patadr, pbt); INC(patadr); pwd := pbt;
@@ -133,7 +134,7 @@ MODULE Display;  (*NW 5.11.2013 / 17.1.2019 / AP 9.3.20 Extended Oberon*)
   BEGIN
     u0 := sx DIV 32; u1 := sx MOD 32; u2 := (sx+w) DIV 32; u3 := (sx+w) MOD 32;
     v0 := dx DIV 32; v1 := dx MOD 32; v2 := (dx+w) DIV 32; v3 := (dx+w) MOD 32;
-    sa := base + u0*4 + sy*128; da := base + v0*4 + dy*128;
+    sa := baseR + u0*4 + sy*128; da := baseR + v0*4 + dy*128;
     d := da - sa; n := u1 - v1;   (*displacement in words and bits*)
     len := (u2 - u0) * 4;
     m0 := {v1 .. 31}; m2 := {v3 .. 31}; m3 := m0 / m2;
@@ -186,7 +187,7 @@ MODULE Display;  (*NW 5.11.2013 / 17.1.2019 / AP 9.3.20 Extended Oberon*)
       pta0, pta1: INTEGER;  (*pattern addresses*)
       ph: BYTE;
       left, right, mid, pix, pixl, pixr, ptw: SET;
-  BEGIN al := base + y*128; SYSTEM.GET(patadr+1, ph);
+  BEGIN al := baseR + y*128; SYSTEM.GET(patadr+1, ph);
     pta0 := patadr+4; pta1 := ph*4 + pta0;
     ar := ((x+w-1) DIV 32)*4 + al; al := (x DIV 32)*4 + al;
     IF ar = al THEN
@@ -207,7 +208,7 @@ MODULE Display;  (*NW 5.11.2013 / 17.1.2019 / AP 9.3.20 Extended Oberon*)
     END
   END ReplPattern;
 
-BEGIN Base := base; Width := 1024; Height := 768;
+BEGIN Base := baseR; Width := 1024; Height := 768;
   arrow := SYSTEM.ADR($0F0F 0060 0070 0038 001C 000E 0007 8003 C101 E300 7700 3F00 1F00 3F00 7F00 FF00$);
   star := SYSTEM.ADR($0F0F 8000 8220 8410 8808 9004 A002 C001 7F7F C001 A002 9004 8808 8410 8220 8000$);
   hook := SYSTEM.ADR($0C0C 070F 8707 C703 E701 F700 7F00 3F00 1F00 0F00 0700 0300 01$);
