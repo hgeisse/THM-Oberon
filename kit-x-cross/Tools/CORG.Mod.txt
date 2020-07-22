@@ -18,7 +18,7 @@ MODULE CORG; (* N.Wirth, 16.4.2016 / 4.4.2017 / 31.5.2019  Oberon compiler; code
     boardIOAddr = 0F1000000H;
 
   (*frequently used opcodes*)  U = 2000H; V = 1000H;
-    Mov = 0; Lsl = 24; Slr = 26; Sar = 28; Ror= 3; And = 16; Ann = 5; Ior = 18; Xor = 20;
+    Mov = 0; Lsl = 24; Slr = 26; Sar = 28; Ror= 3; And = 16; Ior = 18; Xor = 20; Xnor = 22;
     Add = 0; Sub = 2; Cmp = 2; Mul = 4; Mulu = 6; Div = 8; Rem = 12; Remu = 14;
     Ldw = 48; Ldb = 52; Stw = 53; Stb = 55;
 
@@ -101,11 +101,10 @@ MODULE CORG; (* N.Wirth, 16.4.2016 / 4.4.2017 / 31.5.2019  Oberon compiler; code
     INC(pc)
   END Put1;
 
-  PROCEDURE Put1a(op, a, b, im: LONGINT; isMove: BOOLEAN);
+  PROCEDURE Put1c(op, a, b, im: LONGINT; isMove, signExtends: BOOLEAN);
     VAR r: INTEGER;
   BEGIN (*same as Put1, but with range test -C16 <= im < C16*)
-    (* TODO: check for every instruction if is signextended *)
-    IF (im >= -C16) & (im < C15) THEN 
+    IF (signExtends & (im >= -C16) & (im < C15)) OR ((img >= 0) & (im < C15)) THEN 
       Put1(op, a, b, im)
     ELSIF isMove THEN
       Put1(Ldhi, a, 0, im DIV C16 MOD C16);
@@ -117,6 +116,11 @@ MODULE CORG; (* N.Wirth, 16.4.2016 / 4.4.2017 / 31.5.2019  Oberon compiler; code
       IF b # 0 THEN Put0(op, a, b, RH) END ;
       IF RH > r THEN DEC(RH) END
     END
+  END Put1c;
+
+  PROCEDURE Put1a(op, a, b, im: LONGINT; isMove: BOOLEAN);
+  BEGIN
+    Put1c(op, a, b, im, isMove, TRUE);
   END Put1a;
 
   PROCEDURE Put1b(r, mno, off, disp: LONGINT);
@@ -732,7 +736,10 @@ MODULE CORG; (* N.Wirth, 16.4.2016 / 4.4.2017 / 31.5.2019  Oberon compiler; code
           DEC(RH);
         END ;
         x.mode := Reg; x.r := RH-1
-      ELSE DEC(RH); Put0(Ann, RH-1, x.r, y.r)
+      ELSE
+        DEC(RH);
+        Put0(Xnor, y.r, y.r, 0);
+        Put0(And, RH-1, x.r, y.r)
       END
     END
   END Set;
@@ -763,15 +770,18 @@ MODULE CORG; (* N.Wirth, 16.4.2016 / 4.4.2017 / 31.5.2019  Oberon compiler; code
       END ;
       x.a := SYSTEM.VAL(LONGINT, xset)
     ELSIF y.mode = CORB.Const THEN
+      yset := SYSTEM.VAL(SET, y.a);
       load(x);
-      IF op = ORS.plus THEN Put1a(Ior, x.r, x.r, y.a, FALSE)
-      ELSIF op = ORS.minus THEN Put1a(Ann, x.r, x.r, y.a, FALSE)
-      ELSIF op = ORS.times THEN Put1a(And, x.r, x.r, y.a, FALSE)
-      ELSIF op = ORS.rdiv THEN Put1a(Xor, x.r, x.r, y.a, FALSE)
+      IF op = ORS.plus THEN Put1c(Ior, x.r, x.r, y.a, FALSE, FALSE)
+      ELSIF op = ORS.minus THEN Put1c(And, x.r, x.r, SYSTEM.VAL(LONGINT, -yset), FALSE, FALSE)
+      ELSIF op = ORS.times THEN Put1c(And, x.r, x.r, y.a, FALSE, FALSE)
+      ELSIF op = ORS.rdiv THEN Put1c(Xor, x.r, x.r, y.a, FALSE, FALSE)
       END ;
     ELSE load(x); load(y);
       IF op = ORS.plus THEN Put0(Ior, RH-2, x.r, y.r)
-      ELSIF op = ORS.minus THEN Put0(Ann, RH-2, x.r, y.r)
+      ELSIF op = ORS.minus THEN
+        Put0(Xnor, y.r, y.r, 0);
+        Put0(And, RH-2, x.r, y.r)
       ELSIF op = ORS.times THEN Put0(And, RH-2, x.r, y.r)
       ELSIF op = ORS.rdiv THEN Put0(Xor, RH-2, x.r, y.r)
       END ;
@@ -1105,9 +1115,15 @@ MODULE CORG; (* N.Wirth, 16.4.2016 / 4.4.2017 / 31.5.2019  Oberon compiler; code
   PROCEDURE Include*(inorex: LONGINT; VAR x, y: Item);
     VAR op, zr: LONGINT;
   BEGIN loadAdr(x); zr := RH; Put2(Ldw, RH, x.r, 0); incR;
-    IF inorex = 0 THEN op := Ior ELSE op := Ann END ;
-    IF y.mode = CORB.Const THEN Put1a(op, zr, zr, LSL(1, y.a), FALSE)
-    ELSE load(y); Put1(Mov, RH, 0, 1); Put0(Lsl, y.r, RH, y.r); Put0(op, zr, zr, y.r); DEC(RH)
+    IF inorex = 0 THEN op := Ior ELSE op := And END ;
+    IF y.mode = CORB.Const THEN
+      Put1c(op, zr, zr, SYSTEM.VAL(LONGINT, -SYSTEM.VAL(SET, LSL(1, y.a))), FALSE, FALSE)
+    ELSE load(y); Put1(Mov, RH, 0, 1); Put0(Lsl, y.r, RH, y.r);
+      IF op = And THEN
+        Put0(Xnor, y.r, y.r, 0);
+      END ;
+      Put0(op, zr, zr, y.r);
+      DEC(RH)
     END ;
     Put2(Stw, zr, x.r, 0); DEC(RH, 2)
   END Include;
