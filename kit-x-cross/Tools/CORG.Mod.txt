@@ -194,8 +194,8 @@ MODULE CORG; (* N.Wirth, 16.4.2016 / 4.4.2017 / 31.5.2019  Oberon compiler; code
     ELSE GetCodeInfo(pc - 1, a, b, isFloatOp);
       IF isFloatOp THEN op := Bcf; lt := LTF ELSE op := Bc; lt := LT END ;
       IF cond = CC THEN Put3(op, lt, b, 0, 1, isFloatOp); Put3(op, lt, a, 0, 1, isFloatOp); Put3c(J, off)
-      ELSIF extend THEN Put3(op, negated[cond], a, 0, 1, isFloatOp); Put3c(J, off);
-      ELSE Put3(op, cond, a, 0, off, isFloatOp)
+      ELSIF extend THEN Put3(op, negated[cond], RH, 0, 1, isFloatOp); Put3c(J, off);
+      ELSE Put3(op, cond, RH, 0, off, isFloatOp)
       END
     END
   END PutBc;
