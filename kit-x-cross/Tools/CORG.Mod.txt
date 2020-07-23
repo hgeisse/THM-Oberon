@@ -173,6 +173,8 @@ MODULE CORG; (* N.Wirth, 16.4.2016 / 4.4.2017 / 31.5.2019  Oberon compiler; code
   BEGIN GetPosCodeAndOp(at, codeAt, op); a := 0; b := 0; isFloatOp := FALSE;
     IF (op = Bc + NE) & (codeAt MOD C16 = 0FFF8H) THEN GetPosCodeAndOp(at-1, codeAt, op) END; (*string relation*)
     IF op-Ldw IN {0,Ldb-Ldw} THEN a := codeAt DIV C16 MOD C5
+    ELSIF op = Bl THEN (* pattern `fn(x) = 0` *)
+        a := 1;
     ELSIF op = Fpar THEN a := codeAt DIV C11 MOD C5; b:= codeAt DIV C21 MOD C5; isFloatOp := TRUE
     ELSIF op IN {0..29} THEN
       IF op MOD 2 = 0 THEN a := codeAt DIV C11 MOD C5 ELSE a := codeAt DIV C16 MOD C5 END ;
@@ -194,8 +196,8 @@ MODULE CORG; (* N.Wirth, 16.4.2016 / 4.4.2017 / 31.5.2019  Oberon compiler; code
     ELSE GetCodeInfo(pc - 1, a, b, isFloatOp);
       IF isFloatOp THEN op := Bcf; lt := LTF ELSE op := Bc; lt := LT END ;
       IF cond = CC THEN Put3(op, lt, b, 0, 1, isFloatOp); Put3(op, lt, a, 0, 1, isFloatOp); Put3c(J, off)
-      ELSIF extend THEN Put3(op, negated[cond], RH, 0, 1, isFloatOp); Put3c(J, off);
-      ELSE Put3(op, cond, RH, 0, off, isFloatOp)
+      ELSIF extend THEN Put3(op, negated[cond], a, 0, 1, isFloatOp); Put3c(J, off);
+      ELSE Put3(op, cond, a, 0, off, isFloatOp)
       END
     END
   END PutBc;
