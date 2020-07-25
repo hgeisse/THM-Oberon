@@ -307,8 +307,6 @@ MODULE CORP; (*N. Wirth 1.7.97 / 8.3.2020  Oberon compiler for RISC in Oberon-07
           IF x.type.form = CORB.Array THEN CORG.Len(x) ELSE ORS.Mark("not an array") END
       ELSIF fct IN {7, 8, 9} THEN (*LSL, ASR, ROR*) CheckInt(y);
         IF x.type.form IN {CORB.Int, CORB.Set} THEN CORG.Shift(fct-7, x, y); restyp := x.type ELSE ORS.Mark("bad type") END
-      ELSIF fct = 11 THEN (*ADC*) CORG.ADC(x, y)
-      ELSIF fct = 12 THEN (*SBC*) CORG.SBC(x, y)
       ELSIF fct = 13 THEN (*UML*) CORG.UML(x, y)
       ELSIF fct = 14 THEN (*BIT*) CheckInt(x); CheckInt(y); CORG.Bit(x, y)
       ELSIF fct = 15 THEN (*REG*) CheckConst(x); CheckInt(x); CORG.Register(x)
@@ -322,7 +320,6 @@ MODULE CORP; (*N. Wirth 1.7.97 / 8.3.2020  Oberon compiler for RISC in Oberon-07
         ELSE ORS.Mark("must be a type")
         END
       ELSIF fct = 19 THEN (*COND*) CheckConst(x); CheckInt(x); CORG.Condition(x)
-      ELSIF fct = 20 THEN (*H*) CheckConst(x); CheckInt(x); CORG.H(x)
       END ;
       x.type := restyp
     ELSE ORS.Mark("wrong nof params")
@@ -509,7 +506,6 @@ MODULE CORP; (*N. Wirth 1.7.97 / 8.3.2020  Oberon compiler for RISC in Oberon-07
       ELSIF pno = 10 THEN CheckInt(x); CORG.Get(x, y)
       ELSIF pno = 11 THEN CheckInt(x); CORG.Put(x, y)
       ELSIF pno = 12 THEN CheckInt(x); CheckInt(y); CheckInt(z); CORG.Copy(x, y, z)
-      ELSIF pno = 13 THEN CheckConst(x); CheckInt(x); CORG.LDPSR(x)
       ELSIF pno = 14 THEN CheckInt(x); CORG.LDREG(x, y)
       ELSIF pno = 21 THEN CheckInt(x); CORG.GETPSW(x)
       ELSIF pno = 22 THEN CheckInt(x); CORG.SETPSW(x)

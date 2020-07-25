@@ -453,8 +453,6 @@ BEGIN
     LED, ADC, SBC; LDPSR, LDREG, REG, COND are not in language definition*)
   system := NIL;  (*n = procno*10 + nofpar*)
   enter("UML", SFunc, intType, 132);  (*functions*)
-  enter("SBC", SFunc, intType, 122);
-  enter("ADC", SFunc, intType, 112);
   enter("ROR", SFunc, intType, 92);
   enter("ASR", SFunc, intType, 82);
   enter("LSL", SFunc, intType, 72);
@@ -493,7 +491,6 @@ BEGIN
   enter("REG", SFunc, intType, 151);
   enter("BIT", SFunc, boolType, 142);
   enter("LDREG", SProc, noType, 142);  (*procedures*)
-  enter("LDPSR", SProc, noType, 131);
   enter("COPY", SProc, noType, 123);
   enter("PUT", SProc, noType, 112);
   enter("GET", SProc, noType, 102);
