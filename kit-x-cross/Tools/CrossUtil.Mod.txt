@@ -22,10 +22,14 @@ MODULE CrossUtil;
     Files.WriteByte(R, val MOD C8)
   END WriteIntBE;
 
-  PROCEDURE ReadIntBE*(VAR R: Files.Rider; VAR into: INTEGER);
-  VAR tmp: INTEGER;
+  PROCEDURE ReadIntBE*(VAR R: Files.Rider; VAR val: INTEGER);
+    VAR t0, t1, t2, t3: BYTE;
   BEGIN
-    Files.ReadInt(R, tmp);
-    into := InvertEndian(tmp)
+    Files.ReadByte(R, t0);
+    Files.ReadByte(R, t1);
+    Files.ReadByte(R, t2);
+    Files.ReadByte(R, t3);
+    val := t0 * C24 + t1 * C16 + t2 * C8 + t3;
   END ReadIntBE;
+
 END CrossUtil.
