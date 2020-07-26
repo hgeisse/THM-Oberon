@@ -95,6 +95,20 @@ MODULE Kernel;  (*NW/PR  11.4.86 / 27.12.95 / 4.2.2014 / AP 15.5.20 Extended Obe
 
 (* ---------- Garbage collector ----------*)
 
+  (*
+   * Mark values, RISC5:
+   *    0  not visited (yet)
+   *   >0  has been visited, value is a pointer into the
+   *       field offset table of the type descriptor
+   *   -1  free
+   *
+   * Mark values, ECO32:
+   *    0  not visited (yet)
+   *  <-1  has been visited, value is a pointer into the
+   *       field offset table of the type descriptor
+   *   -1  free
+   *)
+
   PROCEDURE Mark*(pref: LONGINT);
     VAR pvadr, offadr, offset, tag, p, q, r, pos, len, elemsize, blktyp: LONGINT;
   BEGIN SYSTEM.GET(pref, pvadr); (*pointers < heapOrg considered NIL*)
@@ -162,12 +176,10 @@ MODULE Kernel;  (*NW/PR  11.4.86 / 27.12.95 / 4.2.2014 / AP 15.5.20 Extended Obe
           SYSTEM.PUT(q, size); SYSTEM.PUT(q+4, -1); SYSTEM.PUT(q+8, list0); list0 := q; INC(q, size)
         END
       END ;
-      IF mark < -1 THEN
-        SYSTEM.GET(p, tag);
+      IF mark < -1 THEN SYSTEM.GET(p, tag);
         IF tag MOD 4 = 0 THEN (*record*) SYSTEM.GET(tag, size) ELSE (*array*) SYSTEM.GET(p+16, size) END ;
         SYSTEM.PUT(p+4, 0); INC(p, size);
-      ELSE (*free*)
-        SYSTEM.GET(p, size); INC(p, size)
+      ELSE (*free*) SYSTEM.GET(p, size); INC(p, size)
       END
     UNTIL p >= heapLim
   END Collect;
@@ -178,10 +190,10 @@ MODULE Kernel;  (*NW/PR  11.4.86 / 27.12.95 / 4.2.2014 / AP 15.5.20 Extended Obe
     VAR offadr, offset, p, r, mark, tag, size, pos, len, elemsize, blktyp: LONGINT; continue: BOOLEAN;
   BEGIN p := heapOrg; resTyp := 0; resPtr := 0; resPvr := 0; continue := (typ # NIL) OR (ptr # NIL) OR (pvr # NIL);
     REPEAT SYSTEM.GET(p+4, mark);
-      IF mark < 0 THEN (*free*) SYSTEM.GET(p, size)
+      IF mark = -1 THEN (*free*) SYSTEM.GET(p, size)
       ELSE (*allocated*) SYSTEM.GET(p, tag); blktyp := tag MOD 4;
         IF blktyp = 0 THEN (*record*) SYSTEM.GET(tag, size) ELSE (*array*) SYSTEM.GET(p+16, size) END ;
-        IF mark > 0 THEN (*marked*) SYSTEM.PUT(p+4, 0);
+        IF mark < -1 THEN (*marked*) SYSTEM.PUT(p+4, 0);
           IF continue THEN
             IF blktyp = 0 THEN (*record*)
               IF typ # NIL THEN INC(resTyp, typ(p, tag, s, continue)) END ;
@@ -257,8 +269,7 @@ MODULE Kernel;  (*NW/PR  11.4.86 / 27.12.95 / 4.2.2014 / AP 15.5.20 Extended Obe
   END SetClock;
 
   PROCEDURE Install*(Padr, at: INTEGER);
-  BEGIN SYSTEM.PUT(at, J + (Padr - at) DIV 4 -1);
-        SYSTEM.CCTL(7);
+  BEGIN SYSTEM.PUT(at, J + (Padr - at) DIV 4 -1); SYSTEM.CCTL(7);
   END Install;
 
   PROCEDURE Trap(VAR a: INTEGER; b, c, d: INTEGER);
