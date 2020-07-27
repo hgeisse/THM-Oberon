@@ -1127,7 +1127,11 @@ MODULE CORG; (* N.Wirth, 16.4.2016 / 4.4.2017 / 31.5.2019  Oberon compiler; code
   BEGIN loadAdr(x); zr := RH; Put2(Ldw, RH, x.r, 0); incR;
     IF inorex = 0 THEN op := Ior ELSE op := And END ;
     IF y.mode = CORB.Const THEN
-      Put1c(op, zr, zr, SYSTEM.VAL(LONGINT, -SYSTEM.VAL(SET, LSL(1, y.a))), FALSE, FALSE)
+      IF op = And THEN
+        Put1c(op, zr, zr, SYSTEM.VAL(LONGINT, -SYSTEM.VAL(SET, LSL(1, y.a))), FALSE, FALSE)
+      ELSE
+        Put1c(op, zr, zr, LSL(1, y.a), FALSE, FALSE)
+      END
     ELSE load(y); Put1(Mov, RH, 0, 1); Put0(Sll, y.r, RH, y.r);
       IF op = And THEN
         Put0(Xnor, y.r, y.r, 0);
