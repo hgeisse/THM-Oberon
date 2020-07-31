@@ -18,9 +18,9 @@ all:
 		@echo "    Type 'make build' and start PCLink2.Run by"
 		@echo "    clicking the middle button of the mouse on this"
 		@echo "    command. Type 'make build-link' in a separate"
-		@echo "    window, followed by '@ build-tools'. When the"
-		@echo "    script has been executed, type '@ build-cross'"
-		@echo "    in the rebuild-link window."
+		@echo "    window, followed by '@ build-cross'. When the"
+		@echo "    script has been executed, type 'q' in the"
+		@echo "    build-link window and CTRL-C in the build window."
 
 build:		Oberon.dsk BootLoad.mem
 		$(BUILD)/bin/sim-RISC5 -d Oberon.dsk -p BootLoad.mem -s 001
@@ -44,6 +44,7 @@ prologue:
 		#
 		mkdir -p $(NEW)/BootLink/txt
 		cp $(SRC)/BootLink/txt/* $(NEW)/BootLink/txt
+		cp $(PATCHES)/BootLink/txt/* $(NEW)/BootLink/txt
 		$(D2O) $(NEW)/BootLink/txt/ORL.Mod.txt ORL.Mod
 		$(D2O) $(NEW)/BootLink/txt/ORX.Mod.txt ORX.Mod
 		#
@@ -54,6 +55,8 @@ prologue:
 		#
 		mkdir -p $(NEW)/Compiler/txt
 		cp $(SRC)/Compiler/txt/* $(NEW)/Compiler/txt
+		cp $(PATCHES)/Compiler/txt/* $(NEW)/Compiler/txt
+		$(D2O) $(NEW)/Compiler/txt/CrossUtil.Mod.txt CrossUtil.Mod
 		$(D2O) $(NEW)/Compiler/txt/ORB.Mod.txt ORB.Mod
 		$(D2O) $(NEW)/Compiler/txt/ORG.Mod.txt ORG.Mod
 		$(D2O) $(NEW)/Compiler/txt/ORP.Mod.txt ORP.Mod
@@ -135,6 +138,7 @@ prologue:
 		#
 		mkdir -p $(NEW)/PCLink2/txt
 		cp $(SRC)/PCLink2/txt/* $(NEW)/PCLink2/txt
+		cp $(PATCHES)/PCLink2/txt/* $(NEW)/PCLink2/txt
 		$(D2O) $(NEW)/PCLink2/txt/PCLink2.Mod.txt PCLink2.Mod
 		#
 		mkdir -p $(NEW)/Tools/txt
@@ -152,9 +156,9 @@ epilogue:
 		#mv Stars.rsc $(NEW)/Apps/rsc
 		#mv TestInt.rsc $(NEW)/Apps/rsc
 		#
-		#mkdir -p $(NEW)/BootLink/rsc
-		#mv ORL.rsc $(NEW)/BootLink/rsc
-		#mv ORX.rsc $(NEW)/BootLink/rsc
+		mkdir -p $(NEW)/BootLink/rsc
+		mv ORL.rsc $(NEW)/BootLink/rsc
+		mv ORX.rsc $(NEW)/BootLink/rsc
 		#
 		mkdir -p $(NEW)/BootLoad/rsc
 		mv BootLoad.rsc $(NEW)/BootLoad/rsc
@@ -166,15 +170,16 @@ epilogue:
 		mv BootLoad.bin $(NEW)/BootLoad/bin/BootLoad.bin
 		rm BootLoad.prm
 		#
-		#mkdir -p $(NEW)/Compiler/rsc
-		#mv ORB.rsc $(NEW)/Compiler/rsc
-		#mv ORG.rsc $(NEW)/Compiler/rsc
-		#mv ORP.rsc $(NEW)/Compiler/rsc
-		#mv ORS.rsc $(NEW)/Compiler/rsc
-		#mv ORTool.rsc $(NEW)/Compiler/rsc
+		mkdir -p $(NEW)/Compiler/rsc
+		mv CrossUtil.rsc $(NEW)/Compiler/rsc
+		mv ORB.rsc $(NEW)/Compiler/rsc
+		mv ORG.rsc $(NEW)/Compiler/rsc
+		mv ORP.rsc $(NEW)/Compiler/rsc
+		mv ORS.rsc $(NEW)/Compiler/rsc
+		mv ORTool.rsc $(NEW)/Compiler/rsc
 		#
-		#mkdir -p $(NEW)/Editor/rsc
-		#mv Edit.rsc $(NEW)/Editor/rsc
+		mkdir -p $(NEW)/Editor/rsc
+		mv Edit.rsc $(NEW)/Editor/rsc
 		#
 		#mkdir -p $(NEW)/Fonts/rsc
 		#mv FontTool.rsc $(NEW)/Fonts/rsc
@@ -209,8 +214,8 @@ epilogue:
 		mkdir -p $(NEW)/Oberon0/bin
 		mv Oberon0.bin $(NEW)/Oberon0/bin
 		#
-		#mkdir -p $(NEW)/Out/rsc
-		#mv Out.rsc $(NEW)/Out/rsc
+		mkdir -p $(NEW)/Out/rsc
+		mv Out.rsc $(NEW)/Out/rsc
 		#
 		mkdir -p $(NEW)/OuterCore/rsc
 		mv Display.rsc $(NEW)/OuterCore/rsc
@@ -223,8 +228,8 @@ epilogue:
 		mv Texts.rsc $(NEW)/OuterCore/rsc
 		mv Viewers.rsc $(NEW)/OuterCore/rsc
 		#
-		#mkdir -p $(NEW)/PCLink2/rsc
-		#mv PCLink2.rsc $(NEW)/PCLink2/rsc
+		mkdir -p $(NEW)/PCLink2/rsc
+		mv PCLink2.rsc $(NEW)/PCLink2/rsc
 		#
 		#mkdir -p $(NEW)/Tools/rsc
 		#mv Tools.rsc $(NEW)/Tools/rsc

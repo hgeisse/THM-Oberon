@@ -1,4 +1,26 @@
 #-----------------------------------------------
+# build cross tools (with host compiler)
+#-----------------------------------------------
+
+h2o CrossUtil.Mod
+calln ORP.Compile CrossUtil.Mod/s
+
+h2o CORB.Mod
+calln ORP.Compile CORB.Mod/s
+
+h2o CORG.Mod
+calln ORP.Compile CORG.Mod/s
+
+h2o CORP.Mod
+calln ORP.Compile CORP.Mod/s
+
+h2o CORL.Mod
+calln ORP.Compile CORL.Mod/s
+
+h2o CORX.Mod
+calln ORP.Compile CORX.Mod/s
+
+#-----------------------------------------------
 # build target objects (with cross compiler)
 #-----------------------------------------------
 
@@ -7,7 +29,7 @@
 #
 
 h2o BootLoad.Mod
-calln CORP.Compile BootLoad.Mod
+calln CORP.Compile BootLoad.Mod/s
 o2h BootLoad.rsc
 
 calln CORX.WriteFile BootLoad.rsc BootLoad.prm
@@ -45,15 +67,15 @@ o2h Modules.bin
 #
 
 h2o RS232.Mod
-calln CORP.Compile RS232.Mod
+calln CORP.Compile RS232.Mod/s
 o2h RS232.rsc
 
 h2o PCLink0.Mod
-calln CORP.Compile PCLink0.Mod
+calln CORP.Compile PCLink0.Mod/s
 o2h PCLink0.rsc
 
 h2o Oberon0.Mod
-calln CORP.Compile Oberon0.Mod
+calln CORP.Compile Oberon0.Mod/s
 o2h Oberon0.rsc
 
 calln CORL.Link Oberon0
@@ -64,67 +86,109 @@ o2h Oberon0.bin
 #
 
 h2o Input.Mod
-calln CORP.Compile Input.Mod
+calln CORP.Compile Input.Mod/s
 o2h Input.rsc
 
 h2o Fonts.Mod
-calln CORP.Compile Fonts.Mod
+calln CORP.Compile Fonts.Mod/s
 o2h Fonts.rsc
 
 h2o Display.Mod
-calln CORP.Compile Display.Mod
+calln CORP.Compile Display.Mod/s
 o2h Display.rsc
 
 h2o Viewers.Mod
-calln CORP.Compile Viewers.Mod
+calln CORP.Compile Viewers.Mod/s
 o2h Viewers.rsc
 
 h2o Texts.Mod
-calln CORP.Compile Texts.Mod
+calln CORP.Compile Texts.Mod/s
 o2h Texts.rsc
 
 h2o Oberon.Mod
-calln CORP.Compile Oberon.Mod
+calln CORP.Compile Oberon.Mod/s
 o2h Oberon.rsc
 
 h2o MenuViewers.Mod
-calln CORP.Compile MenuViewers.Mod
+calln CORP.Compile MenuViewers.Mod/s
 o2h MenuViewers.rsc
 
 h2o TextFrames.Mod
-calln CORP.Compile TextFrames.Mod
+calln CORP.Compile TextFrames.Mod/s
 o2h TextFrames.rsc
 
 h2o System.Mod
-calln CORP.Compile System.Mod
+calln CORP.Compile System.Mod/s
 o2h System.rsc
-
-#h2o System.Tool
-
-#--------------------------------------
-
-#
-# BootLink
-#
 
 #
 # Editor
 #
 
+h2o Edit.Mod
+calln CORP.Compile Edit.Mod/s
+o2h Edit.rsc
+
 #
 # PCLink2
 #
+
+h2o PCLink2.Mod
+calln CORP.Compile PCLink2.Mod/s
+o2h PCLink2.rsc
+
+#
+# Out
+#
+
+h2o Out.Mod
+calln CORP.Compile Out.Mod/s
+o2h Out.rsc
 
 #
 # Compiler
 #
 
-#
-# Tools
-#
+h2o CrossUtil.Mod
+calln CORP.Compile CrossUtil.Mod/s
+o2h CrossUtil.rsc
+
+h2o ORS.Mod
+calln CORP.Compile ORS.Mod/s
+o2h ORS.rsc
+
+h2o ORB.Mod
+calln CORP.Compile ORB.Mod/s
+o2h ORB.rsc
+
+h2o ORG.Mod
+calln CORP.Compile ORG.Mod/s
+o2h ORG.rsc
+
+h2o ORP.Mod
+calln CORP.Compile ORP.Mod/s
+o2h ORP.rsc
+
+h2o ORTool.Mod
+calln CORP.Compile ORTool.Mod/s
+o2h ORTool.rsc
 
 #
-# Out
+# BootLink
+#
+
+h2o ORL.Mod
+calln CORP.Compile ORL.Mod/s
+o2h ORL.rsc
+
+h2o ORX.Mod
+calln CORP.Compile ORX.Mod/s
+o2h ORX.rsc
+
+#--------------------------------------
+
+#
+# Tools
 #
 
 #
