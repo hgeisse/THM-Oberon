@@ -199,21 +199,15 @@ char *disasmFixProg(Word instr, Word locus, Fixup *fixProg) {
 
 
 char *disasmFixData1(Word instr, Word locus, Fixup *fixData) {
-#if 0
-  Word offHi;
-
   if (fixData->mno == 0) {
     /* global variable */
-    offHi = (instr >> 12) & MASK(8);
-    sprintf(instrBuffer, "MOVH    R%d,global:offHi=0x%08X",
-            fixData->val, offHi);
+    sprintf(instrBuffer, "ldhi    $%d,global:offHi=0x%02X",
+            fixData->val1, fixData->val2);
   } else {
     /* external variable */
-    sprintf(instrBuffer, "MOVH    R%d,extern:module=%d",
-            fixData->val, fixData->mno);
+    sprintf(instrBuffer, "ldhi    $%d,extern:module=%d",
+            fixData->val1, fixData->mno);
   }
-#endif
-  sprintf(instrBuffer, "-- not yet 2 --");
   return instrBuffer;
 }
 
