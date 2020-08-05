@@ -8,6 +8,7 @@
 
 
 char *disasm(Word instr, Word locus);
+
 char *disasmFixProg(Word instr, Word locus, Fixup *fixProg);
 char *disasmFixData1(Word instr, Word locus, Fixup *fixData);
 char *disasmFixData2(Word instr, Word locus, Fixup *fixData);

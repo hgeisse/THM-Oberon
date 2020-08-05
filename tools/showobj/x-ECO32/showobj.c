@@ -329,8 +329,10 @@ int main(int argc, char *argv[]) {
   Fixup *fixM;
   Fixup *fixMeth;
   Word body;
+  Word high;
   Word mno;
-  Word val;
+  Word val1;
+  Word val2;
   Word disp;
 
   iFlag = false;
@@ -482,27 +484,19 @@ int main(int argc, char *argv[]) {
   tdsize >>= 2;
   printf("type descriptor size\t: 0x%08X words\n", tdsize);
   if (tdsize != 0) {
-    if (tFlag) {
-      printf("type descriptors\t: \n");
-    } else {
-      printf("type descriptors\t: ...\n");
-    }
     tdescs = memAlloc(tdsize << 2);
     for (i = 0; i < tdsize; i++) {
       readInt(tdescs + i);
     }
-    if (tFlag) {
-      bindump((Byte *) tdescs, tdsize << 2);
-    }
   }
+  /* note: the type descriptors cannot be displayed yet, fixups are missing */
   /* code */
   readInt(&codesize);
   printf("code size\t\t: 0x%08X words\n", codesize);
   if (codesize != 0) {
     code = memAlloc(codesize << 2);
     for (i = 0; i < codesize; i++) {
-      readInt(&instr);
-      code[i] = instr;
+      readInt(code + i);
     }
   }
   /* note: the code cannot be displayed yet, fixups are missing */
@@ -572,20 +566,23 @@ int main(int argc, char *argv[]) {
   if ((int) pvrRef != -1) {
     error("pvrrefs not properly terminated by -1");
   }
-  /* fixup chain of code references */
+  /* fixup chain of instrs calling external code */
   readInt(&fixorgP);
   printf("fixorgP\t\t\t: 0x%08X\n", fixorgP);
   fixP = NULL;
   addr = fixorgP << 2;
   while (addr != 0) {
     instr = code[addr >> 2];
+    high = (instr >> 28) & MASK(4);
     mno = (instr >> 22) & MASK(6);
-    val = (instr >> 14) & MASK(8);
-    disp = instr & MASK(14);
+    val1 = (instr >> 14) & MASK(8);
+    disp = (instr >> 0) & MASK(14);
     fixProg = memAlloc(sizeof(Fixup));
     fixProg->addr = addr;
+    fixProg->high = high;
     fixProg->mno = mno;
-    fixProg->val = val;
+    fixProg->val1 = val1;
+    fixProg->val2 = 0;  /* not used */
     fixProg->next = fixP;
     fixP = fixProg;
     addr -= disp << 2;
@@ -593,25 +590,31 @@ int main(int argc, char *argv[]) {
   if (fpFlag) {
     fixProg = fixP;
     while (fixProg != NULL) {
-      printf("fixup code @ 0x%08X, ref to code: ", fixProg->addr);
-      printf("mno %d / val %d\n", fixProg->mno, fixProg->val);
+      printf("fixup code @ 0x%08X\t: ",
+             fixProg->addr);
+      printf("high %d / mno %d / val1 %d\n",
+             fixProg->high, fixProg->mno, fixProg->val1);
       fixProg = fixProg->next;
     }
   }
-  /* fixup chain of data references */
+  /* fixup chain of instrs referencing global or external code or data */
   readInt(&fixorgD);
   printf("fixorgD\t\t\t: 0x%08X\n", fixorgD);
   fixD = NULL;
   addr = fixorgD << 2;
   while (addr != 0) {
     instr = code[addr >> 2];
-    val = (instr >> 26) & MASK(4);
+    high = (instr >> 30) & MASK(2);
+    val1 = (instr >> 26) & MASK(4);
     mno = (instr >> 20) & MASK(6);
-    disp = instr & MASK(12);
+    val2 = (instr >> 12) & MASK(8);
+    disp = (instr >> 0) & MASK(12);
     fixData = memAlloc(sizeof(Fixup));
     fixData->addr = addr;
+    fixData->high = high;
     fixData->mno = mno;
-    fixData->val = val;
+    fixData->val1 = val1;
+    fixData->val2 = val2;
     fixData->next = fixD;
     fixD = fixData;
     addr -= disp << 2;
@@ -619,25 +622,30 @@ int main(int argc, char *argv[]) {
   if (fdFlag) {
     fixData = fixD;
     while (fixData != NULL) {
-      printf("fixup code @ 0x%08X, ref to data: ", fixData->addr);
-      printf("mno %d / val %d\n", fixData->mno, fixData->val);
+      printf("fixup code @ 0x%08X\t: ",
+             fixData->addr);
+      printf("high %d / mno %d / val1 %d / val2 %d\n",
+             fixData->high, fixData->mno, fixData->val1, fixData->val2);
       fixData = fixData->next;
     }
   }
-  /* fixup chain of type descriptors */
+  /* fixup chain of type descriptors pointing to global or external data */
   readInt(&fixorgT);
   printf("fixorgT\t\t\t: 0x%08X\n", fixorgT);
   fixT = NULL;
   addr = fixorgT << 2;
   while (addr != 0) {
     instr = tdescs[addr >> 2];
+    high = (instr >> 30) & MASK(2);
     mno = (instr >> 24) & MASK(6);
-    val = (instr >> 12) & MASK(12);
-    disp = instr & MASK(12);
+    val1 = (instr >> 12) & MASK(12);
+    disp = (instr >> 0) & MASK(12);
     fixType = memAlloc(sizeof(Fixup));
     fixType->addr = addr;
+    fixType->high = high;
     fixType->mno = mno;
-    fixType->val = val;
+    fixType->val1 = val1;
+    fixType->val2 = 0;  /* not used */
     fixType->next = fixT;
     fixT = fixType;
     addr -= disp << 2;
@@ -645,12 +653,14 @@ int main(int argc, char *argv[]) {
   if (ftFlag) {
     fixType = fixT;
     while (fixType != NULL) {
-      printf("fixup type @ 0x%08X: ", fixType->addr);
-      printf("mno %d / val %d\n", fixType->mno, fixType->val);
+      printf("fixup tdsc @ 0x%08X\t: ",
+             fixType->addr);
+      printf("high %d / mno %d / val1 %d\n",
+             fixType->high, fixType->mno, fixType->val1);
       fixType = fixType->next;
     }
   }
-  /* fixup chain of method tables */
+  /* fixup chain of type descriptors pointing to global or external code */
   readInt(&fixorgM);
   printf("fixorgM\t\t\t: 0x%08X\n", fixorgM);
   fixM = NULL;
@@ -658,12 +668,14 @@ int main(int argc, char *argv[]) {
   while (addr != 0) {
     instr = tdescs[addr >> 2];
     mno = (instr >> 26) & MASK(6);
-    val = (instr >> 10) & MASK(16);
-    disp = instr & MASK(10);
+    val1 = (instr >> 10) & MASK(16);
+    disp = (instr >> 0) & MASK(10);
     fixMeth = memAlloc(sizeof(Fixup));
     fixMeth->addr = addr;
+    fixMeth->high = 0;  /* not used */
     fixMeth->mno = mno;
-    fixMeth->val = val;
+    fixMeth->val1 = val1;
+    fixMeth->val2 = 0;  /* not used */
     fixMeth->next = fixM;
     fixM = fixMeth;
     addr -= disp << 2;
@@ -671,8 +683,10 @@ int main(int argc, char *argv[]) {
   if (fmFlag) {
     fixMeth = fixM;
     while (fixMeth != NULL) {
-      printf("fixup method @ 0x%08X: ", fixMeth->addr);
-      printf("mno %d / val %d\n", fixMeth->mno, fixMeth->val);
+      printf("fixup tdsc @ 0x%08X\t: ",
+             fixMeth->addr);
+      printf("mno %d / val1 %d\n",
+             fixMeth->mno, fixMeth->val1);
       fixMeth = fixMeth->next;
     }
   }
@@ -717,6 +731,15 @@ int main(int argc, char *argv[]) {
       }
     } else {
       printf("code\t\t\t: ...\n");
+    }
+  }
+  /* now display the type descriptors */
+  if (tdsize != 0) {
+    if (tFlag) {
+      printf("type descriptors\t: \n");
+      bindump((Byte *) tdescs, tdsize << 2);
+    } else {
+      printf("type descriptors\t: ...\n");
     }
   }
   /* "O" */

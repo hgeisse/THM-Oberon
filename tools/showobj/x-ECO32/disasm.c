@@ -192,15 +192,8 @@ char *disasm(Word instr, Word locus) {
 
 
 char *disasmFixProg(Word instr, Word locus, Fixup *fixProg) {
-#if 0
-  if ((instr >> 28) != 0xF) {
-    error("unknown instruction 0x%08X @ 0x%08X on prog fixup list",
-          instr, locus);
-  }
-  sprintf(instrBuffer, "C       extern:module=%d,entry=%d",
-          fixProg->mno, fixProg->val);
-#endif
-  sprintf(instrBuffer, "-- not yet 1 --");
+  sprintf(instrBuffer, "jal     extern:module=%d,entry=%d",
+          fixProg->mno, fixProg->val1);
   return instrBuffer;
 }
 
@@ -264,7 +257,7 @@ char *disasmFixData2(Word instr, Word locus, Fixup *fixData) {
     sprintf(instrBuffer, "%-7s R%d,R%d,extern:entry=%d(%s)",
             opName, a, b, entry, base);
   }
-  sprintf(instrBuffer, "-- not yet 3 --");
 #endif
+  sprintf(instrBuffer, "-- not yet 3 --");
   return instrBuffer;
 }
