@@ -489,7 +489,7 @@ int main(int argc, char *argv[]) {
       readInt(tdescs + i);
     }
   }
-  /* note: the type descriptors cannot be displayed yet, fixups are missing */
+  /* note: type descriptors cannot be displayed yet, fixups are missing */
   /* code */
   readInt(&codesize);
   printf("code size\t\t: 0x%08X words\n", codesize);
@@ -499,7 +499,7 @@ int main(int argc, char *argv[]) {
       readInt(code + i);
     }
   }
-  /* note: the code cannot be displayed yet, fixups are missing */
+  /* note: code cannot be displayed yet, fixups are missing */
   /* commands */
   readStr(name);
   if (name[0] == '\0') {
@@ -693,7 +693,16 @@ int main(int argc, char *argv[]) {
   /* body */
   readInt(&body);
   printf("body\t\t\t: 0x%08X\n", body);
-  /* now display the code */
+  /* display the type descriptors */
+  if (tdsize != 0) {
+    if (tFlag) {
+      printf("type descriptors\t: \n");
+      bindump((Byte *) tdescs, tdsize << 2);
+    } else {
+      printf("type descriptors\t: ...\n");
+    }
+  }
+  /* display the code */
   if (codesize != 0) {
     if (dFlag) {
       printf("code\t\t\t: \n");
@@ -731,15 +740,6 @@ int main(int argc, char *argv[]) {
       }
     } else {
       printf("code\t\t\t: ...\n");
-    }
-  }
-  /* now display the type descriptors */
-  if (tdsize != 0) {
-    if (tFlag) {
-      printf("type descriptors\t: \n");
-      bindump((Byte *) tdescs, tdsize << 2);
-    } else {
-      printf("type descriptors\t: ...\n");
     }
   }
   /* "O" */
