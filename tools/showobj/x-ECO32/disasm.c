@@ -192,7 +192,7 @@ char *disasm(Word instr, Word locus) {
 
 
 char *disasmFixProg(Word instr, Word locus, Fixup *fixProg) {
-  sprintf(instrBuffer, "jal     extern:module=%d,entry=%d",
+  sprintf(instrBuffer, "jal     extern:module=%d,entry=%d(code)",
           fixProg->mno, fixProg->val1);
   return instrBuffer;
 }
@@ -212,46 +212,45 @@ char *disasmFixData1(Word instr, Word locus, Fixup *fixData) {
 }
 
 
-#if 0
-static char *memOps[4] = {
-  /* 0 */  "LDW",
-  /* 1 */  "LDB",
-  /* 2 */  "STW",
-  /* 3 */  "STB",
+static char *memOps[8] = {
+  /* 0 */  "ldw",	/* RISC5: LDW */
+  /* 1 */  "ldh",	/* not generated */
+  /* 2 */  "ldhu",	/* not generated */
+  /* 3 */  "ldb",	/* not generated */
+  /* 4 */  "ldbu",	/* RISC5: LDB */
+  /* 5 */  "stw",	/* RISC5: STW */
+  /* 6 */  "sth",	/* not generated */
+  /* 7 */  "stb",	/* RISC5: STB */
 };
-#endif
 
 
 char *disasmFixData2(Word instr, Word locus, Fixup *fixData) {
-#if 0
   char *opName;
   int a, b;
   Word offLo;
   int entry;
   char *base;
 
-  if ((instr >> 30) == 2) {
+  if (((instr >> 29) & 7) == 6) {
     /* memory access */
-    opName = memOps[(instr >> 28) & 3];
+    opName = memOps[(instr >> 26) & 7];
   } else {
     /* any other instruction */
-    opName = "IOR";
+    opName = "add";
   }
-  a = (instr >> 24) & MASK(4);
-  b = (instr >> 20) & MASK(4);
+  a = (instr >> 21) & 0x1F;
+  b = (instr >> 16) & 0x1F;
   if (fixData->mno == 0) {
     /* global variable */
-    offLo = instr & MASK(16);
-    sprintf(instrBuffer, "%-7s R%d,R%d,global:offLo=0x%05X",
-            opName, a, b, offLo);
+    offLo = instr & 0x0000FFFF;
+    sprintf(instrBuffer, "%-7s $%d,$%d,global:offLo=0x%04X",
+            opName, b, a, offLo);
   } else {
     /* external variable */
-    entry = instr & MASK(8);
+    entry = instr & 0x000000FF;
     base = ((instr >> 8) & 1) ? "code" : "data";
-    sprintf(instrBuffer, "%-7s R%d,R%d,extern:entry=%d(%s)",
-            opName, a, b, entry, base);
+    sprintf(instrBuffer, "%-7s $%d,$%d,extern:entry=%d(%s)",
+            opName, b, a, entry, base);
   }
-#endif
-  sprintf(instrBuffer, "-- not yet 3 --");
   return instrBuffer;
 }
