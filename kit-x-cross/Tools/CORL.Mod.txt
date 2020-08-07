@@ -79,6 +79,20 @@ MODULE CORL;  (*Oberon boot linker/loader for RISC / AP 5.5.20 Extended Oberon*)
     FlipRoot := q;
   END NewFlip;
 
+  PROCEDURE CopyModuleNameZeroFill(VAR dst: ModuleName; src: ARRAY OF CHAR);
+    VAR i: INTEGER;
+  BEGIN
+    i := 0;
+    WHILE (i < MnLength) & (src[i] # 0X) DO
+      dst[i] := src[i];
+      INC(i)
+    END;
+    WHILE i < MnLength DO
+      dst[i] := 0X;
+      INC(i)
+    END
+  END CopyModuleNameZeroFill;
+
   PROCEDURE LinkOne(name: ARRAY OF CHAR; VAR newmod: Module);
     (*search module in list; if not found, link module.
       res = noerr: already present or linked;
@@ -134,7 +148,8 @@ MODULE CORL;  (*Oberon boot linker/loader for RISC / AP 5.5.20 Extended Oberon*)
       IF res = noerr THEN (*read file*)
         NewFlip(p, 32 DIV 4);  (* module name *)
         INC(p, DescSize); (*allocate descriptor*)
-        mod.name := name; mod.key := key; mod.refcnt := 0;
+        (*mod.name := name;*) CopyModuleNameZeroFill(mod.name, name);
+        mod.key := key; mod.refcnt := 0;
         mod.selected := FALSE; mod.hidden := FALSE; mod.marked := FALSE; mod.sel := FALSE;
         mod.data := p;  (*data*)
         CrossUtil.ReadIntBE(R, n);

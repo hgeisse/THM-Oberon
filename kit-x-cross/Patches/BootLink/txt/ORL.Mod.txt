@@ -79,6 +79,20 @@ MODULE ORL;  (*Oberon boot linker/loader for RISC / AP 5.5.20 Extended Oberon*)
     FlipRoot := q;
   END NewFlip;
 
+  PROCEDURE CopyModuleNameZeroFill(VAR dst: ModuleName; src: ARRAY OF CHAR);
+    VAR i: INTEGER;
+  BEGIN
+    i := 0;
+    WHILE (i < MnLength) & (src[i] # 0X) DO
+      dst[i] := src[i];
+      INC(i)
+    END;
+    WHILE i < MnLength DO
+      dst[i] := 0X;
+      INC(i)
+    END
+  END CopyModuleNameZeroFill;
+
   PROCEDURE LinkOne(name: ARRAY OF CHAR; VAR newmod: Module);
     (*search module in list; if not found, link module.
       res = noerr: already present or linked;
@@ -134,7 +148,8 @@ MODULE ORL;  (*Oberon boot linker/loader for RISC / AP 5.5.20 Extended Oberon*)
       IF res = noerr THEN (*read file*)
         NewFlip(p, 32 DIV 4);  (* module name *)
         INC(p, DescSize); (*allocate descriptor*)
-        mod.name := name; mod.key := key; mod.refcnt := 0;
+        (*mod.name := name;*) CopyModuleNameZeroFill(mod.name, name);
+        mod.key := key; mod.refcnt := 0;
         mod.selected := FALSE; mod.hidden := FALSE; mod.marked := FALSE; mod.sel := FALSE;
         mod.data := p;  (*data*)
         CrossUtil.ReadIntBE(R, n);
@@ -346,13 +361,13 @@ MODULE ORL;  (*Oberon boot linker/loader for RISC / AP 5.5.20 Extended Oberon*)
         SYSTEM.PUT(Start, J + (x DIV 4) - 1);  (* branch instruction to the initialization body of the top module *)
         SYSTEM.PUT(Start + IntAdr, J + 03FFFFFFH);  (* General Interrupt address of ECO, jump in loop for debugging for now. *)
         SYSTEM.PUT(Start + TrapAdr, J + 03FFFFFFH);  (* ECO Userspace TLB Miss goes here - we ignore that for now, we do not use userspace. Trap handler, typically overwritten by the inner core. Moved from 4 to 8 for ECO. 8 is the former DestAdr, it is unused - we do not support relocation. *)
-        SYSTEM.PUT(Start + MemAdr, EcoVirtStart + Kernel.MemLim);  (* limit of available memory, typically overwritten by the boot loader *)
+        SYSTEM.PUT(Start + MemAdr, Kernel.MemLim);  (* limit of available memory, typically overwritten by the boot loader *)
         SYSTEM.PUT(Start + AllocAdr, EcoVirtStart + AllocPtr - Start);  (* address of the end of the module space loaded *)
         SYSTEM.PUT(Start + RootAdr, EcoVirtStart + SYSTEM.VAL(INTEGER, root) - Start);  (* current root of the links of loaded modules *)
-        SYSTEM.PUT(Start + StackAdr, EcoVirtStart + Kernel.stackOrg);  (* current limit of the module area, typically overwritten by the boot loader *)
+        SYSTEM.PUT(Start + StackAdr, Kernel.stackOrg);  (* current limit of the module area, typically overwritten by the boot loader *)
         SYSTEM.PUT(Start + FPrintAdr, 12345678H);  (* fingerprint *)
         (* in memory: flip endianness of non-word objects, e.g., strings *)
-        DoFlips();
+        (*DoFlips();*)
         (* dump memory to file, flip endianness of everything *)
         MakeFileName(name, S.s, ".bin"); F := Files.New(name); Files.Set(R, F, 0); i := Start;
         WHILE i < AllocPtr DO
@@ -362,7 +377,7 @@ MODULE ORL;  (*Oberon boot linker/loader for RISC / AP 5.5.20 Extended Oberon*)
         END ;
         Texts.WriteInt(W, AllocPtr - Start, 7); Files.Register(F);
         (* in memory: flip endianness of non-word objects again, just to be sure *)
-        DoFlips();
+        (*DoFlips();*)
       ELSE
         Texts.WriteString(W, "Link error:  "); Texts.WriteString(W, importing);
         IF res = nofile THEN Texts.WriteString(W, " module not found")
