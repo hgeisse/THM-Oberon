@@ -9,9 +9,10 @@ TOOLS=CrossUtil.Mod CORB.Mod CORG.Mod CORP.Mod CORL.Mod CORX.Mod
 D2O=$(BUILD)/bin/dos2oberon
 O2U=$(BUILD)/bin/oberon2unix
 M2B=$(BUILD)/bin/mem2bin-ECO32
+
 SRC=../../Source
-NEW=../../New
 PATCHES=../../Patches
+NEW=../../Cross
 
 all:
 		@echo "For cross compiling the system:"
@@ -40,7 +41,6 @@ prologue:
 		$(D2O) $(NEW)/Apps/txt/Hilbert.Mod.txt Hilbert.Mod
 		$(D2O) $(NEW)/Apps/txt/Sierpinski.Mod.txt Sierpinski.Mod
 		$(D2O) $(NEW)/Apps/txt/Stars.Mod.txt Stars.Mod
-		$(D2O) $(NEW)/Apps/txt/TestInt.Mod.txt TestInt.Mod
 		#
 		mkdir -p $(NEW)/BootLink/txt
 		cp $(SRC)/BootLink/txt/* $(NEW)/BootLink/txt
@@ -72,7 +72,6 @@ prologue:
 		$(D2O) $(NEW)/Fonts/txt/FontTool.Mod.txt FontTool.Mod
 		mkdir -p $(NEW)/Fonts/fonts
 		cp $(SRC)/Fonts/fonts/* $(NEW)/Fonts/fonts
-		cp $(NEW)/Fonts/fonts/* .
 		#
 		mkdir -p $(NEW)/Graphics/txt
 		cp $(SRC)/Graphics/txt/* $(NEW)/Graphics/txt
@@ -85,10 +84,8 @@ prologue:
 		$(D2O) $(NEW)/Graphics/txt/Rectangles.Mod.txt Rectangles.Mod
 		mkdir -p $(NEW)/Graphics/tools
 		cp $(SRC)/Graphics/tools/* $(NEW)/Graphics/tools
-		$(D2O) $(NEW)/Graphics/tools/Draw.Tool.txt Draw.Tool
 		mkdir -p $(NEW)/Graphics/libs
 		cp $(SRC)/Graphics/libs/* $(NEW)/Graphics/libs
-		cp $(NEW)/Graphics/libs/* .
 		#
 		mkdir -p $(NEW)/InnerCore/txt
 		cp $(SRC)/InnerCore/txt/* $(NEW)/InnerCore/txt
@@ -134,7 +131,6 @@ prologue:
 		$(D2O) $(NEW)/OuterCore/txt/Viewers.Mod.txt Viewers.Mod
 		mkdir -p $(NEW)/OuterCore/tools
 		cp $(SRC)/OuterCore/tools/* $(NEW)/OuterCore/tools
-		$(D2O) $(NEW)/OuterCore/tools/System.Tool.txt System.Tool
 		#
 		mkdir -p $(NEW)/PCLink2/txt
 		cp $(SRC)/PCLink2/txt/* $(NEW)/PCLink2/txt
@@ -146,19 +142,18 @@ prologue:
 		$(D2O) $(NEW)/Tools/txt/Tools.Mod.txt Tools.Mod
 
 epilogue:
-		#mkdir -p $(NEW)/Apps/rsc
-		#mv Blink.rsc $(NEW)/Apps/rsc
-		#mv Checkers.rsc $(NEW)/Apps/rsc
-		#mv Dummy.rsc $(NEW)/Apps/rsc
-		#mv EBNF.rsc $(NEW)/Apps/rsc
-		#mv Hilbert.rsc $(NEW)/Apps/rsc
-		#mv Sierpinski.rsc $(NEW)/Apps/rsc
-		#mv Stars.rsc $(NEW)/Apps/rsc
-		#mv TestInt.rsc $(NEW)/Apps/rsc
+		mkdir -p $(NEW)/Apps/rsc
+		mv Blink.rsc Blink.smb $(NEW)/Apps/rsc
+		mv Checkers.rsc Checkers.smb $(NEW)/Apps/rsc
+		mv Dummy.rsc Dummy.smb $(NEW)/Apps/rsc
+		mv EBNF.rsc EBNF.smb $(NEW)/Apps/rsc
+		mv Hilbert.rsc Hilbert.smb $(NEW)/Apps/rsc
+		mv Sierpinski.rsc Sierpinski.smb $(NEW)/Apps/rsc
+		mv Stars.rsc Stars.smb $(NEW)/Apps/rsc
 		#
 		mkdir -p $(NEW)/BootLink/rsc
-		mv ORL.rsc $(NEW)/BootLink/rsc
-		mv ORX.rsc $(NEW)/BootLink/rsc
+		mv ORL.rsc ORL.smb $(NEW)/BootLink/rsc
+		mv ORX.rsc ORX.smb $(NEW)/BootLink/rsc
 		#
 		mkdir -p $(NEW)/BootLoad/rsc
 		mv BootLoad.rsc $(NEW)/BootLoad/rsc
@@ -171,68 +166,68 @@ epilogue:
 		rm BootLoad.prm
 		#
 		mkdir -p $(NEW)/Compiler/rsc
-		mv CrossUtil.rsc $(NEW)/Compiler/rsc
-		mv ORB.rsc $(NEW)/Compiler/rsc
-		mv ORG.rsc $(NEW)/Compiler/rsc
-		mv ORP.rsc $(NEW)/Compiler/rsc
-		mv ORS.rsc $(NEW)/Compiler/rsc
-		mv ORTool.rsc $(NEW)/Compiler/rsc
+		mv CrossUtil.rsc CrossUtil.smb $(NEW)/Compiler/rsc
+		mv ORB.rsc ORB.smb $(NEW)/Compiler/rsc
+		mv ORG.rsc ORG.smb $(NEW)/Compiler/rsc
+		mv ORP.rsc ORP.smb $(NEW)/Compiler/rsc
+		mv ORS.rsc ORS.smb $(NEW)/Compiler/rsc
+		mv ORTool.rsc ORTool.smb $(NEW)/Compiler/rsc
 		#
 		mkdir -p $(NEW)/Editor/rsc
-		mv Edit.rsc $(NEW)/Editor/rsc
+		mv Edit.rsc Edit.smb $(NEW)/Editor/rsc
 		#
-		#mkdir -p $(NEW)/Fonts/rsc
-		#mv FontTool.rsc $(NEW)/Fonts/rsc
+		mkdir -p $(NEW)/Fonts/rsc
+		mv FontTool.rsc FontTool.smb $(NEW)/Fonts/rsc
 		#
-		#mkdir -p $(NEW)/Graphics/rsc
-		#mv Curves.rsc $(NEW)/Graphics/rsc
-		#mv Draw.rsc $(NEW)/Graphics/rsc
-		#mv GraphTool.rsc $(NEW)/Graphics/rsc
-		#mv GraphicFrames.rsc $(NEW)/Graphics/rsc
-		#mv Graphics.rsc $(NEW)/Graphics/rsc
-		#mv Rectangles.rsc $(NEW)/Graphics/rsc
+		mkdir -p $(NEW)/Graphics/rsc
+		mv Curves.rsc Curves.smb $(NEW)/Graphics/rsc
+		mv Draw.rsc Draw.smb $(NEW)/Graphics/rsc
+		mv GraphTool.rsc GraphTool.smb $(NEW)/Graphics/rsc
+		mv GraphicFrames.rsc GraphicFrames.smb $(NEW)/Graphics/rsc
+		mv Graphics.rsc Graphics.smb $(NEW)/Graphics/rsc
+		mv Rectangles.rsc Rectangles.smb $(NEW)/Graphics/rsc
 		#
 		mkdir -p $(NEW)/InnerCore/rsc
-		mv Disk.rsc $(NEW)/InnerCore/rsc
-		mv FileDir.rsc $(NEW)/InnerCore/rsc
-		mv Files.rsc $(NEW)/InnerCore/rsc
-		mv Kernel.rsc $(NEW)/InnerCore/rsc
-		mv Modules.rsc $(NEW)/InnerCore/rsc
+		mv Disk.rsc Disk.smb $(NEW)/InnerCore/rsc
+		mv FileDir.rsc FileDir.smb $(NEW)/InnerCore/rsc
+		mv Files.rsc Files.smb $(NEW)/InnerCore/rsc
+		mv Kernel.rsc Kernel.smb $(NEW)/InnerCore/rsc
+		mv Modules.rsc Modules.smb $(NEW)/InnerCore/rsc
 		mkdir -p $(NEW)/InnerCore/bin
 		mv Modules.bin $(NEW)/InnerCore/bin
 		#
-		#mkdir -p $(NEW)/MacroTool/rsc
-		#mv MacroTool.rsc $(NEW)/MacroTool/rsc
+		mkdir -p $(NEW)/MacroTool/rsc
+		mv MacroTool.rsc MacroTool.smb $(NEW)/MacroTool/rsc
 		#
-		#mkdir -p $(NEW)/Math/rsc
-		#mv Math.rsc $(NEW)/Math/rsc
+		mkdir -p $(NEW)/Math/rsc
+		mv Math.rsc Math.smb $(NEW)/Math/rsc
 		#
 		mkdir -p $(NEW)/Oberon0/rsc
-		mv Oberon0.rsc $(NEW)/Oberon0/rsc
-		mv PCLink0.rsc $(NEW)/Oberon0/rsc
-		mv RS232.rsc $(NEW)/Oberon0/rsc
+		mv Oberon0.rsc Oberon0.smb $(NEW)/Oberon0/rsc
+		mv PCLink0.rsc PCLink0.smb $(NEW)/Oberon0/rsc
+		mv RS232.rsc RS232.smb $(NEW)/Oberon0/rsc
 		mkdir -p $(NEW)/Oberon0/bin
 		mv Oberon0.bin $(NEW)/Oberon0/bin
 		#
 		mkdir -p $(NEW)/Out/rsc
-		mv Out.rsc $(NEW)/Out/rsc
+		mv Out.rsc Out.smb $(NEW)/Out/rsc
 		#
 		mkdir -p $(NEW)/OuterCore/rsc
-		mv Display.rsc $(NEW)/OuterCore/rsc
-		mv Fonts.rsc $(NEW)/OuterCore/rsc
-		mv Input.rsc $(NEW)/OuterCore/rsc
-		mv MenuViewers.rsc $(NEW)/OuterCore/rsc
-		mv Oberon.rsc $(NEW)/OuterCore/rsc
-		mv System.rsc $(NEW)/OuterCore/rsc
-		mv TextFrames.rsc $(NEW)/OuterCore/rsc
-		mv Texts.rsc $(NEW)/OuterCore/rsc
-		mv Viewers.rsc $(NEW)/OuterCore/rsc
+		mv Display.rsc Display.smb $(NEW)/OuterCore/rsc
+		mv Fonts.rsc Fonts.smb $(NEW)/OuterCore/rsc
+		mv Input.rsc Input.smb $(NEW)/OuterCore/rsc
+		mv MenuViewers.rsc MenuViewers.smb $(NEW)/OuterCore/rsc
+		mv Oberon.rsc Oberon.smb $(NEW)/OuterCore/rsc
+		mv System.rsc System.smb $(NEW)/OuterCore/rsc
+		mv TextFrames.rsc TextFrames.smb $(NEW)/OuterCore/rsc
+		mv Texts.rsc Texts.smb $(NEW)/OuterCore/rsc
+		mv Viewers.rsc Viewers.smb $(NEW)/OuterCore/rsc
 		#
 		mkdir -p $(NEW)/PCLink2/rsc
-		mv PCLink2.rsc $(NEW)/PCLink2/rsc
+		mv PCLink2.rsc PCLink2.smb $(NEW)/PCLink2/rsc
 		#
-		#mkdir -p $(NEW)/Tools/rsc
-		#mv Tools.rsc $(NEW)/Tools/rsc
+		mkdir -p $(NEW)/Tools/rsc
+		mv Tools.rsc Tools.smb $(NEW)/Tools/rsc
 
 Oberon.dsk:
 		cp $(RISC5KIT)/install/sim/Oberon.dsk .
