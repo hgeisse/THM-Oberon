@@ -138,6 +138,10 @@ MODULE ORG; (* N.Wirth, 16.4.2016 / 4.4.2017 / 31.5.2019  Oberon compiler; code 
 
   PROCEDURE Put2(op, a, b, off: LONGINT);
   BEGIN (*emit load/store instruction*)
+    IF (off >= C15) OR (off <= -C15) THEN
+      Put1a(Add, b, b, off, FALSE);
+      off := 0
+    END ;
     code[pc] := ((op * 20H + b) * 20H + a) * C16 + off MOD C16; INC(pc)
   END Put2;
 
