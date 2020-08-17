@@ -58,18 +58,12 @@ calln System.DeleteFiles EBNF.smb
 calln System.DeleteFiles Hilbert.Mod
 calln System.DeleteFiles Hilbert.rsc
 calln System.DeleteFiles Hilbert.smb
-calln System.DeleteFiles RISC.Mod
-calln System.DeleteFiles RISC.rsc
-calln System.DeleteFiles RISC.smb
 calln System.DeleteFiles Sierpinski.Mod
 calln System.DeleteFiles Sierpinski.rsc
 calln System.DeleteFiles Sierpinski.smb
 calln System.DeleteFiles Stars.Mod
 calln System.DeleteFiles Stars.rsc
 calln System.DeleteFiles Stars.smb
-calln System.DeleteFiles TestInt.Mod
-calln System.DeleteFiles TestInt.rsc
-calln System.DeleteFiles TestInt.smb
 #
 calln System.DeleteFiles ORL.Mod
 calln System.DeleteFiles ORL.rsc
@@ -521,7 +515,3 @@ h2o Stars.Mod
 calln ORP.Compile Stars.Mod
 o2h Stars.rsc
 o2h Stars.smb
-h2o TestInt.Mod
-calln ORP.Compile TestInt.Mod
-o2h TestInt.rsc
-o2h TestInt.smb

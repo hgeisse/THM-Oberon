@@ -15,7 +15,6 @@ Apps
 			TextFrames
   Stars			Display, Viewers, Texts, Oberon,
 			MenuViewers, TextFrames
-  TestInt		<none>
 BootLink
   ORL			Kernel, Disk, Files, Modules, Texts, Oberon
   ORX			Files, Texts, Oberon

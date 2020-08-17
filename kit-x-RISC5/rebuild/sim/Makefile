@@ -42,7 +42,6 @@ prologue:
 		$(D2O) $(NEW)/Apps/txt/Hilbert.Mod.txt Hilbert.Mod
 		$(D2O) $(NEW)/Apps/txt/Sierpinski.Mod.txt Sierpinski.Mod
 		$(D2O) $(NEW)/Apps/txt/Stars.Mod.txt Stars.Mod
-		$(D2O) $(NEW)/Apps/txt/TestInt.Mod.txt TestInt.Mod
 		#
 		mkdir -p $(NEW)/BootLink/txt
 		cp $(KIT)/BootLink/txt/* $(NEW)/BootLink/txt
@@ -148,7 +147,6 @@ epilogue:
 		mv Hilbert.rsc Hilbert.smb $(NEW)/Apps/rsc
 		mv Sierpinski.rsc Sierpinski.smb $(NEW)/Apps/rsc
 		mv Stars.rsc Stars.smb $(NEW)/Apps/rsc
-		mv TestInt.rsc TestInt.smb $(NEW)/Apps/rsc
 		#
 		mkdir -p $(NEW)/BootLink/rsc
 		mv ORL.rsc ORL.smb $(NEW)/BootLink/rsc
