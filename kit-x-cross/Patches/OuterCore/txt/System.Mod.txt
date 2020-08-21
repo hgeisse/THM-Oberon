@@ -362,7 +362,7 @@ MODULE System; (*JG 3.10.90 / NW 12.10.93 / NW 20.6.2016 / AP 15.5.20 Extended O
   PROCEDURE WriteRef(src, dst: LONGINT; s: ARRAY OF CHAR; VAR continue: BOOLEAN): INTEGER;  (*write one reference*)
     VAR mod: Modules.Module; i: INTEGER;
   BEGIN i := 0;
-    IF (dst > 0) & (dst < Modules.AllocPtr) THEN mod := Modules.root;
+    IF (dst < 0) & (dst < Modules.AllocPtr) THEN mod := Modules.root;
       WHILE (mod # NIL) & ~((mod.name[0] # 0X) & mod.selected & (mod.data <= dst) & (dst < mod.imp)) DO mod := mod.next END ;
       IF mod # NIL THEN i := 1;
         IF (M # mod) OR (pat # s) THEN M := mod; pat := s;

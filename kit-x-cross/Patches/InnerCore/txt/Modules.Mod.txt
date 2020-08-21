@@ -414,7 +414,7 @@ MODULE Modules;  (*Link and load on RISC; NW 20.10.2013 / 8.1.2019 / AP 27.4.20 
   PROCEDURE HandleRef(src, dst: LONGINT; s: ARRAY OF CHAR; VAR continue: BOOLEAN): INTEGER;
     VAR mod: Module; i: INTEGER;
   BEGIN i := 0;
-    IF (dst > 0) & (dst < AllocPtr) THEN mod := root;
+    IF (dst < 0) & (dst < AllocPtr) THEN mod := root;
       WHILE (mod # NIL) & ~((mod.name[0] # 0X) & mod.selected & (mod.data <= dst) & (dst < mod.imp)) DO mod := mod.next END ;
       IF mod # NIL THEN (*src references mod*) i := 1; continue := FALSE END
     END ;
