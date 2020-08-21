@@ -1,0 +1,20 @@
+
+Sequence of actions
+-------------------
+
+1. build-cross
+   needs	: ../kit-x-RISC5/install/sim/Oberon.dsk
+		  ../kit-x-RISC5/Stable/BootLoad/mem/BootLoad.mem
+		  ./Tools
+		  ./Source
+		  ./Patches
+   produces	: ./Cross
+
+2. install-cross
+   needs	: ./Cross
+   produces	: ./install-cross/sim/ramdisk.img
+
+3. build-new
+   needs	:
+   produces	:
+
