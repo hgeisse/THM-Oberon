@@ -10,7 +10,8 @@ We want to achieve our goal in two different ways: First by
 constructing a version of RISC5 (Wirth's processor for his
 Oberon project) for the DE2-115. On a different path, we try
 to retarget the Oberon compiler to our ECO32, which is a well
-established independent 32-bit microcomputer system.
+established independent 32-bit microcomputer system running
+on the DE2-115 (among other FPGA boards).
 
 If you have any questions don't hesitate to contact me by
 email to
