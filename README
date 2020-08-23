@@ -2,7 +2,15 @@
 Welcome to THM-Oberon!
 
 This project tries to port Niklaus Wirth's Oberon system to
-Terasic's DE2-115 FPGA development board.
+Terasic's DE2-115 FPGA development board. We decided to start
+not from Wirth's original "Project Oberon", but from Andreas
+Pirklbauer's "Extended Oberon", for a variety of reasons.
+
+We want to achieve our goal in two different ways: First by
+constructing a version of RISC5 (Wirth's processor for his
+Oberon project) for the DE2-115. On a different path, we try
+to retarget the Oberon compiler to our ECO32, which is a well
+established independent 32-bit microcomputer system.
 
 If you have any questions don't hesitate to contact me by
 email to
