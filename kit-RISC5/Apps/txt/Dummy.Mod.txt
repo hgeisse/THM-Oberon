@@ -1,2 +1,0 @@
-MODULE Dummy;
-END Dummy.

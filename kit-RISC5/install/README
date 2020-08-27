@@ -1,6 +1,0 @@
-This README contains instructions how to install
-the Oberon system, either on the RISC5 simulator
-or on a real FPGA board. Choose the appropriate
-subdirectory and type 'make'. This will present
-different options, realized as make targets.
-Choose a target and follow the instructions.
