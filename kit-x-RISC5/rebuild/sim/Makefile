@@ -11,18 +11,17 @@ M2B=$(BUILD)/bin/mem2bin-RISC5
 NEW=../../New
 
 all:
-		@echo "For re-building the system binaries:"
+		@echo "For re-building the system:"
 		@echo "    Type 'make rebuild' and start PCLink2.Run by"
 		@echo "    clicking the middle button of the mouse on this"
 		@echo "    command. Type 'make rebuild-link' in a separate"
 		@echo "    window, followed by '@ sysbuild'. When the script"
 		@echo "    has been executed, type 'q' in the rebuild-link"
 		@echo "    and CTRL-C in the rebuild window. The newly built"
-		@echo "    system binaries are copied to the 'new' directory."
-		@echo "For checking the newly built system binaries:"
+		@echo "    system is copied to the '../../New' directory."
+		@echo "For checking the newly built system:"
 		@echo "    Type 'make check'. This compares the new system"
-		@echo "    binaries with the old ones. Any differences are"
-		@echo "    reported."
+		@echo "    with the stable one. Any differences are reported."
 
 rebuild:	Oberon.dsk BootLoad.mem
 		$(BUILD)/bin/sim-RISC5 -d Oberon.dsk -p BootLoad.mem -s 001
