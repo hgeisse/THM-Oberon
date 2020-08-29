@@ -301,9 +301,3 @@ h2o Stars.smb
 #
 
 ldboot Modules.bin
-
-#
-# save ramdisk to file in host system
-#
-
-call Disk.Shutdown

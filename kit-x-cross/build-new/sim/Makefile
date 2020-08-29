@@ -3,12 +3,13 @@
 #
 
 BUILD=../../../build
-SRC=../../Cross
-NEW=../../New
-
 D2O=$(BUILD)/bin/dos2oberon
 O2U=$(BUILD)/bin/oberon2unix
 M2B=$(BUILD)/bin/mem2bin-ECO32
+
+INSTALL=../../install-cross/sim
+SRC=../../Cross
+NEW=../../New
 
 all:
 		@echo "For building the new system:"
@@ -19,20 +20,25 @@ all:
 		@echo "    When the script has been executed, type 'q'"
 		@echo "    in the build-link and CTRL-C in the build"
 		@echo "    window. The newly built system is copied"
-		@echo "    to the 'New' directory."
+		@echo "    to the '../../New' directory."
 		@echo "For checking the newly built system:"
 		@echo "    Type 'make check'. This compares the new system"
 		@echo "    with the old one. Any differences are reported."
 
-build:		ramdisk.img
-		cp ramdisk.img bootdisk.img
-		$(BUILD)/bin/sim-ECO32 -m 6 -l bootdisk.img -a 0x1FF800 \
-		  -sb 001 -s 1 -u serial.dev -G -o ramdisk.img
+build:		BootLoad.bin Oberon.dsk
+		$(BUILD)/bin/sim-ECO32 -r BootLoad.bin -D Oberon.dsk \
+		  -sb 001 -s 1 -u serial.dev -G
 
 build-link:
 		$(MAKE) prologue
 		$(BUILD)/bin/serlink
 		$(MAKE) epilogue
+
+BootLoad.bin:
+		cp $(SRC)/BootLoad/bin/BootLoad.bin .
+
+Oberon.dsk:
+		cp $(INSTALL)/Oberon.dsk .
 
 prologue:
 		mkdir -p $(NEW)/Apps/txt
@@ -231,12 +237,8 @@ check:
 		@echo "      ignored here, because they are caused by"
 		@echo "      RISC5's non-conforming FP implementation."
 
-ramdisk.img:
-		cp ../../install-cross/sim/ramdisk.img .
-
 clean:
 		rm -f *~
 		rm -f serial.dev Oberon.dsk BootLoad.mem
 		rm -f Oberon0.bin Modules.bin BootLoad.prm BootLoad.bin
 		rm -f *.Mod *.rsc *.smb *.Scn.Fnt *.Tool *.Lib
-		rm -f ramdisk.img bootdisk.img

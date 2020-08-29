@@ -5,30 +5,50 @@
 BUILD=../../../build
 D2O=$(BUILD)/bin/dos2oberon
 KIT=../../Cross
-MODULES=BootLoad InnerCore Oberon0 OuterCore Editor PCLink2 Out \
+
+DISK_SIZE=64M
+
+MODGRPS=BootLoad InnerCore Oberon0 OuterCore Editor PCLink2 Out \
         Compiler BootLink Tools Math Fonts Graphics MacroTool Apps
 
 all:
-		@echo "Please use 'make install' and 'make install-link',"
-		@echo "        or 'make run'     and 'make run-link'!"
+		@echo "For installing the system:"
+		@echo "    Type 'make install' and 'make install-link'"
+		@echo "    (in separate windows, in this order). Then type"
+		@echo "    '@ install-cross' in the install-link window. When"
+		@echo "    the script has been executed, type 'q' in the"
+		@echo "    install-link and CTRL-C in the install window."
+		@echo "    Make a backup copy of the disk 'Oberon.dsk'."
+		@echo "For running an installed system:"
+		@echo "    Type 'make run'. If you want to transfer files"
+		@echo "    between the host and the Oberon system, start"
+		@echo "    PCLink2.Run by clicking the middle button of the"
+		@echo "    mouse on this command. Then type 'make run-link'"
+		@echo "    in a separate window of the Linux system."
 
-install:	BootLoad.bin
-		$(BUILD)/bin/sim-ECO32 -r BootLoad.bin -m 6 \
-		  -sb 003 -s 1 -u serial.dev -G -o ramdisk.img
+install:	BootLoad.bin Oberon.dsk
+		$(BUILD)/bin/sim-ECO32 -r BootLoad.bin -D Oberon.dsk \
+		  -sb 003 -s 1 -u serial.dev -G
 
-install-link:	Oberon0.bin Modules.bin $(MODULES)
+install-link:	Oberon0.bin Modules.bin $(MODGRPS)
 		$(BUILD)/bin/serlink Oberon0.bin
 
-run:
-		cp ramdisk.img bootdisk.img
-		$(BUILD)/bin/sim-ECO32 -m 6 -l bootdisk.img -a 0x1FF800 \
-		  -sb 001 -s 1 -u serial.dev -G -o ramdisk.img
+run:		BootLoad.bin Oberon.dsk
+		$(BUILD)/bin/sim-ECO32 -r BootLoad.bin -D Oberon.dsk \
+		  -sb 001 -s 1 -u serial.dev -G
+
+debug:		BootLoad.bin Oberon.dsk
+		$(BUILD)/bin/sim-ECO32 -i -r BootLoad.bin -D Oberon.dsk \
+		  -sb 001 -s 1 -u serial.dev -G
 
 run-link:
 		$(BUILD)/bin/serlink
 
 BootLoad.bin:
 		cp $(KIT)/BootLoad/bin/BootLoad.bin .
+
+Oberon.dsk:
+		$(BUILD)/bin/mkdisk Oberon.dsk $(DISK_SIZE)
 
 Oberon0.bin:
 		cp $(KIT)/Oberon0/bin/Oberon0.bin .
@@ -87,6 +107,6 @@ Apps:
 
 clean:
 		rm -rf *~
+		rm -f serial.dev Oberon.dsk
 		rm -f BootLoad.bin Oberon0.bin Modules.bin
-		rm -f serial.dev ramdisk.img bootdisk.img
 		rm -f *.rsc *.smb *.Scn.Fnt *.Tool *.Lib

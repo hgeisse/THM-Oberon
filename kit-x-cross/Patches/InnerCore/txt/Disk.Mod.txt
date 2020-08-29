@@ -5,11 +5,16 @@ MODULE Disk;
   CONST
     SectorLength* = 1024;
     mapsize = 1000H; (* 4K * 1K sectors = 4MB *)
-    ramDiskStart = 0C0200000H; (* RAM disk start: 2MB *)
-    ramDiskSize = 400000H; (* RAM disk size: 4MB *)
-    romStart = 0E0000000H; romSize = 0800H;
-    outputDevice = 0FF000000H;
-    shutdownDevice = 0FF100000H;
+    (* SD card *)
+    SDCctrl = 0F0600000H;
+    SDCdata = 0F0600004H;
+    SDCcrc7 = 0F0600008H;
+    SDCcrc16 = 0F060000CH;
+    SDCselect = 0;
+    SDCfastclk = 1;
+    SDCcrc16miso = 2;
+    SDCready = 0;
+    StartBlockToken = 0FEH;
 
   TYPE
     Sector* = ARRAY SectorLength OF BYTE;
@@ -20,70 +25,148 @@ MODULE Disk;
 
   (*----------------------------------------------------------*)
 
-  PROCEDURE Shutdown*;
-    VAR i, w: INTEGER;
+  PROCEDURE SndRcv(b: INTEGER): INTEGER;
+    VAR r: INTEGER;
   BEGIN
-    (* if ROM is present, copy the bootstrap loader to RAM *)
-    SYSTEM.GET(romStart, w);
-    IF w # 0FFFFFFFFH THEN
-      FOR i := 0 TO romSize - 4 BY 4 DO
-        SYSTEM.GET(romStart + i, w);
-        SYSTEM.PUT(ramDiskStart - romSize + i, w)
-      END
-    END;
-    (* dump bootstrap loader from RAM, just below RAM disk *)
-    FOR i := 0 TO romSize - 4 BY 4 DO
-      SYSTEM.GET(ramDiskStart - romSize + i, w);
-      SYSTEM.PUT(outputDevice, w DIV 1000000H);
-      SYSTEM.PUT(outputDevice, w DIV 10000H);
-      SYSTEM.PUT(outputDevice, w DIV 100H);
-      SYSTEM.PUT(outputDevice, w DIV 1H)
-    END;
-    (* dump RAM disk contents *)
-    FOR i := 0 TO ramDiskSize - 4 BY 4 DO
-      SYSTEM.GET(ramDiskStart + i, w);
-      SYSTEM.PUT(outputDevice, w DIV 1000000H);
-      SYSTEM.PUT(outputDevice, w DIV 10000H);
-      SYSTEM.PUT(outputDevice, w DIV 100H);
-      SYSTEM.PUT(outputDevice, w DIV 1H)
-    END;
-    (* shutdown *)
-    (* SYSTEM.PUT(shutdownDevice, 0) *)
-  END Shutdown;
+    SYSTEM.PUT(SDCdata, b);
+    REPEAT
+    UNTIL SYSTEM.BIT(SDCctrl, SDCready);
+    SYSTEM.GET(SDCdata, r);
+    RETURN r
+  END SndRcv;
 
-  (*----------------------------------------------------------*)
-
-  PROCEDURE Read512(src, dst: INTEGER);
-    (* src: block #, dst: address of buffer *)
-    VAR
-      dskAddr: INTEGER;
-      i: INTEGER;
-      data: INTEGER;
+  PROCEDURE ReadBlock(src, dst: INTEGER);
+    (* read a single 512-byte SD card block,
+       src: block #, dst: address of buffer *)
+    VAR i, r, crc: INTEGER;
+        cmd: ARRAY 5 OF BYTE;
+        b: BYTE;
   BEGIN
-    dskAddr := ramDiskStart + src * 512;
-    FOR i := 0 TO 511 BY 4 DO
-      SYSTEM.GET(dskAddr, data);
-      INC(dskAddr, 4);
-      SYSTEM.PUT(dst, data);
-      INC(dst, 4);
+    cmd[0] := 051H;
+    cmd[1] := (src DIV 01000000H) MOD 256;
+    cmd[2] := (src DIV 00010000H) MOD 256;
+    cmd[3] := (src DIV 00000100H) MOD 256;
+    cmd[4] := src MOD 256;
+    (* select *)
+    SYSTEM.PUT(SDCctrl, { SDCfastclk, SDCselect });
+    (* send command *)
+    SYSTEM.PUT(SDCcrc7, 01H);
+    FOR i := 0 TO 4 DO
+      r := SndRcv(cmd[i]);
     END;
-  END Read512;
+    SYSTEM.GET(SDCcrc7, crc);
+    r := SndRcv(crc);
+    (* receive answer *)
+    i := 8;
+    REPEAT
+      r := SndRcv(0FFH);
+      DEC(i);
+    UNTIL (r # 0FFH) OR (i = 0);
+    IF i = 0 THEN
+      (* no answer *)
+      LED(0F1H);
+      REPEAT UNTIL FALSE;
+    ELSE
+      (* wait for start block token *)
+      i := 2048;
+      REPEAT
+        r := SndRcv(0FFH);
+        DEC(i);
+      UNTIL (r = StartBlockToken) OR (i = 0);
+      IF i = 0 THEN
+        (* no start block token *)
+        LED(0F2H);
+        REPEAT UNTIL FALSE;
+      ELSE
+        (* reset CRC *)
+        SYSTEM.PUT(SDCctrl, { SDCcrc16miso, SDCfastclk, SDCselect });
+        SYSTEM.PUT(SDCcrc16, 0000H);
+        (* receive data bytes *)
+        FOR i := 0 TO 511 DO
+          b := SndRcv(0FFH);
+          SYSTEM.PUT(dst + i, b);
+        END;
+        (* receive CRC *)
+        r := SndRcv(0FFH);
+        r := SndRcv(0FFH);
+        SYSTEM.GET(SDCcrc16, crc);
+        (* deselect *)
+        SYSTEM.PUT(SDCctrl, { SDCfastclk });
+        r := SndRcv(0FFH);
+        (* check CRC *)
+        IF crc # 0 THEN
+          (* CRC error *)
+          LED(0F3H);
+          REPEAT UNTIL FALSE;
+        END;
+      END;
+    END;
+  END ReadBlock;
 
-  PROCEDURE Write512(dst, src: INTEGER);
+  PROCEDURE WriteBlock(dst, src: INTEGER);
     (* dst: block #, src: address of buffer *)
-    VAR
-      dskAddr: INTEGER;
-      i: INTEGER;
-      data: INTEGER;
+    VAR i, r, crc: INTEGER;
+        cmd: ARRAY 5 OF BYTE;
+        b: BYTE;
   BEGIN
-    dskAddr := ramDiskStart + dst * 512;
-    FOR i := 0 TO 511 BY 4 DO
-      SYSTEM.GET(src, data);
-      INC(src, 4);
-      SYSTEM.PUT(dskAddr, data);
-      INC(dskAddr, 4);
+    cmd[0] := 058H;
+    cmd[1] := (dst DIV 01000000H) MOD 256;
+    cmd[2] := (dst DIV 00010000H) MOD 256;
+    cmd[3] := (dst DIV 00000100H) MOD 256;
+    cmd[4] := dst MOD 256;
+    (* select *)
+    SYSTEM.PUT(SDCctrl, { SDCfastclk, SDCselect });
+    (* send command *)
+    SYSTEM.PUT(SDCcrc7, 01H);
+    FOR i := 0 TO 4 DO
+      r := SndRcv(cmd[i]);
     END;
-  END Write512;
+    SYSTEM.GET(SDCcrc7, crc);
+    r := SndRcv(crc);
+    (* receive answer *)
+    i := 8;
+    REPEAT
+      r := SndRcv(0FFH);
+      DEC(i);
+    UNTIL (r # 0FFH) OR (i = 0);
+    IF i = 0 THEN
+      (* no answer *)
+      LED(0F4H);
+      REPEAT UNTIL FALSE;
+    ELSE
+      (* send start block token *)
+      r := SndRcv(StartBlockToken);
+      (* reset CRC *)
+      SYSTEM.PUT(SDCctrl, { SDCfastclk, SDCselect });
+      SYSTEM.PUT(SDCcrc16, 0000H);
+      (* send data bytes *)
+      FOR i := 0 TO 511 DO
+        SYSTEM.GET(src + i, b);
+        r := SndRcv(b);
+      END;
+      (* send CRC *)
+      SYSTEM.GET(SDCcrc16, crc);
+      r := SndRcv((crc DIV 256) MOD 256);
+      r := SndRcv(crc MOD 256);
+      (* receive data response token *)
+      REPEAT
+        r := SndRcv(0FFH);
+      UNTIL r # 0FFH;
+      IF (r MOD 020H) # 005H THEN
+        (* rejected *)
+        LED(0F5H);
+        REPEAT UNTIL FALSE;
+      ELSE
+        (* wait while busy *)
+        REPEAT
+          r := SndRcv(0FFH);
+        UNTIL r # 000H;
+        (* deselect *)
+        SYSTEM.PUT(SDCctrl, { SDCfastclk });
+        r := SndRcv(0FFH);
+      END;
+    END;
+  END WriteBlock;
 
   (*----------------------------------------------------------*)
 
@@ -139,8 +222,8 @@ MODULE Disk;
     ASSERT((src MOD 29) = 0);
     src := src DIV 29;
     src := src * 2;
-    Read512(src, SYSTEM.ADR(dst));
-    Read512(src + 1, SYSTEM.ADR(dst) + 512)
+    ReadBlock(src, SYSTEM.ADR(dst));
+    ReadBlock(src + 1, SYSTEM.ADR(dst) + 512)
   END GetSector;
 
   PROCEDURE PutSector*(dst: INTEGER; VAR src: Sector);
@@ -148,8 +231,8 @@ MODULE Disk;
     ASSERT((dst MOD 29) = 0);
     dst := dst DIV 29;
     dst := dst * 2;
-    Write512(dst, SYSTEM.ADR(src));
-    Write512(dst + 1, SYSTEM.ADR(src) + 512)
+    WriteBlock(dst, SYSTEM.ADR(src));
+    WriteBlock(dst + 1, SYSTEM.ADR(src) + 512)
   END PutSector;
 
   PROCEDURE Init*;
