@@ -15,15 +15,16 @@ Apps
 			TextFrames
   Stars			Display, Viewers, Texts, Oberon,
 			MenuViewers, TextFrames
-  TestInt		<none>
 BootLink
-  ORL			Kernel, Disk, Files, Modules, Texts, Oberon
-  ORX			Files, Texts, Oberon
+  ORL			Kernel, Disk, Files, Modules, Texts, Oberon,
+			CrossUtil
+  ORX			Files, Texts, Oberon, CrossUtil
 BootLoad
   BootLoad		<none>
 Compiler
-  ORB			Files, ORS
-  ORG			Files, ORS, ORB
+  CrossUtil		Files
+  ORB			Files, ORS, CrossUtil
+  ORG			Files, ORS, ORB, Out, CrossUtil
   ORP			Texts, Oberon, ORS, ORB, ORG
   ORS			Texts, Oberon
   ORTool		Files, Modules, Texts, Oberon, ORB
