@@ -3,7 +3,7 @@
 #
 
 BUILD=../../../build
-RISC5KIT=../../../kit-x-RISC5
+RISC5KIT=../../../kit-RISC5
 TOOLDIR=../../Tools
 TOOLS=CrossUtil.Mod CORB.Mod CORG.Mod CORP.Mod CORL.Mod CORX.Mod
 D2O=$(BUILD)/bin/dos2oberon

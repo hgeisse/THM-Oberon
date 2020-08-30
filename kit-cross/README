@@ -3,8 +3,8 @@ Sequence of actions
 -------------------
 
 1. build-cross
-   needs	: ../kit-x-RISC5/Stable/BootLoad/mem/BootLoad.mem
-		  ../kit-x-RISC5/install/sim/Oberon.dsk
+   needs	: ../kit-RISC5/Stable/BootLoad/mem/BootLoad.mem
+		  ../kit-RISC5/install/sim/Oberon.dsk
 		  ./Tools
 		  ./Source
 		  ./Patches
