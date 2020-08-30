@@ -3,7 +3,7 @@
 #
 
 BUILD=../../../build
-KIT=../../../kit-x-RISC5
+KIT=../../../kit-RISC5
 D2O=$(BUILD)/bin/dos2oberon
 
 DIRS=Module01 Module02 Module03 Module04 Module05 \

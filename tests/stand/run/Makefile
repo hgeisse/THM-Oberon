@@ -3,8 +3,8 @@
 #
 
 BUILD=../../../build
-RISC5=../../../kit-x-RISC5
-CROSS=../../../kit-x-cross
+RISC5=../../../kit-RISC5
+CROSS=../../../kit-cross
 D2O=$(BUILD)/bin/dos2oberon
 
 DIRS=Stand01 Stand02
