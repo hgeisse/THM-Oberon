@@ -11,7 +11,7 @@ LDLIBS = -lm
 
 SRCS = showobj.c disasm.c instr.c
 OBJS = $(patsubst %.c,%.o,$(SRCS))
-BIN = showobj-x-ECO32
+BIN = showobj-ECO32
 
 all:		$(BIN)
 

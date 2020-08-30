@@ -4,7 +4,7 @@
 
 BUILD = ../../build
 
-DIRS = x-RISC5 x-ECO32
+DIRS = RISC5 ECO32
 
 all:
 		for i in $(DIRS) ; do \
