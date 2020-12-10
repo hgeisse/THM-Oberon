@@ -1,0 +1,8 @@
+This README contains instructions how to re-build
+all the binaries in the kit. For this task it is
+necessary to have a running Oberon system. So please
+do an install first, either on the ECO32 simulator
+or on a real FPGA board. Then choose the appropriate
+subdirectory and type 'make'. This will present
+different options, realized as make targets.
+Choose a target and follow the instructions.
