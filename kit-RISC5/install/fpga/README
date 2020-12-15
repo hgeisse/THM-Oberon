@@ -1,0 +1,21 @@
+It is possible to make a backup copy of a newly installed
+Oberon system with the help of an SD card reader:
+1. Switch off the FPGA board. Remove the SD card from
+   the card cage and insert it into the SD card reader.
+2. Connect the SD card reader to a PC (which usually
+   means inserting the reader into a USB slot).
+3. Copy the relevant part of the SD card to a file.
+   NOTE: There is no recognizable file system on the
+   card! So you have to copy directly from the bare
+   device. Example:
+     sudo dd if=/dev/sdb of=Oberon.dsk bs=1M count=300
+   This copies 300 MiB from the device /dev/sdb (must
+   be your SD card reader) to the file 'Oberon.dsk'.
+4. In order to prepare a second SD card with an exact
+   copy of the first, insert the card into the reader,
+   connect it to the PC, and write the disk image file
+   directly to the bare device. Example:
+     sudo dd if=Oberon.dsk of=/dev/sdb
+   NOTE: Double-check the output specification! This
+   *must* be your SD card reader device. Otherwise you
+   risk to destroy the file system on your hard disk!
