@@ -9,15 +9,15 @@
 `default_nettype none
 
 
-module ram(pclk, clk, rst,
+module ram(clk, clk_q, rst,
            adr, en, ben, wr,
            din, dout, memwait,
            sram_addr, sram_data,
            sram_ce_n, sram_oe_n,
            sram_we_n, sram_ub_n, sram_lb_n);
     // internal interface
-    input pclk;		// 75 MHz for generating SRAM write signal
     input clk;		// 25 MHz system clock
+    input clk_q;	// 25 MHz system clock, quadrature, for SRAM write
     input rst;		// system reset
     input [19:0] adr;	// byte address
     input en;		// RAM enable
@@ -38,7 +38,6 @@ module ram(pclk, clk, rst,
   reg second_cycle;
   wire adr1;
   reg [15:0] sram_hold;
-  reg [1:0] wr_state;
 
   //
   // generate memory wait signal
@@ -97,28 +96,9 @@ module ram(pclk, clk, rst,
   // (generated twice in case of write word)
   //
 
-  always @(posedge pclk) begin
-    if (rst) begin
-      wr_state[1:0] <= 2'b00;
-    end else begin
-      if (wr_state[1:0] == 2'b00) begin
-        if (en & wr) begin
-          wr_state[1:0] <= 2'b01;
-        end
-      end else begin
-        if (wr_state[1:0] == 2'b01) begin
-          wr_state[1:0] <= 2'b10;
-        end
-        if (wr_state[1:0] == 2'b10) begin
-          wr_state[1:0] <= 2'b00;
-        end
-      end
-    end
-  end
-
   assign sram_ce_n = ~en;
   assign sram_oe_n = ~en | wr;
-  assign sram_we_n = ~wr_state[0];
+  assign sram_we_n = ~(en & wr & clk_q);
   assign sram_ub_n = ben & ~adr[0];
   assign sram_lb_n = ben & adr[0];
 

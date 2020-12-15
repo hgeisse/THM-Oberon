@@ -8,12 +8,13 @@
 
 
 module clk_rst(clk_in, rst_in_n,
-               clk_ok, clk_75, clk_25, rst);
+               clk_ok, clk_75, clk_25, clk_25_q, rst);
     input clk_in;
     input rst_in_n;
     output clk_ok;
     output clk_75;
     output clk_25;
+    output clk_25_q;
     output rst;
 
   wire [1:0] inclk;
@@ -45,7 +46,12 @@ module clk_rst(clk_in, rst_in_n,
     .clk0_multiply_by(8),
     .clk0_divide_by(16),
     .clk0_duty_cycle(50),		// in %
-    .clk0_phase_shift(0)		// in picosec
+    .clk0_phase_shift(0),		// in picosec
+    // 25 MHz output, 90 degrees out-of-phase
+    .clk2_multiply_by(8),
+    .clk2_divide_by(16),
+    .clk2_duty_cycle(50),		// in %
+    .clk2_phase_shift(10000)		// in picosec
   ) clk_pll (
     .inclk(inclk[1:0]),
     .clk(outclk[5:0]),
@@ -54,6 +60,7 @@ module clk_rst(clk_in, rst_in_n,
 
   assign clk_75 = outclk[1];
   assign clk_25 = outclk[0];
+  assign clk_25_q = outclk[2];
 
   assign clk_ok = locked;
 
