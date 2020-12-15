@@ -8,12 +8,13 @@
 
 
 module clk_rst(clk_in, rst_in_n,
-               clk_ok, clk_75, clk_25, rst);
+               clk_ok, clk_75, clk_25, clk_25_q, rst);
     input clk_in;
     input rst_in_n;
     output clk_ok;
     output reg clk_75;
     output reg clk_25;
+    output reg clk_25_q;
     output rst;
 
   reg rst_p_n;
@@ -24,10 +25,15 @@ module clk_rst(clk_in, rst_in_n,
 
   initial begin
     clk_25 = 1'b0;
+    clk_25_q = 1'b0;
   end
 
   always @(posedge clk_in) begin
     clk_25 = ~clk_25;
+  end
+
+  always @(negedge clk_in) begin
+    clk_25_q = ~clk_25_q;
   end
 
   always @(posedge clk_25) begin

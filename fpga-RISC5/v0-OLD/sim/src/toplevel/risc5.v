@@ -19,6 +19,7 @@ module risc5(clk_in,
   wire clk_ok;				// system clocks stable
   wire pclk;				// pixel clock, 75 MHz
   wire clk;				// system clock, 25 MHz
+  wire clk_q;				// system clock, 25 MHz, quadrature
   wire rst;				// system reset
   // cpu
   wire memwait;
@@ -70,6 +71,7 @@ module risc5(clk_in,
     .clk_ok(clk_ok),
     .clk_75(pclk),
     .clk_25(clk),
+    .clk_25_q(clk_q),
     .rst(rst)
   );
 
@@ -87,8 +89,8 @@ module risc5(clk_in,
   );
 
   ram ram1(
-    .pclk(pclk),
     .clk(clk),
+    .clk_q(clk_q),
     .rst(rst),
     .adr(ram_adr[19:0]),
     .en(ram_en),
