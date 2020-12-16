@@ -1,5 +1,5 @@
 //
-// test01.mem -- write a repeating pattern into the video memory
+// test_01.mem -- write a repeating pattern into the video memory
 //
 6000000E	//		MOV     R0,0x000E0000
 40067F00	//		IOR     R0,R0,0x00007F00

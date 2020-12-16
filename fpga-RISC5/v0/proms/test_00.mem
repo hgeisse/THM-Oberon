@@ -1,5 +1,5 @@
 //
-// test00.mem -- read switches 7..0 and copy them to LEDs 7..0
+// test_00.mem -- read switches 7..0 and copy them to LEDs 7..0
 //
 5000FFC4	//	loop:	MOV     R0,0xFFFFFFC4
 81000000	//		LDW     R1,R0,+00000

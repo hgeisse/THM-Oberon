@@ -1,5 +1,5 @@
 //
-// test05.mem -- copy a program to RAM and run it there
+// test_05.mem -- copy a program from PROM to RAM and run it from there
 // CAUTION: The current implementation does not allow LDWs from PROM!
 //          So this program fails badly.
 //

@@ -1,5 +1,5 @@
 //
-// test02.mem -- echo characters on serial interface
+// test_02.mem -- echo characters on serial interface (8N1, 9600 baud)
 //
 5000FFC8	//		MOV     R0,0xFFFFFFC8
 81000004	//	loop1:	LDW     R1,R0,+00004

@@ -1,5 +1,6 @@
 //
-// test04.mem -- generate a program in RAM and run it there
+// test_04.mem -- generate a program in RAM and run it from there
+//                (the program in RAM is the same one as in test_00)
 //
 41000000	//		MOV     R1,0x00000000
 62005000	//		MOV     R2,0x50000000

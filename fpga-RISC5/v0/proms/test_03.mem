@@ -1,5 +1,5 @@
 //
-// test_03.mem -- write and read bytes and words
+// test_03.mem -- write and read bytes and words to/from RAM
 //
 
 	// write 4 bytes into the same word at different offsets
