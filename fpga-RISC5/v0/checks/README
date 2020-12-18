@@ -1,0 +1,4 @@
+These checks are intended to be used with a simulator,
+either the instruction-set simulator or the Verilog
+simulation. Each of them is contained in a PROM image
+file and checks a specific detail of the system.
