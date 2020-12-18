@@ -1,5 +1,5 @@
 //
-// test_60.mem -- a simple test program (copies switches to LEDs)
+// test_40.mem -- a simple test program (copies switches to LEDs)
 //                it should be converted to binary
 //                and then sent via serlink to the boot loader
 //
