@@ -1,0 +1,115 @@
+MODULE* Memtest1;
+
+  IMPORT
+    SYSTEM;
+
+  CONST
+    SP = 14;
+    stackTop = 0D0000H;
+    serStat = -52;
+    serData = -56;
+    memStart = 10000H;
+    memSize = 0B0000H;
+
+  VAR
+    addr: INTEGER;
+    bval: BYTE;
+    rbval: BYTE;
+    ival: INTEGER;
+    rival: INTEGER;
+    i: INTEGER;
+    run: BOOLEAN;
+    loops: INTEGER;
+
+BEGIN
+  SYSTEM.LDREG(SP, stackTop);
+  REPEAT
+    REPEAT
+      REPEAT UNTIL SYSTEM.BIT(serStat, 0);
+      SYSTEM.GET(serData, ival);
+    UNTIL ival = 0F5H;
+    loops := 0;
+    REPEAT
+      (* write bytes *)
+      bval := 135;
+      addr := memStart;
+      i := 0;
+      WHILE (i < memSize) DO
+        SYSTEM.PUT(addr, bval);
+        bval := bval + 1;
+        IF bval = 255 THEN
+          bval := 0
+        END;
+        addr := addr + 1;
+        i := i + 1
+      END;
+      (* read bytes *)
+      bval := 135;
+      addr := memStart;
+      i := 0;
+      run := TRUE;
+      WHILE (i < memSize) & run DO
+        SYSTEM.GET(addr, rbval);
+        IF rbval # bval THEN
+          run := FALSE;
+        END;
+        bval := bval + 1;
+        IF bval = 255 THEN
+          bval := 0
+        END;
+        addr := addr + 1;
+        i := i + 1
+      END;
+      IF run THEN
+        REPEAT UNTIL SYSTEM.BIT(serStat, 1);
+        SYSTEM.PUT(serData, 00H)
+      ELSE
+        REPEAT UNTIL SYSTEM.BIT(serStat, 1);
+        SYSTEM.PUT(serData, 80H)
+      END;
+      (* read words *)
+      bval := 135;
+      addr := memStart;
+      i := 0;
+      run := TRUE;
+      WHILE (i < memSize DIV 4) & run DO
+        ival := bval;
+        bval := bval + 1;
+        IF bval = 255 THEN
+          bval := 0
+        END;
+        ival := ival + LSL(bval, 8);
+        bval := bval + 1;
+        IF bval = 255 THEN
+          bval := 0
+        END;
+        ival := ival + LSL(bval, 16);
+        bval := bval + 1;
+        IF bval = 255 THEN
+          bval := 0
+        END;
+        ival := ival + LSL(bval, 24);
+        bval := bval + 1;
+        IF bval = 255 THEN
+          bval := 0
+        END;
+        SYSTEM.GET(addr, rival);
+        IF rival # ival THEN
+          run := FALSE;
+        END;
+        addr := addr + 4;
+        i := i + 1
+      END;
+      IF run THEN
+        REPEAT UNTIL SYSTEM.BIT(serStat, 1);
+        SYSTEM.PUT(serData, 01H)
+      ELSE
+        REPEAT UNTIL SYSTEM.BIT(serStat, 1);
+        SYSTEM.PUT(serData, 81H)
+      END;
+      loops := loops + 1
+    UNTIL loops = 4;
+    REPEAT UNTIL SYSTEM.BIT(serStat, 1);
+    SYSTEM.PUT(serData, 0FAH)
+  UNTIL FALSE
+END Memtest1.

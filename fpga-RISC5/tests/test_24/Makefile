@@ -1,12 +1,12 @@
 #
-# Makefile for SDC test program
+# Makefile for memory test program
 #
 
-all:		sdctest
+all:		memtest
 
-sdctest:	sdctest.c
-		gcc -g -Wall -o sdctest sdctest.c
+memtest:	memtest.c
+		gcc -g -Wall -o memtest memtest.c
 
 clean:
 		rm -f *~
-		rm -f sdctest
+		rm -f memtest
