@@ -9,7 +9,8 @@ input clk, rst, memwait,
 input [31:0] inbus, codebus,
 output [23:0] adr,
 output rd, wr, ben,
-output [31:0] outbus);
+output [31:0] outbus,
+output lpout);
 
 localparam StartAdr = 22'h3FF800;
 
@@ -191,5 +192,35 @@ always @ (posedge clk) begin
     H <= MUL ? product[63:32] : DIV ? remainder : H;
   end
 end
+
+wire [23:0] PC_24;
+wire lptrigger;
+wire lpsample;
+wire [127:0] lpchannels;
+
+assign PC_24[23:0] = { PC[21:0], 2'b00 };
+
+assign lptrigger = 1'b1;				// trace00
+
+assign lpsample = 1'b1;
+assign lpchannels[127:0] = {
+  PC_24[23:0],
+  ins[31:0],
+  stall, stall1, stallL,
+  PMsel,
+  memwait,
+  adr[23:0],
+  codebus[31:0],
+  11'h0
+};
+
+LogicProbe lp(
+    .clock(clk),
+    .reset(rst),
+    .trigger(lptrigger),
+    .sample(lpsample),
+    .channels(lpchannels[127:0]),
+    .serial_out(lpout)
+);
 
 endmodule

@@ -30,6 +30,7 @@ module risc5(clk_in,
              ps2_1_data,
              rs232_0_rxd,
              rs232_0_txd,
+             rs232_1_txd,
              sdcard_ss_n,
              sdcard_sclk,
              sdcard_mosi,
@@ -79,6 +80,7 @@ module risc5(clk_in,
     // RS-232
     input rs232_0_rxd;
     output rs232_0_txd;
+    output rs232_1_txd;
     // SPI
     output sdcard_ss_n;
     output sdcard_sclk;
@@ -170,7 +172,8 @@ module risc5(clk_in,
     .rd(rd),
     .wr(wr),
     .ben(ben),
-    .outbus(outbus[31:0])
+    .outbus(outbus[31:0]),
+    .lpout(rs232_1_txd)
   );
 
   ram ram1(
