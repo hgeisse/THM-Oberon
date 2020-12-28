@@ -55,30 +55,6 @@ set_global_assignment -name PARTITION_FITTER_PRESERVATION_LEVEL PLACEMENT_AND_RO
 set_global_assignment -name PARTITION_COLOR 16764057 -section_id Top
 set_global_assignment -name TIMING_ANALYZER_MULTICORNER_ANALYSIS ON
 set_global_assignment -name NUM_PARALLEL_PROCESSORS ALL
-set_global_assignment -name VERILOG_FILE ../src/toplevel/risc5.v
-set_global_assignment -name SDC_FILE ../src/toplevel/risc5.sdc
-set_global_assignment -name VERILOG_FILE ../src/clk_rst/clk_rst.v
-set_global_assignment -name VERILOG_FILE ../src/cpu/RISC5cpu.v
-set_global_assignment -name VERILOG_FILE ../src/cpu/PROM.v
-set_global_assignment -name VERILOG_FILE ../src/cpu/Multiplier.v
-set_global_assignment -name VERILOG_FILE ../src/cpu/Divider.v
-set_global_assignment -name VERILOG_FILE ../src/cpu/LeftShifter.v
-set_global_assignment -name VERILOG_FILE ../src/cpu/RightShifter.v
-set_global_assignment -name VERILOG_FILE ../src/cpu/FPAdder.v
-set_global_assignment -name VERILOG_FILE ../src/cpu/FPMultiplier.v
-set_global_assignment -name VERILOG_FILE ../src/cpu/FPDivider.v
-set_global_assignment -name VERILOG_FILE ../src/ram/ram.v
-set_global_assignment -name VERILOG_FILE ../src/vid/vid.v
-set_global_assignment -name VERILOG_FILE ../src/tmr/tmr.v
-set_global_assignment -name VERILOG_FILE ../src/kbd_ms/kbd_ms.v
-set_global_assignment -name VERILOG_FILE ../src/kbd_ms/PS2.v
-set_global_assignment -name VERILOG_FILE ../src/kbd_ms/MouseP.v
-set_global_assignment -name VERILOG_FILE ../src/ser/ser.v
-set_global_assignment -name VERILOG_FILE ../src/ser/RS232R.v
-set_global_assignment -name VERILOG_FILE ../src/ser/RS232T.v
-set_global_assignment -name VERILOG_FILE ../src/spi/spi.v
-set_global_assignment -name VERILOG_FILE ../src/spi/spi_rt.v
-set_global_assignment -name VERILOG_FILE ../src/bio/bio.v
 set_location_assignment PIN_Y2 -to clk_in
 set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to clk_in
 set_location_assignment PIN_M23 -to rst_in_n
@@ -451,4 +427,32 @@ set_location_assignment PIN_AC4 -to sram_ub_n
 set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to sram_ub_n
 set_location_assignment PIN_AD4 -to sram_lb_n
 set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to sram_lb_n
+set_global_assignment -name VERILOG_FILE ../src/toplevel/risc5.v
+set_global_assignment -name SDC_FILE ../src/toplevel/risc5.sdc
+set_global_assignment -name VERILOG_FILE ../src/clk_rst/clk_rst.v
+set_global_assignment -name VERILOG_FILE ../src/cpu/RISC5cpu.v
+set_global_assignment -name VERILOG_FILE ../src/cpu/LogicProbe.v
+set_global_assignment -name VERILOG_FILE ../src/cpu/PROM.v
+set_global_assignment -name VERILOG_FILE ../src/cpu/Multiplier.v
+set_global_assignment -name VERILOG_FILE ../src/cpu/Divider.v
+set_global_assignment -name VERILOG_FILE ../src/cpu/LeftShifter.v
+set_global_assignment -name VERILOG_FILE ../src/cpu/RightShifter.v
+set_global_assignment -name VERILOG_FILE ../src/cpu/FPAdder.v
+set_global_assignment -name VERILOG_FILE ../src/cpu/FPMultiplier.v
+set_global_assignment -name VERILOG_FILE ../src/cpu/FPDivider.v
+set_global_assignment -name VERILOG_FILE ../src/ram/ram.v
+set_global_assignment -name VERILOG_FILE ../src/vid/vid.v
+set_global_assignment -name VERILOG_FILE ../src/tmr/tmr.v
+set_global_assignment -name VERILOG_FILE ../src/kbd_ms/kbd_ms.v
+set_global_assignment -name VERILOG_FILE ../src/kbd_ms/PS2.v
+set_global_assignment -name VERILOG_FILE ../src/kbd_ms/MouseP.v
+set_global_assignment -name VERILOG_FILE ../src/ser/ser.v
+set_global_assignment -name VERILOG_FILE ../src/ser/RS232R.v
+set_global_assignment -name VERILOG_FILE ../src/ser/RS232T.v
+set_global_assignment -name VERILOG_FILE ../src/spi/spi.v
+set_global_assignment -name VERILOG_FILE ../src/spi/spi_rt.v
+set_global_assignment -name VERILOG_FILE ../src/bio/bio.v
+set_global_assignment -name SOURCE_FILE db/risc5.cmp.rdb
+set_location_assignment PIN_G14 -to rs232_1_txd
+set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to rs232_1_txd
 set_instance_assignment -name PARTITION_HIERARCHY root_partition -to | -section_id Top
