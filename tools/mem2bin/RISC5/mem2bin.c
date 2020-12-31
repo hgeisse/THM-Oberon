@@ -12,9 +12,11 @@
 
 int main(int argc, char *argv[]) {
   FILE *in, *out;
+  int lineno;
   char line[LINE_SIZE];
-  char *endp;
+  char *p;
   unsigned int w;
+  char *endp;
   unsigned char b;
 
   if (argc != 3) {
@@ -31,12 +33,21 @@ int main(int argc, char *argv[]) {
     printf("error: cannot open output file '%s'\n", argv[2]);
     return 1;
   }
+  lineno = 0;
   while (fgets(line, LINE_SIZE, in) != NULL) {
-    w = strtoul(line, &endp, 16);
-    if (*endp != '\n') {
-      printf("error: illegal input format\n");
-      return 1;
+    lineno++;
+    p = line;
+    while (*p == ' ' || *p == '\t') {
+      p++;
     }
+    if (*p == '\n') {
+      continue;
+    }
+    if (*(p + 0) == '/' &&
+        *(p + 1) == '/') {
+      continue;
+    }
+    w = strtoul(p, &endp, 16);
     b = (w >> 0) & 0xFF;
     if (fwrite(&b, 1, 1, out) != 1) {
       printf("error: cannot write output file\n");
@@ -57,6 +68,19 @@ int main(int argc, char *argv[]) {
       printf("error: cannot write output file\n");
       return 1;
     }
+    p = endp;
+    while (*p == ' ' || *p == '\t') {
+      p++;
+    }
+    if (*p == '\n') {
+      continue;
+    }
+    if (*(p + 0) == '/' &&
+        *(p + 1) == '/') {
+      continue;
+    }
+    printf("error: garbage at end of line %d\n", lineno);
+    return 1;
   }
   fclose(in);
   fclose(out);
