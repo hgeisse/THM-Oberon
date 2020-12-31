@@ -1527,7 +1527,7 @@ static void disasmF2(Word instr) {
   a = (instr >> 24) & 0x0F;
   b = (instr >> 20) & 0x0F;
   offset = SIGN_EXT_20(instr & 0x000FFFFF);
-  sprintf(instrBuffer, "%-7s R%d,R%d,%s%05X",
+  sprintf(instrBuffer, "%-7s R%d,R%d,%s0x%05X",
           opName, a, b,
           offset < 0 ? "-" : "+",
           offset < 0 ? -offset : offset);
