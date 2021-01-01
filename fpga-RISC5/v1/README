@@ -1,0 +1,2 @@
+This is a port of RISC5 to the DE2-115 board.
+It uses a multicycle implementation of the CPU.
