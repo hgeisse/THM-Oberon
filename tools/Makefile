@@ -5,7 +5,7 @@
 BUILD = ../build
 
 DIRS = mkdisk dos2oberon oberon2dos oberon2unix unix2oberon mem2bin cmpx \
-       showobj showsym
+       showobj showsym bin2boot
 
 all:
 		for i in $(DIRS) ; do \
