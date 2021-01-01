@@ -1,7 +1,8 @@
 //
 // test_40.mem -- a simple test program (copies switches to LEDs)
-//                it should be converted to binary
-//                and then sent via serlink to the boot loader
+//                it should be converted to binary, and then either
+//                a) sent via serlink to the boot loader or
+//                b) converted to a serial input file for simulation
 //
 E7000007	// branch to start
 00000000	// reserve 7 words for boot loader
