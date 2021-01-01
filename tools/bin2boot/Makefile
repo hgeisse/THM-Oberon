@@ -2,7 +2,7 @@
 # Makefile for plain binary to boot-via-serial-line converter
 #
 
-BUILD = ../../../build
+BUILD = ../../build
 
 EXE = bin2boot
 
