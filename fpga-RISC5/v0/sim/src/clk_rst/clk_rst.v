@@ -19,7 +19,8 @@ module clk_rst(clk_in, rst_in_n,
 
   reg rst_p_n;
   reg rst_s_n;
-  reg [3:0] cnt;
+  reg [3:0] rst_counter;
+  wire rst_counting;
 
   assign clk_ok = 1'b1;
 
@@ -45,18 +46,21 @@ module clk_rst(clk_in, rst_in_n,
     #6.66 clk_75 = 1'b0;
   end
 
+  assign rst_counting =
+    (rst_counter[3:0] == 4'hF) ? 1'b0 : 1'b1;
+
   always @(posedge clk_25) begin
     rst_p_n <= rst_in_n;
     rst_s_n <= rst_p_n;
-    if (rst_s_n == 0) begin
-      cnt <= 4'h0;
+    if (~rst_s_n | ~clk_ok) begin
+      rst_counter[3:0] <= 4'h0;
     end else begin
-      if (cnt != 4'hF) begin
-        cnt <= cnt + 1;
+      if (rst_counting) begin
+        rst_counter[3:0] <= rst_counter[3:0] + 4'h1;
       end
     end
   end
 
-  assign rst = (cnt == 4'hF) ? 0 : 1;
+  assign rst = rst_counting;
 
 endmodule

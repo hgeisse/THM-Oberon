@@ -192,4 +192,10 @@ always @ (posedge clk) begin
   end
 end
 
+wire [23:0] pcmux_24;
+wire [23:0] PC_24;
+
+assign pcmux_24[23:0] = { pcmux[21:0], 2'b00 };
+assign PC_24[23:0] = { PC[21:0], 2'b00 };
+
 endmodule
