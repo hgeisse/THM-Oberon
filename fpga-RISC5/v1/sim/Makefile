@@ -7,7 +7,9 @@ SRCS = risc5test.v \
        src/clk_rst/clk_rst.v \
        src/cpu/cpu.v \
        src/cpu/cpu_bus.v \
-       src/cpu/cpu_core.v
+       src/cpu/cpu_core.v \
+       src/prom/prom.v \
+       src/ram/ram.v
 
 all:		show
 

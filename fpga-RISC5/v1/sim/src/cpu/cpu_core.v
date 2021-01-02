@@ -20,13 +20,85 @@ module cpu_core(clk, rst,
     output [31:0] bus_dout;		// bus data output, for writes
     input bus_ack;			// bus acknowledge
 
-  reg [23:0] pc;
-  wire [23:0] pc_next;
+  // program counter
+  wire [23:0] pc;		// program counter
+  wire [1:0] pc_src;		// pc source selector
+  wire [23:0] pc_next;		// value written into pc
 
-  assign pc_next[23:0] = rst ? 24'hFFE000 : pc[23:0] + 24'h000004;
+  //------------------------------------------------------------
 
+  // program counter
+  assign pc_next[23:0] =
+    (pc_src == 2'b00) ? 24'hFFE000 :
+    (pc_src == 2'b01) ? pc :
+    (pc_src == 2'b10) ? pc + 24'h4 :
+    24'hxxxxxx;
   always @(posedge clk) begin
-    pc[23:0] <= pc_next[23:0];
+    pc <= pc_next;
+  end
+
+  // bus
+
+  // instruction register & decoder
+
+  // register file
+
+  // alu, shift, and muldiv units
+
+  // ctrl
+  ctrl ctrl_0(
+    .clk(clk),
+    .rst(rst)
+  );
+
+endmodule
+
+
+//--------------------------------------------------------------
+// ctrl -- the finite state machine within the CPU
+//--------------------------------------------------------------
+
+
+module ctrl(clk, rst);
+    input clk;
+    input rst;
+
+  reg [1:0] state;
+  reg [1:0] next_state;
+
+  // state machine
+  always @(posedge clk) begin
+    if (rst) begin
+      state <= 2'd0;
+    end else begin
+      state <= next_state;
+    end
+  end
+
+  // output logic
+  always @(*) begin
+    case (state)
+      2'd0:  // reset
+        begin
+          next_state = 2'd1;
+          pc_src = 2'b00;
+        end
+      2'd1:  // fetch instr
+        begin
+          next_state = 2'd2;
+          pc_src = 2'b;
+        end
+      2'd2:  // halt
+        begin
+          next_state = 2'd2;
+          pc_src = 2'b00;
+        end
+      default:  // all other states: unused
+        begin
+          next_state = 2'd0;
+          pc_src = 2'b00;
+        end
+    endcase
   end
 
 endmodule

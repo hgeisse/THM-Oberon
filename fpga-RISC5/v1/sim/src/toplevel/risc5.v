@@ -21,10 +21,20 @@ module risc5(clk_in,
   // cpu
   wire bus_stb;				// bus strobe
   wire bus_we;				// bus write enable
-  wire [31:2] bus_addr;			// bus address (word address)
+  wire [23:2] bus_addr;			// bus address (word address)
   wire [31:0] bus_din;			// bus data input, for reads
   wire [31:0] bus_dout;			// bus data output, for writes
   wire bus_ack;				// bus acknowledge
+  // prom
+  wire prom_stb;			// prom strobe
+  wire [31:0] prom_dout;		// prom data output
+  wire prom_ack;			// prom acknowledge
+  // ram
+  wire ram_stb;				// ram strobe
+  wire [31:0] ram_dout;			// ram data output
+  wire ram_ack;				// ram acknowledge
+  // i/o
+  wire i_o_stb;				// i/o strobe
 
   //--------------------------------------
   // module instances
@@ -50,12 +60,57 @@ module risc5(clk_in,
     .bus_ack(bus_ack)
   );
 
+  prom prom_0(
+    .clk(clk),
+    .rst(rst),
+    .stb(prom_stb),
+    .we(bus_we),
+    .addr(bus_addr[10:2]),
+    .data_out(prom_dout[31:0]),
+    .ack(prom_ack)
+  );
+
+  ram ram_0(
+    .clk(clk),
+    .rst(rst),
+    .stb(ram_stb),
+    .we(bus_we),
+    .addr(bus_addr[23:2]),
+    .data_in(bus_dout[31:0]),
+    .data_out(ram_dout[31:0]),
+    .ack(ram_ack)
+  );
+
   //--------------------------------------
-  // address decoder
+  // address decoder (16 MB addr space)
   //--------------------------------------
+
+  // PROM: 2 KB @ 0xFFE000
+  assign prom_stb =
+    (bus_stb == 1'b1 && bus_addr[23:12] == 12'hFFE
+                     && bus_addr[11] == 1'b0) ? 1'b1 : 1'b0;
+
+  // RAM: 1 MB @ 0x000000
+  assign ram_stb =
+    (bus_stb == 1'b1 && bus_addr[23:20] == 4'h0) ? 1'b1 : 1'b0;
+
+  // I/O: 64 bytes (16 words) @ 0xFFFFC0
+  assign i_o_stb =
+    (bus_stb == 1'b1 && bus_addr[23:8] == 16'hFFFF
+                     && bus_addr[7:6] == 2'b11) ? 1'b1 : 1'b0;
 
   //--------------------------------------
   // data and acknowledge multiplexers
   //--------------------------------------
+
+  assign bus_din[31:0] =
+    prom_stb ? prom_dout[31:0] :
+    ram_stb  ? ram_dout[31:0]  :
+    32'h00000000;
+
+  assign bus_ack =
+    prom_stb ? prom_ack :
+    ram_stb  ? ram_ack  :
+    1'b0;
 
 endmodule
