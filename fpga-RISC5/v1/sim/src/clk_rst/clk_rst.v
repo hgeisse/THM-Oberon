@@ -8,10 +8,11 @@
 
 
 module clk_rst(clk_in, rst_in_n,
-               clk_ok, clk_75, clk_50, rst);
+               clk_ok, clk_100, clk_75, clk_50, rst);
     input clk_in;
     input rst_in_n;
     output clk_ok;
+    output reg clk_100;
     output reg clk_75;
     output clk_50;
     output rst;
@@ -22,6 +23,15 @@ module clk_rst(clk_in, rst_in_n,
   reg [3:0] rst_counter;
   wire rst_counting;
 
+  assign clk_ok = 1'b1;
+
+  always @(posedge clk_in) begin
+    clk_100 = 1'b1;
+    #5 clk_100 = 1'b0;
+    #5 clk_100 = 1'b1;
+    #5 clk_100 = 1'b0;
+  end
+
   initial begin
     clk_25 = 1'b0;
   end
@@ -29,8 +39,6 @@ module clk_rst(clk_in, rst_in_n,
   always @(posedge clk_in) begin
     clk_25 = ~clk_25;
   end
-
-  assign clk_ok = 1'b1;
 
   always @(posedge clk_25) begin
     clk_75 = 1'b1;

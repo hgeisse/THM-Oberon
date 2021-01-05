@@ -15,6 +15,7 @@ module risc5(clk_in,
 
   // clk_rst
   wire clk_ok;				// system clocks stable
+  wire mclk;				// memory clock, 100 MHz
   wire pclk;				// pixel clock, 75 MHz
   wire clk;				// system clock, 50 MHz
   wire rst;				// system reset
@@ -44,6 +45,7 @@ module risc5(clk_in,
     .clk_in(clk_in),
     .rst_in_n(rst_in_n),
     .clk_ok(clk_ok),
+    .clk_100(mclk),
     .clk_75(pclk),
     .clk_50(clk),
     .rst(rst)
