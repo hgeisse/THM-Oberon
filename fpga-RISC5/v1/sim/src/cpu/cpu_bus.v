@@ -10,7 +10,7 @@
 module cpu_bus(clk, rst,
                bus_stb, bus_we, bus_addr,
                bus_din, bus_dout, bus_ack,
-               cpu_stb, cpu_we, cpu_size, cpu_addr,
+               cpu_stb, cpu_we, cpu_ben, cpu_addr,
                cpu_din, cpu_dout, cpu_ack);
     // bus interface
     input clk;
@@ -24,7 +24,7 @@ module cpu_bus(clk, rst,
     // CPU interface
     input cpu_stb;
     input cpu_we;
-    input cpu_size;
+    input cpu_ben;
     input [23:0] cpu_addr;
     output reg [31:0] cpu_din;
     input [31:0] cpu_dout;
@@ -64,7 +64,7 @@ module cpu_bus(clk, rst,
           // bus activated by cpu
           if (~cpu_we) begin
             // cpu read cycle
-            if (~cpu_size) begin
+            if (cpu_ben) begin
               // cpu read byte
               bus_stb = 1'b1;
               bus_we = 1'b0;
@@ -72,15 +72,15 @@ module cpu_bus(clk, rst,
               bus_dout[31:0] = 32'hxxxxxxxx;
               if (~cpu_addr[1]) begin
                 if (~cpu_addr[0]) begin
-                  cpu_din[31:0] = { 24'h0, bus_din[31:24] };
+                  cpu_din[31:0] = { 24'h0, bus_din[ 7: 0] };
                 end else begin
-                  cpu_din[31:0] = { 24'h0, bus_din[23:16] };
+                  cpu_din[31:0] = { 24'h0, bus_din[15: 8] };
                 end
               end else begin
                 if (~cpu_addr[0]) begin
-                  cpu_din[31:0] = { 24'h0, bus_din[15: 8] };
+                  cpu_din[31:0] = { 24'h0, bus_din[23:16] };
                 end else begin
-                  cpu_din[31:0] = { 24'h0, bus_din[ 7: 0] };
+                  cpu_din[31:0] = { 24'h0, bus_din[31:24] };
                 end
               end
               cpu_ack = bus_ack;
@@ -101,7 +101,7 @@ module cpu_bus(clk, rst,
             end
           end else begin
             // cpu write cycle
-            if (~cpu_size) begin
+            if (cpu_ben) begin
               // cpu write byte
               // part 1: read word into word buffer
               bus_stb = 1'b1;
@@ -118,19 +118,19 @@ module cpu_bus(clk, rst,
               wbuf_we = 1'b1;
               if (~cpu_addr[1]) begin
                 if (~cpu_addr[0]) begin
-                  wbuf_in[31:0] = { cpu_dout[7:0], bus_din[23:16],
-                                    bus_din[15:8], bus_din[7:0] };
+                  wbuf_in[31:0] = { bus_din[31:24], bus_din[23:16],
+                                    bus_din[15:8], cpu_dout[7:0] };
                 end else begin
-                  wbuf_in[31:0] = { bus_din[31:24], cpu_dout[7:0],
-                                    bus_din[15:8], bus_din[7:0] };
+                  wbuf_in[31:0] = { bus_din[31:24], bus_din[23:16],
+                                    cpu_dout[7:0], bus_din[7:0] };
                 end
               end else begin
                 if (~cpu_addr[0]) begin
-                  wbuf_in[31:0] = { bus_din[31:24], bus_din[23:16],
-                                    cpu_dout[7:0], bus_din[7:0] };
+                  wbuf_in[31:0] = { bus_din[31:24], cpu_dout[7:0],
+                                    bus_din[15:8], bus_din[7:0] };
                 end else begin
-                  wbuf_in[31:0] = { bus_din[31:24], bus_din[23:16],
-                                    bus_din[15:8], cpu_dout[7:0] };
+                  wbuf_in[31:0] = { cpu_dout[7:0], bus_din[23:16],
+                                    bus_din[15:8], bus_din[7:0] };
                 end
               end
             end else begin

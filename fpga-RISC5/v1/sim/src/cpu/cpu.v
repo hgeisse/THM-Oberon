@@ -21,7 +21,7 @@ module cpu(clk, rst,
 
   wire cpu_stb;
   wire cpu_we;
-  wire cpu_size;
+  wire cpu_ben;
   wire [23:0] cpu_addr;
   wire [31:0] cpu_din;
   wire [31:0] cpu_dout;
@@ -38,7 +38,7 @@ module cpu(clk, rst,
     .bus_ack(bus_ack),
     .cpu_stb(cpu_stb),
     .cpu_we(cpu_we),
-    .cpu_size(cpu_size),
+    .cpu_ben(cpu_ben),
     .cpu_addr(cpu_addr[23:0]),
     .cpu_din(cpu_din[31:0]),
     .cpu_dout(cpu_dout[31:0]),
@@ -50,7 +50,7 @@ module cpu(clk, rst,
     .rst(rst),
     .bus_stb(cpu_stb),
     .bus_we(cpu_we),
-    .bus_size(cpu_size),
+    .bus_ben(cpu_ben),
     .bus_addr(cpu_addr[23:0]),
     .bus_din(cpu_din[31:0]),
     .bus_dout(cpu_dout[31:0]),
