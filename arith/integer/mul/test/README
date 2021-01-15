@@ -1,0 +1,11 @@
+1. Choose one of the three implementations of a multiplier:
+     make choose-Wirth
+     make choose-Straube
+     make choose-Geisse
+   This copies the respective implementation to the file "multiplier.v".
+2. Choose one of the two sets of test cases:
+     make choose-s
+     make choose-u
+   This copies the respective set to the file "ref.dat".
+3. Run the simulation with "make run". Look at the signal
+   "error" at a time where "done" is 1.
