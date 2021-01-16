@@ -6,9 +6,14 @@ must hold:
 
 (q = a DIV b) AND (r = a MOD b)  =>  (a = q * b + r)
 
+Furthermore, in order to make the result unique, the
+following relation must hold:
 
-Method 1
---------
+abs(a MOD b) < abs(b)
+
+
+Definition 1
+------------
 
  14 :  3 =  4 R  2		 12 :  3 =  4 R 0
 -14 :  3 = -4 R -2		-12 :  3 = -4 R 0
@@ -18,8 +23,8 @@ Method 1
 (Remainder has the same sign as the dividend.)
 
 
-Method 2
---------
+Definition 2
+------------
 
  14 :  3 =  4 R  2		 12 :  3 =  4 R 0
 -14 :  3 = -5 R  1		-12 :  3 = -4 R 0
@@ -29,8 +34,8 @@ Method 2
 (Remainder has the same sign as the divisor.)
 
 
-Method 3
---------
+Definition 3
+------------
 
  14 :  3 =  4 R  2		 12 :  3 =  4 R 0
 -14 :  3 = -5 R  1		-12 :  3 = -4 R 0
@@ -38,4 +43,19 @@ Method 3
 -14 : -3 =  5 R  1		-12 : -3 =  4 R 0
 
 (Remainder is always non-negative.)
+
+
+Remarks
+-------
+
+1) The "typical C implementation" uses Definition 1.
+
+2) RISC5 (used for Oberon) behaves a little weird:
+
+ 14 :  3 =  4 R  2		 12 :  3 =  4 R  0
+-14 :  3 = -5 R  1		-12 :  3 = -4 R  0
+ 14 : -3 = -6 R -4		 12 : -3 = -6 R -6
+-14 : -3 =  5 R  1		-12 : -3 =  5 R  3
+
+My guess is that definition 3 above would fit best.
 
