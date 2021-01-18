@@ -21,8 +21,9 @@ module Multiplier(clk, run, stall,
   reg x_neg;
   reg y_neg;
   reg [31:0] y_abs;
-  reg [64:0] q;
+  reg [63:0] q;
   wire [64:1] s;
+  wire [64:1] t;
 
   always @(posedge clk) begin
     if (run) begin
@@ -34,8 +35,9 @@ module Multiplier(clk, run, stall,
 
   assign stall = run & (counter[5:0] != 6'd33);
 
-  assign s[64:32] = q[64:32] + { 1'b0, y_abs };
-  assign s[31: 1] = q[31: 1];
+  assign s[64:32] = { 1'b0, q[63:32] } + { 1'b0, y_abs };
+  assign s[31: 1] = q[31:1];
+  assign t[64: 1] = { 1'b0, q[63:1] };
 
   always @(posedge clk) begin
     if (counter[5:0] == 6'd0) begin
@@ -43,12 +45,12 @@ module Multiplier(clk, run, stall,
       if (~op_unsigned & x[31]) begin
         // negate first operand
         x_neg <= 1'b1;
-        q[64:32] <= 33'b0;
+        q[63:32] <= 32'b0;
         q[31: 0] <= ~x[31:0] + 32'b1;
       end else begin
         // use first operand as is
         x_neg <= 1'b0;
-        q[64:32] <= 33'b0;
+        q[63:32] <= 32'b0;
         q[31: 0] <= x[31:0];
       end
       if (~op_unsigned & y[31]) begin
@@ -62,10 +64,10 @@ module Multiplier(clk, run, stall,
       end
     end else begin
       // do a multiplication step
-      if (q[0] == 1) begin
-        q[64:0] <= { 1'b0, s[64:1] };
+      if (q[0]) begin
+        q[63:0] <= s[64:1];
       end else begin
-        q[64:0] <= { 1'b0, q[64:1] };
+        q[63:0] <= t[64:1];
       end
     end
   end
