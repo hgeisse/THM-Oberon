@@ -48,6 +48,8 @@ module cpu_core(clk, rst,
   wire [31:0] reg_di2;		// register data in 2
   wire reg_we2;			// register write enable 2
   // alu
+  wire alu_run;			// signal to start alu running
+  wire alu_stall;		// alu needs additional clock cycles
   wire alu_src1;		// alu source 1 selector
   wire [31:0] alu_op1;		// alu operand 1
   wire [1:0] alu_src2;		// alu source 2 selector
@@ -136,9 +138,13 @@ module cpu_core(clk, rst,
     32'hxxxxxxxx;
   assign alu_fnc = alu_add ? 4'h8 : ir_op;
   alu alu_0(
+    .clk(clk),
+    .run(alu_run),
+    .stall(alu_stall),
     .op1(alu_op1),
     .op2(alu_op2),
     .fnc(alu_fnc),
+    .op_unsigned(ir_u),
     .res(alu_res)
   );
   always @(posedge clk) begin
@@ -151,6 +157,7 @@ module cpu_core(clk, rst,
     .rst(rst),
     .ir_pq(ir_pq),
     .bus_ack(bus_ack),
+    .alu_stall(alu_stall),
     .pc_src(pc_src),
     .pc_we(pc_we),
     .bus_stb(bus_stb),
@@ -159,6 +166,7 @@ module cpu_core(clk, rst,
     .ir_we(ir_we),
     .reg_a2_src(reg_a2_src),
     .reg_we2(reg_we2),
+    .alu_run(alu_run),
     .alu_src1(alu_src1),
     .alu_src2(alu_src2),
     .alu_add(alu_add)
@@ -172,102 +180,26 @@ endmodule
 //--------------------------------------------------------------
 
 
-module lsl(value, shcnt, res);
-    input [31:0] value;
-    input [4:0] shcnt;
-    output [31:0] res;
-
-  reg [31:0] aux_0;
-  reg [31:0] aux_1;
-
-  always @(*) begin
-    case (shcnt[1:0])
-      2'b00: aux_0 = value[31:0];
-      2'b01: aux_0 = { value[30:0], 1'b0 };
-      2'b10: aux_0 = { value[29:0], 2'b0 };
-      2'b11: aux_0 = { value[28:0], 3'b0 };
-    endcase
-  end
-  always @(*) begin
-    case (shcnt[3:2])
-      2'b00: aux_1 = aux_0[31:0];
-      2'b01: aux_1 = { aux_0[27:0],  4'b0 };
-      2'b10: aux_1 = { aux_0[23:0],  8'b0 };
-      2'b11: aux_1 = { aux_0[19:0], 12'b0 };
-    endcase
-  end
-  assign res = ~shcnt[4] ? aux_1 : { aux_1[15:0], 16'b0 };
-
-endmodule
-
-
-module asr(value, shcnt, res);
-    input [31:0] value;
-    input [4:0] shcnt;
-    output [31:0] res;
-
-  reg [31:0] aux_0;
-  reg [31:0] aux_1;
-
-  always @(*) begin
-    case (shcnt[1:0])
-      2'b00: aux_0 = value[31:0];
-      2'b01: aux_0 = { {1{value[31]}}, value[31:1] };
-      2'b10: aux_0 = { {2{value[31]}}, value[31:2] };
-      2'b11: aux_0 = { {3{value[31]}}, value[31:3] };
-    endcase
-  end
-  always @(*) begin
-    case (shcnt[3:2])
-      2'b00: aux_1 = aux_0[31:0];
-      2'b01: aux_1 = { { 4{value[31]}}, aux_0[31: 4] };
-      2'b10: aux_1 = { { 8{value[31]}}, aux_0[31: 8] };
-      2'b11: aux_1 = { {12{value[31]}}, aux_0[31:12] };
-    endcase
-  end
-  assign res = ~shcnt[4] ? aux_1 : { {16{value[31]}}, aux_1[31:16] };
-
-endmodule
-
-
-module ror(value, shcnt, res);
-    input [31:0] value;
-    input [4:0] shcnt;
-    output [31:0] res;
-
-  reg [31:0] aux_0;
-  reg [31:0] aux_1;
-
-  always @(*) begin
-    case (shcnt[1:0])
-      2'b00: aux_0 = value[31:0];
-      2'b01: aux_0 = { value[0:0], value[31:1] };
-      2'b10: aux_0 = { value[1:0], value[31:2] };
-      2'b11: aux_0 = { value[2:0], value[31:3] };
-    endcase
-  end
-  always @(*) begin
-    case (shcnt[3:2])
-      2'b00: aux_1 = aux_0[31:0];
-      2'b01: aux_1 = { aux_0[ 3:0], aux_0[31: 4] };
-      2'b10: aux_1 = { aux_0[ 7:0], aux_0[31: 8] };
-      2'b11: aux_1 = { aux_0[11:0], aux_0[31:12] };
-    endcase
-  end
-  assign res = ~shcnt[4] ? aux_1 : { aux_1[15:0], aux_1[31:16] };
-
-endmodule
-
-
-module alu(op1, op2, fnc, res);
+module alu(clk, run, stall,
+           op1, op2, fnc, op_unsigned, res);
+    input clk;
+    input run;
+    output stall;
     input [31:0] op1;
     input [31:0] op2;
     input [3:0] fnc;
+    input op_unsigned;
     output reg [31:0] res;
 
   wire [31:0] lsl_res;
   wire [31:0] asr_res;
   wire [31:0] ror_res;
+  wire mul_stall;
+  wire [31:0] mul_res_hi;
+  wire [31:0] mul_res_lo;
+  wire div_stall;
+  wire [31:0] div_res_quo;
+  wire [31:0] div_res_rem;
 
   lsl lsl_0(
     .value(op1),
@@ -287,6 +219,30 @@ module alu(op1, op2, fnc, res);
     .res(ror_res)
   );
 
+  mul mul_0(
+    .clk(clk),
+    .run(run & (fnc == 4'hA)),
+    .stall(mul_stall),
+    .op_unsigned(op_unsigned),
+    .x(op1),
+    .y(op2),
+    .zhi(mul_res_hi),
+    .zlo(mul_res_lo)
+  );
+
+  div div_0(
+    .clk(clk),
+    .run(run & (fnc == 4'hB)),
+    .stall(div_stall),
+    .op_unsigned(op_unsigned),
+    .x(op1),
+    .y(op2),
+    .quo(div_res_quo),
+    .rem(div_res_rem)
+  );
+
+  assign stall = mul_stall | div_stall;
+
   always @(*) begin
     case (fnc)
       4'h0: res = op2;
@@ -299,8 +255,8 @@ module alu(op1, op2, fnc, res);
       4'h7: res = op1 ^ op2;
       4'h8: res = op1 + op2;
       4'h9: res = op1 - op2;
-      4'hA: res = 32'hxxxxxxxx;
-      4'hB: res = 32'hxxxxxxxx;
+      4'hA: res = mul_res_lo;
+      4'hB: res = div_res_quo;
       4'hC: res = 32'hxxxxxxxx;
       4'hD: res = 32'hxxxxxxxx;
       4'hE: res = 32'hxxxxxxxx;
@@ -319,15 +275,17 @@ endmodule
 module ctrl(clk, rst,
             ir_pq,
             bus_ack,
+            alu_stall,
             pc_src, pc_we,
             bus_stb, bus_we, bus_ben,
             ir_we,
             reg_a2_src, reg_we2,
-            alu_src1, alu_src2, alu_add);
+            alu_run, alu_src1, alu_src2, alu_add);
     input clk;
     input rst;
     input [1:0] ir_pq;
     input bus_ack;
+    input alu_stall;
     output reg [1:0] pc_src;
     output reg pc_we;
     output reg bus_stb;
@@ -336,6 +294,7 @@ module ctrl(clk, rst,
     output reg ir_we;
     output reg reg_we2;
     output reg [1:0] reg_a2_src;
+    output reg alu_run;
     output reg alu_src1;
     output reg [1:0] alu_src2;
     output reg alu_add;
@@ -366,6 +325,7 @@ module ctrl(clk, rst,
           ir_we = 1'b0;
           reg_a2_src = 2'bxx;
           reg_we2 = 1'b0;
+          alu_run = 1'b0;
           alu_src1 = 1'bx;
           alu_src2 = 2'bxx;
           alu_add = 1'bx;
@@ -393,6 +353,7 @@ module ctrl(clk, rst,
           end
           reg_a2_src = 2'bxx;
           reg_we2 = 1'b0;
+          alu_run = 1'b0;
           alu_src1 = 1'b0;
           alu_src2 = 2'b00;
           alu_add = 1'b1;
@@ -425,21 +386,27 @@ module ctrl(clk, rst,
           ir_we = 1'b0;
           reg_a2_src = 2'b00;
           reg_we2 = 1'b0;
+          alu_run = 1'b0;
           alu_src1 = 1'bx;
           alu_src2 = 2'bxx;
           alu_add = 1'bx;
         end
       4'd3:  // format 0 execute
         begin
-          next_state = 4'd4;
+          if (alu_stall) begin
+            next_state = 4'd3;
+          end else begin
+            next_state = 4'd4;
+          end
           pc_src = 2'bxx;
           pc_we = 1'b0;
           bus_stb = 1'b0;
           bus_we = 1'bx;
           bus_ben = 1'bx;
           ir_we = 1'b0;
-          reg_a2_src = 2'bxx;
+          reg_a2_src = 2'b00;
           reg_we2 = 1'b0;
+          alu_run = 1'b1;
           alu_src1 = 1'b1;
           alu_src2 = 2'b01;
           alu_add = 1'b0;
@@ -455,21 +422,27 @@ module ctrl(clk, rst,
           ir_we = 1'b0;
           reg_a2_src = 2'b01;
           reg_we2 = 1'b1;
+          alu_run = 1'b0;
           alu_src1 = 1'bx;
           alu_src2 = 2'bxx;
           alu_add = 1'bx;
         end
       4'd5:  // format 1 execute
         begin
-          next_state = 4'd6;
+          if (alu_stall) begin
+            next_state = 4'd5;
+          end else begin
+            next_state = 4'd6;
+          end
           pc_src = 2'bxx;
           pc_we = 1'b0;
           bus_stb = 1'b0;
           bus_we = 1'bx;
           bus_ben = 1'bx;
           ir_we = 1'b0;
-          reg_a2_src = 2'bxx;
+          reg_a2_src = 2'b00;
           reg_we2 = 1'b0;
+          alu_run = 1'b0;
           alu_src1 = 1'b1;
           alu_src2 = 2'b10;
           alu_add = 1'b0;
@@ -485,6 +458,7 @@ module ctrl(clk, rst,
           ir_we = 1'b0;
           reg_a2_src = 2'b01;
           reg_we2 = 1'b1;
+          alu_run = 1'b0;
           alu_src1 = 1'bx;
           alu_src2 = 2'bxx;
           alu_add = 1'bx;
@@ -500,6 +474,7 @@ module ctrl(clk, rst,
           ir_we = 1'b0;
           reg_a2_src = 2'bxx;
           reg_we2 = 1'b0;
+          alu_run = 1'b0;
           alu_src1 = 1'bx;
           alu_src2 = 2'bxx;
           alu_add = 1'bx;
@@ -515,6 +490,7 @@ module ctrl(clk, rst,
           ir_we = 1'b0;
           reg_a2_src = 2'bxx;
           reg_we2 = 1'b0;
+          alu_run = 1'b0;
           alu_src1 = 1'bx;
           alu_src2 = 2'bxx;
           alu_add = 1'bx;
@@ -530,6 +506,7 @@ module ctrl(clk, rst,
           ir_we = 1'b0;
           reg_a2_src = 2'bxx;
           reg_we2 = 1'b0;
+          alu_run = 1'b0;
           alu_src1 = 1'bx;
           alu_src2 = 2'bxx;
           alu_add = 1'bx;
