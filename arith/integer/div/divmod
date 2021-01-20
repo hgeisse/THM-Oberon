@@ -15,34 +15,37 @@ abs(a MOD b) < abs(b)
 Definition 1
 ------------
 
+The remainder has the same sign as the dividend:
+round towards zero, "truncated division".
+
  14 :  3 =  4 R  2		 12 :  3 =  4 R 0
 -14 :  3 = -4 R -2		-12 :  3 = -4 R 0
  14 : -3 = -4 R  2		 12 : -3 = -4 R 0
 -14 : -3 =  4 R -2		-12 : -3 =  4 R 0
 
-(Remainder has the same sign as the dividend.)
-
 
 Definition 2
 ------------
+
+The remainder has the same sign as the divisor:
+round downwards, "floored division".
 
  14 :  3 =  4 R  2		 12 :  3 =  4 R 0
 -14 :  3 = -5 R  1		-12 :  3 = -4 R 0
  14 : -3 = -5 R -1		 12 : -3 = -4 R 0
 -14 : -3 =  4 R -2		-12 : -3 =  4 R 0
 
-(Remainder has the same sign as the divisor.)
-
 
 Definition 3
 ------------
+
+The remainder is always non-negative:
+"Euclidean division".
 
  14 :  3 =  4 R  2		 12 :  3 =  4 R 0
 -14 :  3 = -5 R  1		-12 :  3 = -4 R 0
  14 : -3 = -4 R  2		 12 : -3 = -4 R 0
 -14 : -3 =  5 R  1		-12 : -3 =  4 R 0
-
-(Remainder is always non-negative.)
 
 
 Remarks
