@@ -18,5 +18,6 @@ module fpmul(clk, run, stall,
 
   // fake return = 3.1415927410e-01
   assign z[31:0] = 32'h3EA0D97C;
+  assign stall = 1'b0;
 
 endmodule

@@ -200,6 +200,12 @@ module alu(clk, run, stall,
   wire div_stall;
   wire [31:0] div_res_quo;
   wire [31:0] div_res_rem;
+  wire fpadd_stall;
+  wire [31:0] fpadd_res;
+  wire fpmul_stall;
+  wire [31:0] fpmul_res;
+  wire fpdiv_stall;
+  wire [31:0] fpdiv_res;
 
   lsl lsl_0(
     .value(op1),
@@ -241,7 +247,36 @@ module alu(clk, run, stall,
     .rem(div_res_rem)
   );
 
-  assign stall = mul_stall | div_stall;
+  fpadd fpadd_0(
+    .clk(clk),
+    .run(run & ((fnc == 4'hC) | (fnc == 4'hD))),
+    .stall(fpadd_stall),
+    .op_sub(fnc == 4'hD),
+    .x(op1),
+    .y(op2),
+    .z(fpadd_res)
+  );
+
+  fpmul fpmul_0(
+    .clk(clk),
+    .run(run & (fnc == 4'hE)),
+    .stall(fpmul_stall),
+    .x(op1),
+    .y(op2),
+    .z(fpmul_res)
+  );
+
+  fpdiv fpdiv_0(
+    .clk(clk),
+    .run(run & (fnc == 4'hF)),
+    .stall(fpdiv_stall),
+    .x(op1),
+    .y(op2),
+    .z(fpdiv_res)
+  );
+
+  assign stall = mul_stall | div_stall |
+                 fpadd_stall | fpmul_stall | fpdiv_stall;
 
   always @(*) begin
     case (fnc)
@@ -257,10 +292,10 @@ module alu(clk, run, stall,
       4'h9: res = op1 - op2;
       4'hA: res = mul_res_lo;
       4'hB: res = div_res_quo;
-      4'hC: res = 32'hxxxxxxxx;
-      4'hD: res = 32'hxxxxxxxx;
-      4'hE: res = 32'hxxxxxxxx;
-      4'hF: res = 32'hxxxxxxxx;
+      4'hC: res = fpadd_res;
+      4'hD: res = fpadd_res;
+      4'hE: res = fpmul_res;
+      4'hF: res = fpdiv_res;
     endcase
   end
 
