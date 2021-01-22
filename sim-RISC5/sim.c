@@ -1453,8 +1453,8 @@ static void disasmF0(Word instr) {
     /* any operation other than MOV */
     sprintf(instrBuffer, "%-7s R%d,R%d,R%d", regOps[op], a, b, c);
     if ((op == 8 || op == 9) && ((instr >> 29) & 1) != 0) {
-      /* ADD, SUB with u = 1: add/subtract with carry */
-      instrBuffer[3] = 'C';
+      /* ADD, SUB with u = 1: add/subtract with carry/borrow */
+      instrBuffer[3] = (op == 8) ? 'C' : 'B';
     } else
     if (op == 10 && ((instr >> 29) & 1) != 0) {
       /* MUL with u = 1: unsigned mul */
@@ -1489,8 +1489,8 @@ static void disasmF1(Word instr) {
     /* any operation other than MOV */
     sprintf(instrBuffer, "%-7s R%d,R%d,0x%08X", regOps[op], a, b, im);
     if ((op == 8 || op == 9) && ((instr >> 29) & 1) != 0) {
-      /* ADD, SUB with u = 1: add/subtract with carry */
-      instrBuffer[3] = 'C';
+      /* ADD, SUB with u = 1: add/subtract with carry/borrow */
+      instrBuffer[3] = (op == 8) ? 'C' : 'B';
     } else
     if (op == 10 && ((instr >> 29) & 1) != 0) {
       /* MUL with u = 1: unsigned mul */
