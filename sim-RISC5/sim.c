@@ -1308,6 +1308,16 @@ void cpuSetReg(int regno, Word value) {
 }
 
 
+Word cpuGetH(void) {
+  return H;
+}
+
+
+void cpuSetH(Word value) {
+  H = value;
+}
+
+
 Byte cpuGetFlags(void) {
   return (N << 4) |
          (Z << 3) |
@@ -1953,6 +1963,7 @@ static void doRegister(char *tokens[], int n) {
       }
       printf("\n");
     }
+    printf("H    %08X\n", cpuGetH());
     showFlags();
     showIntrs();
     showBreak();
