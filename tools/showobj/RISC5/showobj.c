@@ -427,11 +427,11 @@ static void disasmF3(unsigned int instr, unsigned int locus) {
           sprintf(instrBuffer, "RTI");
           break;
         case 2:
-          /* interrupt disable/enable */
+          /* clear/set interrupt enable */
           if ((instr & 1) == 0) {
-            sprintf(instrBuffer, "DI");
+            sprintf(instrBuffer, "CLI");
           } else {
-            sprintf(instrBuffer, "EI");
+            sprintf(instrBuffer, "STI");
           }
           break;
         case 3:
