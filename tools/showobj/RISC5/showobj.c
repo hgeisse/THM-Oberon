@@ -324,6 +324,14 @@ static void disasmF0(unsigned int instr) {
     if ((op == 10 || op == 11) && ((instr >> 29) & 1) != 0) {
       /* MUL/DIV with u = 1: unsigned mul/div */
       instrBuffer[3] = 'U';
+    } else
+    if (op == 12 && ((instr >> 29) & 1) != 0 && ((instr >> 28) & 1) == 0) {
+      /* FAD with u = 1, v = 0: FLT (INTEGER -> REAL) */
+      sprintf(instrBuffer, "%-7s R%d,R%d", "FLT", a, b);
+    } else
+    if (op == 12 && ((instr >> 29) & 1) == 0 && ((instr >> 28) & 1) != 0) {
+      /* FAD with u = 0, v = 1: FLR (REAL -> INTEGER) */
+      sprintf(instrBuffer, "%-7s R%d,R%d", "FLR", a, b);
     }
   }
 }
