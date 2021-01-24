@@ -28,7 +28,7 @@ Word fpAdd(Word x, Word y, Bool u, Bool v) {
   int32_t x0;
 
   /* HG: patch to get FLT/FLR working without compiler support */
-  /* uv = 00 : ADD (y is second operand)  */
+  /* uv = 00 : FAD (y is second operand)  */
   /* uv = 01 : FLR (y must be 0x4B000000) */
   /* uv = 10 : FLT (y must be 0x4B000000) */
   /* uv = 11 : illegal, "cannot happen"   */
