@@ -23,9 +23,20 @@ typedef unsigned long uint64_t;
 
 
 Word fpAdd(Word x, Word y, Bool u, Bool v) {
-  Bool xs = (x & 0x80000000) != 0;
+  Bool xs;
   uint32_t xe;
   int32_t x0;
+
+  /* HG: patch to get FLT/FLR working without compiler support */
+  /* uv = 00 : ADD (y is second operand)  */
+  /* uv = 01 : FLR (y must be 0x4B000000) */
+  /* uv = 10 : FLT (y must be 0x4B000000) */
+  /* uv = 11 : illegal, "cannot happen"   */
+  if (u != v) {
+    y = 0x4B000000;
+  }
+  /*------------------------------------------------------------*/
+  xs = (x & 0x80000000) != 0;
   if (!u) {
     xe = (x >> 23) & 0xFF;
     uint32_t xm = ((x & 0x7FFFFF) << 1) | 0x1000000;
