@@ -1,5 +1,5 @@
 //
-// cpu.v -- the RISC5 CPU core
+// cpu_core.v -- the RISC5 CPU core
 //
 
 
