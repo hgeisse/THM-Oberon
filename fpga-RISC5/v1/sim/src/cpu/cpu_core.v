@@ -21,13 +21,13 @@ module cpu_core(clk, rst,
     input bus_ack;			// bus acknowledge
 
   // program counter
-  wire [1:0] pc_src;		// pc source selector
+  wire pc_src;			// pc source selector
   wire [23:0] pc_next;		// value written into pc
   wire pc_we;			// pc write enable
   reg [23:0] pc;		// program counter
   // bus
+  wire bus_addr_src;		// bus address source selector
   // instruction register & decoder
-  wire [31:0] instr;		// instruction
   wire ir_we;			// instruction register write enable
   reg [31:0] ir;		// instruction register
   wire [1:0] ir_pq;		// instr format pq
@@ -38,6 +38,9 @@ module cpu_core(clk, rst,
   wire [3:0] ir_c;		// instr register c
   wire [3:0] ir_op;		// instr operation
   wire [15:0] ir_imm;		// instr immediate
+  wire [19:0] ir_off;		// instr data offset
+  // data register
+  reg [31:0] dr;		// data register
   // register file
   reg [31:0] regs[0:15];	// 16 32-bit registers
   wire [3:0] reg_a1;		// register address 1
@@ -45,6 +48,7 @@ module cpu_core(clk, rst,
   wire [1:0] reg_a2_src;	// register address 2 source selector
   wire [3:0] reg_a2;		// register address 2
   reg [31:0] reg_do2;		// register data out 2
+  wire reg_di2_src;		// register data in 2 source selector
   wire [31:0] reg_di2;		// register data in 2
   wire reg_we2;			// register write enable 2
   // alu
@@ -52,6 +56,8 @@ module cpu_core(clk, rst,
   wire alu_stall;		// alu needs additional clock cycles
   wire alu_src1;		// alu source 1 selector
   wire [31:0] alu_op1;		// alu operand 1
+  wire [31:0] alu_imm1;		// immediate data from 16 bits imm
+  wire [31:0] alu_imm2;		// immediate data from 20 bits off
   wire [1:0] alu_src2;		// alu source 2 selector
   wire [31:0] alu_op2;		// alu operand 2
   wire alu_add;			// alu add, regardless of ir_op
@@ -63,10 +69,8 @@ module cpu_core(clk, rst,
 
   // program counter
   assign pc_next =
-    (pc_src == 2'b00) ? 24'hFFE000 :	// reset
-    (pc_src == 2'b01) ? alu_res[23:0] :	// next
-    (pc_src == 2'b10) ? alu_out[23:0] :	// branch
-    (pc_src == 2'b11) ? 24'hFFE000 :	// exception
+    (pc_src == 1'b0) ? 24'hFFE000 :		// reset
+    (pc_src == 1'b1) ? alu_res[23:0] :		// next instr, branch
     24'hxxxxxx;
   always @(posedge clk) begin
     if (pc_we) begin
@@ -75,13 +79,16 @@ module cpu_core(clk, rst,
   end
 
   // bus
-  assign bus_addr = pc;
+  assign bus_addr =
+    (bus_addr_src == 1'b0) ? pc :		// instr fetch
+    (bus_addr_src == 1'b1) ? alu_out[23:0] :	// data load/store
+    24'hxxxxxx;
+  assign bus_dout = reg_do2;
 
   // instruction register & decoder
-  assign instr = bus_din;
   always @(posedge clk) begin
     if (ir_we) begin
-      ir <= instr;
+      ir <= bus_din;
     end
   end
   assign ir_pq = ir[31:30];
@@ -92,6 +99,12 @@ module cpu_core(clk, rst,
   assign ir_c = ir[3:0];
   assign ir_op = ir[19:16];
   assign ir_imm = ir[15:0];
+  assign ir_off = ir[19:0];
+
+  // data register
+  always @(posedge clk) begin
+    dr <= bus_din;
+  end
 
   // !!!!! delete me !!!!!
   initial begin
@@ -116,11 +129,14 @@ module cpu_core(clk, rst,
   // register file
   assign reg_a1 = ir_b;
   assign reg_a2 =
-    (reg_a2_src == 2'b00) ? ir_c :	// arith: op2
-    (reg_a2_src == 2'b01) ? ir_a :	// arith or load: dst, store: src
-    (reg_a2_src == 2'b10) ? 4'hF :	// call: link
+    (reg_a2_src == 2'b00) ? ir_c :		// arith: op2
+    (reg_a2_src == 2'b01) ? ir_a :		// arith: dst, store: src
+    (reg_a2_src == 2'b10) ? 4'hF :		// call: link
     4'hx;
-  assign reg_di2 = alu_out;
+  assign reg_di2 =
+    (reg_di2_src == 1'b0) ? alu_out :		// data from ALU
+    (reg_di2_src == 1'b1) ? dr :		// data from bus
+    32'hxxxxxxxx;
   always @(posedge clk) begin
     reg_do1 <= regs[reg_a1];
     reg_do2 <= regs[reg_a2];
@@ -130,13 +146,22 @@ module cpu_core(clk, rst,
   end
 
   // alu
-  assign alu_op1 = (alu_src1 == 1'b0) ? { 8'h00, pc } : reg_do1;
-  assign alu_op2 =
-    (alu_src2 == 2'b00) ? 32'h00000004 :
-    (alu_src2 == 2'b01) ? reg_do2 :
-    (alu_src2 == 2'b10) ? { {16{ir_v}}, ir_imm } :
+  assign alu_op1 =
+    (alu_src1 == 1'b0) ? { 8'h00, pc } :	// next instr, branch
+    (alu_src1 == 1'b1) ? reg_do1 :		// arith, eff. mem addr
     32'hxxxxxxxx;
-  assign alu_fnc = alu_add ? 4'h8 : ir_op;
+  assign alu_imm1 = { {16{ir_v}}, ir_imm };
+  assign alu_imm2 = { {12{ir_off[19]}}, ir_off };
+  assign alu_op2 =
+    (alu_src2 == 2'b00) ? 32'h00000004 :	// next instr
+    (alu_src2 == 2'b01) ? reg_do2 :		// arith
+    (alu_src2 == 2'b10) ? alu_imm1 :		// v-ext. immediate data
+    (alu_src2 == 2'b11) ? alu_imm2 :		// sign-ext. mem offset
+    32'hxxxxxxxx;
+  assign alu_fnc =
+    (alu_add == 1'b0) ? ir_op :			// op field of instr
+    (alu_add == 1'b1) ? 4'h8 :			// override by ADD
+    4'hx;
   alu alu_0(
     .clk(clk),
     .run(alu_run),
@@ -156,15 +181,19 @@ module cpu_core(clk, rst,
     .clk(clk),
     .rst(rst),
     .ir_pq(ir_pq),
+    .ir_u(ir_u),
+    .ir_v(ir_v),
     .bus_ack(bus_ack),
     .alu_stall(alu_stall),
     .pc_src(pc_src),
     .pc_we(pc_we),
+    .bus_addr_src(bus_addr_src),
     .bus_stb(bus_stb),
     .bus_we(bus_we),
     .bus_ben(bus_ben),
     .ir_we(ir_we),
     .reg_a2_src(reg_a2_src),
+    .reg_di2_src(reg_di2_src),
     .reg_we2(reg_we2),
     .alu_run(alu_run),
     .alu_src1(alu_src1),
@@ -308,27 +337,31 @@ endmodule
 
 
 module ctrl(clk, rst,
-            ir_pq,
+            ir_pq, ir_u, ir_v,
             bus_ack,
             alu_stall,
             pc_src, pc_we,
-            bus_stb, bus_we, bus_ben,
+            bus_addr_src, bus_stb, bus_we, bus_ben,
             ir_we,
-            reg_a2_src, reg_we2,
+            reg_a2_src, reg_di2_src, reg_we2,
             alu_run, alu_src1, alu_src2, alu_add);
     input clk;
     input rst;
     input [1:0] ir_pq;
+    input ir_u;
+    input ir_v;
     input bus_ack;
     input alu_stall;
-    output reg [1:0] pc_src;
+    output reg pc_src;
     output reg pc_we;
+    output reg bus_addr_src;
     output reg bus_stb;
     output reg bus_we;
     output reg bus_ben;
     output reg ir_we;
-    output reg reg_we2;
     output reg [1:0] reg_a2_src;
+    output reg reg_di2_src;
+    output reg reg_we2;
     output reg alu_run;
     output reg alu_src1;
     output reg [1:0] alu_src2;
@@ -352,13 +385,15 @@ module ctrl(clk, rst,
       4'd0:  // reset
         begin
           next_state = 4'd1;
-          pc_src = 2'b00;
+          pc_src = 1'b0;
           pc_we = 1'b1;
+          bus_addr_src = 1'bx;
           bus_stb = 1'b0;
           bus_we = 1'bx;
           bus_ben = 1'bx;
           ir_we = 1'b0;
           reg_a2_src = 2'bxx;
+          reg_di2_src = 1'bx;
           reg_we2 = 1'b0;
           alu_run = 1'b0;
           alu_src1 = 1'bx;
@@ -372,12 +407,13 @@ module ctrl(clk, rst,
           end else begin
             next_state = 4'd2;
           end
-          pc_src = 2'b01;
+          pc_src = 1'b1;
           if (~bus_ack) begin
             pc_we = 1'b0;
           end else begin
             pc_we = 1'b1;
           end
+          bus_addr_src = 1'b0;
           bus_stb = 1'b1;
           bus_we = 1'b0;
           bus_ben = 1'b0;
@@ -387,6 +423,7 @@ module ctrl(clk, rst,
             ir_we = 1'b1;
           end
           reg_a2_src = 2'bxx;
+          reg_di2_src = 1'bx;
           reg_we2 = 1'b0;
           alu_run = 1'b0;
           alu_src1 = 1'b0;
@@ -396,30 +433,32 @@ module ctrl(clk, rst,
       4'd2:  // decode, fetch register operands
         begin
           case (ir_pq)
-            2'b00:  // register/register instructions
+            2'b00:  // format 0: register/register instructions
               begin
                 next_state = 4'd3;
               end
-            2'b01:  // register/immediate instructions
+            2'b01:  // format 1: register/immediate instructions
               begin
                 next_state = 4'd5;
               end
-            2'b10:  // memory instructions
+            2'b10:  // format 2: memory instructions
               begin
-                next_state = 4'd12;
+                next_state = 4'd7;
               end
-            2'b11:  // branch instructions
+            2'b11:  // format 3: branch instructions
               begin
-                next_state = 4'd14;
+                next_state = 4'd11;
               end
           endcase
-          pc_src = 2'bxx;
+          pc_src = 1'bx;
           pc_we = 1'b0;
+          bus_addr_src = 1'bx;
           bus_stb = 1'b0;
           bus_we = 1'bx;
           bus_ben = 1'bx;
           ir_we = 1'b0;
           reg_a2_src = 2'b00;
+          reg_di2_src = 1'bx;
           reg_we2 = 1'b0;
           alu_run = 1'b0;
           alu_src1 = 1'bx;
@@ -433,29 +472,33 @@ module ctrl(clk, rst,
           end else begin
             next_state = 4'd4;
           end
-          pc_src = 2'bxx;
+          pc_src = 1'bx;
           pc_we = 1'b0;
+          bus_addr_src = 1'bx;
           bus_stb = 1'b0;
           bus_we = 1'bx;
           bus_ben = 1'bx;
           ir_we = 1'b0;
           reg_a2_src = 2'b00;
+          reg_di2_src = 1'bx;
           reg_we2 = 1'b0;
           alu_run = 1'b1;
           alu_src1 = 1'b1;
           alu_src2 = 2'b01;
           alu_add = 1'b0;
         end
-      4'd4:  // format 0 writeback
+      4'd4:  // format 0 write-back
         begin
           next_state = 4'd1;
-          pc_src = 2'bxx;
+          pc_src = 1'bx;
           pc_we = 1'b0;
+          bus_addr_src = 1'bx;
           bus_stb = 1'b0;
           bus_we = 1'bx;
           bus_ben = 1'bx;
           ir_we = 1'b0;
           reg_a2_src = 2'b01;
+          reg_di2_src = 1'b0;
           reg_we2 = 1'b1;
           alu_run = 1'b0;
           alu_src1 = 1'bx;
@@ -469,61 +512,137 @@ module ctrl(clk, rst,
           end else begin
             next_state = 4'd6;
           end
-          pc_src = 2'bxx;
+          pc_src = 1'bx;
           pc_we = 1'b0;
+          bus_addr_src = 1'bx;
           bus_stb = 1'b0;
           bus_we = 1'bx;
           bus_ben = 1'bx;
           ir_we = 1'b0;
           reg_a2_src = 2'b00;
+          reg_di2_src = 1'bx;
           reg_we2 = 1'b0;
           alu_run = 1'b0;
           alu_src1 = 1'b1;
           alu_src2 = 2'b10;
           alu_add = 1'b0;
         end
-      4'd6:  // format 1 writeback
+      4'd6:  // format 1 write-back
         begin
           next_state = 4'd1;
-          pc_src = 2'bxx;
+          pc_src = 1'bx;
           pc_we = 1'b0;
+          bus_addr_src = 1'bx;
           bus_stb = 1'b0;
           bus_we = 1'bx;
           bus_ben = 1'bx;
           ir_we = 1'b0;
           reg_a2_src = 2'b01;
+          reg_di2_src = 1'b0;
           reg_we2 = 1'b1;
           alu_run = 1'b0;
           alu_src1 = 1'bx;
           alu_src2 = 2'bxx;
           alu_add = 1'bx;
         end
-      4'd12:  // halt: format 2 (memory)
+      4'd7:  // format 2 address calculation
         begin
-          next_state = 4'd12;
-          pc_src = 2'bxx;
+          if (~ir_u) begin
+            /* load */
+            next_state = 4'd8;
+          end else begin
+            /* store */
+            next_state = 4'd10;
+          end
+          pc_src = 1'bx;
           pc_we = 1'b0;
+          bus_addr_src = 1'bx;
           bus_stb = 1'b0;
           bus_we = 1'bx;
           bus_ben = 1'bx;
           ir_we = 1'b0;
-          reg_a2_src = 2'bxx;
+          reg_a2_src = 2'b01;
+          reg_di2_src = 1'bx;
           reg_we2 = 1'b0;
+          alu_run = 1'b0;
+          alu_src1 = 1'b1;
+          alu_src2 = 2'b11;
+          alu_add = 1'b1;
+        end
+      4'd8:  // format 2 (load) bus access
+        begin
+          if (~bus_ack) begin
+            next_state = 4'd8;
+          end else begin
+            next_state = 4'd9;
+          end
+          pc_src = 1'bx;
+          pc_we = 1'b0;
+          bus_addr_src = 1'b1;
+          bus_stb = 1'b1;
+          bus_we = 1'b0;
+          bus_ben = ir_v;
+          ir_we = 1'b0;
+          reg_a2_src = 2'bxx;
+          reg_di2_src = 1'bx;
+          reg_we2 = 1'b0;
+          alu_run = 1'b0;
+          alu_src1 = 1'b1;
+          alu_src2 = 2'b11;
+          alu_add = 1'b1;
+        end
+      4'd9:  // format 2 (load) write-back
+        begin
+          next_state = 4'd1;
+          pc_src = 1'bx;
+          pc_we = 1'b0;
+          bus_addr_src = 1'bx;
+          bus_stb = 1'b0;
+          bus_we = 1'bx;
+          bus_ben = 1'bx;
+          ir_we = 1'b0;
+          reg_a2_src = 2'b01;
+          reg_di2_src = 1'b1;
+          reg_we2 = 1'b1;
           alu_run = 1'b0;
           alu_src1 = 1'bx;
           alu_src2 = 2'bxx;
           alu_add = 1'bx;
         end
-      4'd14:  // halt: format 3 (branch)
+      4'd10:  // format 2 (store) bus access
         begin
-          next_state = 4'd14;
-          pc_src = 2'bxx;
+          if (~bus_ack) begin
+            next_state = 4'd10;
+          end else begin
+            next_state = 4'd1;
+          end
+          pc_src = 1'bx;
           pc_we = 1'b0;
+          bus_addr_src = 1'b1;
+          bus_stb = 1'b1;
+          bus_we = 1'b1;
+          bus_ben = ir_v;
+          ir_we = 1'b0;
+          reg_a2_src = 2'b01;
+          reg_di2_src = 1'bx;
+          reg_we2 = 1'b0;
+          alu_run = 1'b0;
+          alu_src1 = 1'b1;
+          alu_src2 = 2'b11;
+          alu_add = 1'b1;
+        end
+      4'd11:  // halt: format 3 (branch)
+        begin
+          next_state = 4'd11;
+          pc_src = 1'bx;
+          pc_we = 1'b0;
+          bus_addr_src = 1'bx;
           bus_stb = 1'b0;
           bus_we = 1'bx;
           bus_ben = 1'bx;
           ir_we = 1'b0;
           reg_a2_src = 2'bxx;
+          reg_di2_src = 1'bx;
           reg_we2 = 1'b0;
           alu_run = 1'b0;
           alu_src1 = 1'bx;
@@ -533,13 +652,15 @@ module ctrl(clk, rst,
       default:  // all other states: unused
         begin
           next_state = 4'd0;
-          pc_src = 2'bxx;
+          pc_src = 1'bx;
           pc_we = 1'b0;
+          bus_addr_src = 1'bx;
           bus_stb = 1'b0;
           bus_we = 1'bx;
           bus_ben = 1'bx;
           ir_we = 1'b0;
           reg_a2_src = 2'bxx;
+          reg_di2_src = 1'bx;
           reg_we2 = 1'b0;
           alu_run = 1'b0;
           alu_src1 = 1'bx;
