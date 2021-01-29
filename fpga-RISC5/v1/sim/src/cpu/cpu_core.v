@@ -60,7 +60,7 @@ module cpu_core(clk, rst,
   wire [31:0] alu_imm1;		// immediate data from 16 bits imm
   wire [31:0] alu_imm2;		// immediate data from 20 bits off
   wire [31:0] alu_imm3;		// immediate data from 24 bits dist
-  wire [1:0] alu_src2;		// alu source 2 selector
+  wire [2:0] alu_src2;		// alu source 2 selector
   wire [31:0] alu_op2;		// alu operand 2
   wire alu_add;			// alu add, regardless of ir_op
   wire [3:0] alu_fnc;		// alu function
@@ -139,16 +139,17 @@ module cpu_core(clk, rst,
   // alu
   assign alu_op1 =
     (alu_src1 == 1'b0) ? { 8'h00, pc } :	// next instr, branch
-    (alu_src1 == 1'b1) ? reg_do1 :		// arith, eff. mem addr
+    (alu_src1 == 1'b1) ? reg_do1 :		// arith, eff. memory addr
     32'hxxxxxxxx;
   assign alu_imm1 = { {16{ir_v}}, ir_imm };
   assign alu_imm2 = { {12{ir_off[19]}}, ir_off };
   assign alu_imm3 = { {6{ir_dist[23]}}, ir_dist, 2'b00 };
   assign alu_op2 =
-    (alu_src2 == 2'b00) ? 32'h00000004 :	// next instr
-    (alu_src2 == 2'b01) ? reg_do2 :		// arith
-    (alu_src2 == 2'b10) ? alu_imm1 :		// v-ext. immediate data
-    (alu_src2 == 2'b11) ? alu_imm2 :		// sign-ext. mem offset
+    (alu_src2 == 3'b000) ? 32'h00000004 :	// next instr
+    (alu_src2 == 3'b001) ? reg_do2 :		// arithmetic
+    (alu_src2 == 3'b010) ? alu_imm1 :		// immediate data
+    (alu_src2 == 3'b011) ? alu_imm2 :		// memory offset
+    (alu_src2 == 3'b100) ? alu_imm3 :		// branch distance
     32'hxxxxxxxx;
   assign alu_fnc =
     (alu_add == 1'b0) ? ir_op :			// op field of instr
@@ -415,7 +416,7 @@ module ctrl(clk, rst,
     output reg reg_we2;
     output reg alu_run;
     output reg alu_src1;
-    output reg [1:0] alu_src2;
+    output reg [2:0] alu_src2;
     output reg alu_add;
     output reg alu_setf;
 
@@ -449,7 +450,7 @@ module ctrl(clk, rst,
           reg_we2 = 1'b0;
           alu_run = 1'b0;
           alu_src1 = 1'bx;
-          alu_src2 = 2'bxx;
+          alu_src2 = 3'bxxx;
           alu_add = 1'bx;
           alu_setf = 1'b0;
         end
@@ -480,7 +481,7 @@ module ctrl(clk, rst,
           reg_we2 = 1'b0;
           alu_run = 1'b0;
           alu_src1 = 1'b0;
-          alu_src2 = 2'b00;
+          alu_src2 = 3'b000;
           alu_add = 1'b1;
           alu_setf = 1'b0;
         end
@@ -501,7 +502,13 @@ module ctrl(clk, rst,
               end
             2'b11:  // format 3: branch instructions
               begin
-                next_state = 4'd11;
+                if (~ir_u) begin
+                  /* branch target is in register */
+                  next_state = 4'd11;
+                end else begin
+                  /* branch target is sum of PC and immediate distance */
+                  next_state = 4'd13;
+                end
               end
           endcase
           pc_src = 1'bx;
@@ -516,7 +523,7 @@ module ctrl(clk, rst,
           reg_we2 = 1'b0;
           alu_run = 1'b0;
           alu_src1 = 1'bx;
-          alu_src2 = 2'bxx;
+          alu_src2 = 3'bxxx;
           alu_add = 1'bx;
           alu_setf = 1'b0;
         end
@@ -539,7 +546,7 @@ module ctrl(clk, rst,
           reg_we2 = 1'b0;
           alu_run = 1'b1;
           alu_src1 = 1'b1;
-          alu_src2 = 2'b01;
+          alu_src2 = 3'b001;
           alu_add = 1'b0;
           if (alu_stall) begin
             alu_setf = 1'b0;
@@ -562,7 +569,7 @@ module ctrl(clk, rst,
           reg_we2 = 1'b1;
           alu_run = 1'b0;
           alu_src1 = 1'bx;
-          alu_src2 = 2'bxx;
+          alu_src2 = 3'bxxx;
           alu_add = 1'bx;
           alu_setf = 1'b0;
         end
@@ -585,7 +592,7 @@ module ctrl(clk, rst,
           reg_we2 = 1'b0;
           alu_run = 1'b1;
           alu_src1 = 1'b1;
-          alu_src2 = 2'b10;
+          alu_src2 = 3'b010;
           alu_add = 1'b0;
           if (alu_stall) begin
             alu_setf = 1'b0;
@@ -608,7 +615,7 @@ module ctrl(clk, rst,
           reg_we2 = 1'b1;
           alu_run = 1'b0;
           alu_src1 = 1'bx;
-          alu_src2 = 2'bxx;
+          alu_src2 = 3'bxxx;
           alu_add = 1'bx;
           alu_setf = 1'b0;
         end
@@ -633,7 +640,7 @@ module ctrl(clk, rst,
           reg_we2 = 1'b0;
           alu_run = 1'b0;
           alu_src1 = 1'b1;
-          alu_src2 = 2'b11;
+          alu_src2 = 3'b011;
           alu_add = 1'b1;
           alu_setf = 1'b0;
         end
@@ -656,7 +663,7 @@ module ctrl(clk, rst,
           reg_we2 = 1'b0;
           alu_run = 1'b0;
           alu_src1 = 1'b1;
-          alu_src2 = 2'b11;
+          alu_src2 = 3'b011;
           alu_add = 1'b1;
           alu_setf = 1'b0;
         end
@@ -675,7 +682,7 @@ module ctrl(clk, rst,
           reg_we2 = 1'b1;
           alu_run = 1'b0;
           alu_src1 = 1'bx;
-          alu_src2 = 2'bxx;
+          alu_src2 = 3'bxxx;
           alu_add = 1'bx;
           alu_setf = 1'b0;
         end
@@ -698,7 +705,7 @@ module ctrl(clk, rst,
           reg_we2 = 1'b0;
           alu_run = 1'b0;
           alu_src1 = 1'b1;
-          alu_src2 = 2'b11;
+          alu_src2 = 3'b011;
           alu_add = 1'b1;
           alu_setf = 1'b0;
         end
@@ -717,7 +724,26 @@ module ctrl(clk, rst,
           reg_we2 = 1'b0;
           alu_run = 1'b0;
           alu_src1 = 1'bx;
-          alu_src2 = 2'bxx;
+          alu_src2 = 3'bxxx;
+          alu_add = 1'bx;
+          alu_setf = 1'b0;
+        end
+      4'd13:  // halt: format 3 (branch)
+        begin
+          next_state = 4'd13;
+          pc_src = 1'bx;
+          pc_we = 1'b0;
+          bus_addr_src = 1'bx;
+          bus_stb = 1'b0;
+          bus_we = 1'bx;
+          bus_ben = 1'bx;
+          ir_we = 1'b0;
+          reg_a2_src = 2'bxx;
+          reg_di2_src = 1'bx;
+          reg_we2 = 1'b0;
+          alu_run = 1'b0;
+          alu_src1 = 1'bx;
+          alu_src2 = 3'bxxx;
           alu_add = 1'bx;
           alu_setf = 1'b0;
         end
@@ -736,7 +762,7 @@ module ctrl(clk, rst,
           reg_we2 = 1'b0;
           alu_run = 1'b0;
           alu_src1 = 1'bx;
-          alu_src2 = 2'bxx;
+          alu_src2 = 3'bxxx;
           alu_add = 1'bx;
           alu_setf = 1'b0;
         end
