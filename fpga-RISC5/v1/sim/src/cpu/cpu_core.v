@@ -62,7 +62,6 @@ module cpu_core(clk, rst,
   wire [31:0] alu_imm3;		// immediate data from 24 bits dist
   wire [2:0] alu_src2;		// alu source 2 selector
   wire [31:0] alu_op2;		// alu operand 2
-  wire alu_add;			// alu add, regardless of ir_op
   wire [3:0] alu_fnc;		// alu function
   wire [31:0] alu_res;		// alu result
   wire [31:0] alu_out;		// alu result, 1 cycle delay
@@ -151,10 +150,6 @@ module cpu_core(clk, rst,
     (alu_src2 == 3'b011) ? alu_imm2 :		// memory offset
     (alu_src2 == 3'b100) ? alu_imm3 :		// branch distance
     32'hxxxxxxxx;
-  assign alu_fnc =
-    (alu_add == 1'b0) ? ir_op :			// op field of instr
-    (alu_add == 1'b1) ? 4'h8 :			// override by ADD
-    4'hx;
   alu alu_0(
     .clk(clk),
     .run(alu_run),
@@ -194,6 +189,7 @@ module cpu_core(clk, rst,
     .ir_pq(ir_pq),
     .ir_u(ir_u),
     .ir_v(ir_v),
+    .ir_op(ir_op),
     .bus_ack(bus_ack),
     .alu_stall(alu_stall),
     .pc_src(pc_src),
@@ -209,7 +205,7 @@ module cpu_core(clk, rst,
     .alu_run(alu_run),
     .alu_src1(alu_src1),
     .alu_src2(alu_src2),
-    .alu_add(alu_add),
+    .alu_fnc(alu_fnc),
     .alu_setf(alu_setf)
   );
 
@@ -389,19 +385,20 @@ endmodule
 
 
 module ctrl(clk, rst,
-            ir_pq, ir_u, ir_v,
+            ir_pq, ir_u, ir_v, ir_op,
             bus_ack,
             alu_stall,
             pc_src, pc_we,
             bus_addr_src, bus_stb, bus_we, bus_ben,
             ir_we,
             reg_a2_src, reg_di2_src, reg_we2,
-            alu_run, alu_src1, alu_src2, alu_add, alu_setf);
+            alu_run, alu_src1, alu_src2, alu_fnc, alu_setf);
     input clk;
     input rst;
     input [1:0] ir_pq;
     input ir_u;
     input ir_v;
+    input [3:0] ir_op;
     input bus_ack;
     input alu_stall;
     output reg pc_src;
@@ -417,7 +414,7 @@ module ctrl(clk, rst,
     output reg alu_run;
     output reg alu_src1;
     output reg [2:0] alu_src2;
-    output reg alu_add;
+    output reg [3:0] alu_fnc;
     output reg alu_setf;
 
   reg [3:0] state;
@@ -451,7 +448,7 @@ module ctrl(clk, rst,
           alu_run = 1'b0;
           alu_src1 = 1'bx;
           alu_src2 = 3'bxxx;
-          alu_add = 1'bx;
+          alu_fnc = 4'hx;
           alu_setf = 1'b0;
         end
       4'd1:  // fetch instr, inc pc by 4
@@ -482,7 +479,7 @@ module ctrl(clk, rst,
           alu_run = 1'b0;
           alu_src1 = 1'b0;
           alu_src2 = 3'b000;
-          alu_add = 1'b1;
+          alu_fnc = 4'h8;
           alu_setf = 1'b0;
         end
       4'd2:  // decode, fetch register operands
@@ -506,8 +503,8 @@ module ctrl(clk, rst,
                   /* branch target is in register */
                   next_state = 4'd11;
                 end else begin
-                  /* branch target is sum of PC and immediate distance */
-                  next_state = 4'd13;
+                  /* branch target is sum of pc and immediate distance */
+                  next_state = 4'd12;
                 end
               end
           endcase
@@ -524,10 +521,10 @@ module ctrl(clk, rst,
           alu_run = 1'b0;
           alu_src1 = 1'bx;
           alu_src2 = 3'bxxx;
-          alu_add = 1'bx;
+          alu_fnc = 4'hx;
           alu_setf = 1'b0;
         end
-      4'd3:  // format 0 execute
+      4'd3:  // format 0: execute
         begin
           if (alu_stall) begin
             next_state = 4'd3;
@@ -547,14 +544,14 @@ module ctrl(clk, rst,
           alu_run = 1'b1;
           alu_src1 = 1'b1;
           alu_src2 = 3'b001;
-          alu_add = 1'b0;
+          alu_fnc = ir_op;
           if (alu_stall) begin
             alu_setf = 1'b0;
           end else begin
             alu_setf = 1'b1;
           end
         end
-      4'd4:  // format 0 write-back
+      4'd4:  // format 0: write-back
         begin
           next_state = 4'd1;
           pc_src = 1'bx;
@@ -570,10 +567,10 @@ module ctrl(clk, rst,
           alu_run = 1'b0;
           alu_src1 = 1'bx;
           alu_src2 = 3'bxxx;
-          alu_add = 1'bx;
+          alu_fnc = 4'hx;
           alu_setf = 1'b0;
         end
-      4'd5:  // format 1 execute
+      4'd5:  // format 1: execute
         begin
           if (alu_stall) begin
             next_state = 4'd5;
@@ -593,14 +590,14 @@ module ctrl(clk, rst,
           alu_run = 1'b1;
           alu_src1 = 1'b1;
           alu_src2 = 3'b010;
-          alu_add = 1'b0;
+          alu_fnc = ir_op;
           if (alu_stall) begin
             alu_setf = 1'b0;
           end else begin
             alu_setf = 1'b1;
           end
         end
-      4'd6:  // format 1 write-back
+      4'd6:  // format 1: write-back
         begin
           next_state = 4'd1;
           pc_src = 1'bx;
@@ -616,10 +613,10 @@ module ctrl(clk, rst,
           alu_run = 1'b0;
           alu_src1 = 1'bx;
           alu_src2 = 3'bxxx;
-          alu_add = 1'bx;
+          alu_fnc = 4'hx;
           alu_setf = 1'b0;
         end
-      4'd7:  // format 2 address calculation
+      4'd7:  // format 2: address calculation
         begin
           if (~ir_u) begin
             /* load */
@@ -641,10 +638,10 @@ module ctrl(clk, rst,
           alu_run = 1'b0;
           alu_src1 = 1'b1;
           alu_src2 = 3'b011;
-          alu_add = 1'b1;
+          alu_fnc = 4'h8;
           alu_setf = 1'b0;
         end
-      4'd8:  // format 2 (load) bus access
+      4'd8:  // format 2 (load): bus read
         begin
           if (~bus_ack) begin
             next_state = 4'd8;
@@ -664,10 +661,10 @@ module ctrl(clk, rst,
           alu_run = 1'b0;
           alu_src1 = 1'b1;
           alu_src2 = 3'b011;
-          alu_add = 1'b1;
+          alu_fnc = 4'h8;
           alu_setf = 1'b0;
         end
-      4'd9:  // format 2 (load) write-back
+      4'd9:  // format 2 (load): write-back
         begin
           next_state = 4'd1;
           pc_src = 1'bx;
@@ -683,10 +680,10 @@ module ctrl(clk, rst,
           alu_run = 1'b0;
           alu_src1 = 1'bx;
           alu_src2 = 3'bxxx;
-          alu_add = 1'bx;
+          alu_fnc = 4'hx;
           alu_setf = 1'b0;
         end
-      4'd10:  // format 2 (store) bus access
+      4'd10:  // format 2 (store): bus write
         begin
           if (~bus_ack) begin
             next_state = 4'd10;
@@ -706,14 +703,14 @@ module ctrl(clk, rst,
           alu_run = 1'b0;
           alu_src1 = 1'b1;
           alu_src2 = 3'b011;
-          alu_add = 1'b1;
+          alu_fnc = 4'h8;
           alu_setf = 1'b0;
         end
-      4'd11:  // halt: format 3 (branch)
+      4'd11:  // format 3: branch register
         begin
-          next_state = 4'd11;
-          pc_src = 1'bx;
-          pc_we = 1'b0;
+          next_state = 4'd1;
+          pc_src = 1'b1;
+          pc_we = 1'b1;
           bus_addr_src = 1'bx;
           bus_stb = 1'b0;
           bus_we = 1'bx;
@@ -724,15 +721,15 @@ module ctrl(clk, rst,
           reg_we2 = 1'b0;
           alu_run = 1'b0;
           alu_src1 = 1'bx;
-          alu_src2 = 3'bxxx;
-          alu_add = 1'bx;
+          alu_src2 = 3'b001;
+          alu_fnc = 4'h0;
           alu_setf = 1'b0;
         end
-      4'd13:  // halt: format 3 (branch)
+      4'd12:  // format 3: branch pc relative
         begin
-          next_state = 4'd13;
-          pc_src = 1'bx;
-          pc_we = 1'b0;
+          next_state = 4'd1;
+          pc_src = 1'b1;
+          pc_we = 1'b1;
           bus_addr_src = 1'bx;
           bus_stb = 1'b0;
           bus_we = 1'bx;
@@ -742,9 +739,9 @@ module ctrl(clk, rst,
           reg_di2_src = 1'bx;
           reg_we2 = 1'b0;
           alu_run = 1'b0;
-          alu_src1 = 1'bx;
-          alu_src2 = 3'bxxx;
-          alu_add = 1'bx;
+          alu_src1 = 1'b0;
+          alu_src2 = 3'b100;
+          alu_fnc = 4'h8;
           alu_setf = 1'b0;
         end
       default:  // all other states: unused
@@ -763,7 +760,7 @@ module ctrl(clk, rst,
           alu_run = 1'b0;
           alu_src1 = 1'bx;
           alu_src2 = 3'bxxx;
-          alu_add = 1'bx;
+          alu_fnc = 4'hx;
           alu_setf = 1'b0;
         end
     endcase
