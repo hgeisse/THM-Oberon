@@ -8,14 +8,9 @@ SRCS = risc5test.v \
        src/cpu/cpu.v \
        src/cpu/cpu_bus.v \
        src/cpu/cpu_core.v \
-       src/cpu/lsl.v \
-       src/cpu/asr.v \
-       src/cpu/ror.v \
-       src/cpu/mul.v \
-       src/cpu/div.v \
-       src/cpu/fpadd.v \
-       src/cpu/fpmul.v \
-       src/cpu/fpdiv.v \
+       src/cpu/shift.v \
+       src/cpu/muldiv.v \
+       src/cpu/fpu.v \
        src/prom/prom.v \
        src/ram/ram.v
 
