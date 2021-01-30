@@ -451,19 +451,15 @@ module ctrl(clk, rst,
           alu_fnc = 4'hx;
           alu_setf = 1'b0;
         end
-      4'd1:  // fetch instr, inc pc by 4
+      4'd1:  // fetch instr
         begin
           if (~bus_ack) begin
             next_state = 4'd1;
           end else begin
             next_state = 4'd2;
           end
-          pc_src = 1'b1;
-          if (~bus_ack) begin
-            pc_we = 1'b0;
-          end else begin
-            pc_we = 1'b1;
-          end
+          pc_src = 1'bx;
+          pc_we = 1'b0;
           bus_addr_src = 1'b0;
           bus_stb = 1'b1;
           bus_we = 1'b0;
@@ -477,12 +473,12 @@ module ctrl(clk, rst,
           reg_di2_src = 1'bx;
           reg_we2 = 1'b0;
           alu_run = 1'b0;
-          alu_src1 = 1'b0;
-          alu_src2 = 3'b000;
-          alu_fnc = 4'h8;
+          alu_src1 = 1'bx;
+          alu_src2 = 3'bxxx;
+          alu_fnc = 4'hx;
           alu_setf = 1'b0;
         end
-      4'd2:  // decode, fetch register operands
+      4'd2:  // inc pc by 4, decode instr, fetch register operands
         begin
           case (ir_pq)
             2'b00:  // format 0: register/register instructions
@@ -508,8 +504,8 @@ module ctrl(clk, rst,
                 end
               end
           endcase
-          pc_src = 1'bx;
-          pc_we = 1'b0;
+          pc_src = 1'b1;
+          pc_we = 1'b1;
           bus_addr_src = 1'bx;
           bus_stb = 1'b0;
           bus_we = 1'bx;
@@ -519,9 +515,9 @@ module ctrl(clk, rst,
           reg_di2_src = 1'bx;
           reg_we2 = 1'b0;
           alu_run = 1'b0;
-          alu_src1 = 1'bx;
-          alu_src2 = 3'bxxx;
-          alu_fnc = 4'hx;
+          alu_src1 = 1'b0;
+          alu_src2 = 3'b000;
+          alu_fnc = 4'h8;
           alu_setf = 1'b0;
         end
       4'd3:  // format 0: execute
@@ -716,9 +712,9 @@ module ctrl(clk, rst,
           bus_we = 1'bx;
           bus_ben = 1'bx;
           ir_we = 1'b0;
-          reg_a2_src = 2'bxx;
-          reg_di2_src = 1'bx;
-          reg_we2 = 1'b0;
+          reg_a2_src = 2'b10;
+          reg_di2_src = 1'b0;
+          reg_we2 = ir_v & branch;
           alu_run = 1'b0;
           alu_src1 = 1'bx;
           alu_src2 = 3'b001;
@@ -735,9 +731,9 @@ module ctrl(clk, rst,
           bus_we = 1'bx;
           bus_ben = 1'bx;
           ir_we = 1'b0;
-          reg_a2_src = 2'bxx;
-          reg_di2_src = 1'bx;
-          reg_we2 = 1'b0;
+          reg_a2_src = 2'b10;
+          reg_di2_src = 1'b0;
+          reg_we2 = ir_v & branch;
           alu_run = 1'b0;
           alu_src1 = 1'b0;
           alu_src2 = 3'b100;
