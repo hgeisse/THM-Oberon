@@ -192,6 +192,7 @@ module cpu_core(clk, rst,
     .ir_op(ir_op),
     .bus_ack(bus_ack),
     .alu_stall(alu_stall),
+    .branch(branch),
     .pc_src(pc_src),
     .pc_we(pc_we),
     .bus_addr_src(bus_addr_src),
@@ -386,12 +387,10 @@ endmodule
 
 module ctrl(clk, rst,
             ir_pq, ir_u, ir_v, ir_op,
-            bus_ack,
-            alu_stall,
+            bus_ack, alu_stall, branch,
             pc_src, pc_we,
             bus_addr_src, bus_stb, bus_we, bus_ben,
-            ir_we,
-            reg_a2_src, reg_di2_src, reg_we2,
+            ir_we, reg_a2_src, reg_di2_src, reg_we2,
             alu_run, alu_src1, alu_src2, alu_fnc, alu_setf);
     input clk;
     input rst;
@@ -401,6 +400,7 @@ module ctrl(clk, rst,
     input [3:0] ir_op;
     input bus_ack;
     input alu_stall;
+    input branch;
     output reg pc_src;
     output reg pc_we;
     output reg bus_addr_src;
@@ -710,7 +710,7 @@ module ctrl(clk, rst,
         begin
           next_state = 4'd1;
           pc_src = 1'b1;
-          pc_we = 1'b1;
+          pc_we = branch;
           bus_addr_src = 1'bx;
           bus_stb = 1'b0;
           bus_we = 1'bx;
@@ -729,7 +729,7 @@ module ctrl(clk, rst,
         begin
           next_state = 4'd1;
           pc_src = 1'b1;
-          pc_we = 1'b1;
+          pc_we = branch;
           bus_addr_src = 1'bx;
           bus_stb = 1'b0;
           bus_we = 1'bx;
