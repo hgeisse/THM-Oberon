@@ -12,7 +12,8 @@ SRCS = risc5test.v \
        src/cpu/muldiv.v \
        src/cpu/fpu.v \
        src/prom/prom.v \
-       src/ram/ram.v
+       src/ram/ram.v \
+       src/bio/bio.v
 
 all:		show
 

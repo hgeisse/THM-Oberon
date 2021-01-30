@@ -36,6 +36,10 @@ module risc5(clk_in,
   wire ram_ack;				// ram acknowledge
   // i/o
   wire i_o_stb;				// i/o strobe
+  // bio
+  wire bio_stb;				// board i/o strobe
+  wire [31:0] bio_dout;			// board i/o data output
+  wire bio_ack;				// board i/O acknowledge
 
   //--------------------------------------
   // module instances
@@ -83,6 +87,16 @@ module risc5(clk_in,
     .ack(ram_ack)
   );
 
+  bio bio_0(
+    .clk(clk),
+    .rst(rst),
+    .stb(bio_stb),
+    .we(bus_we),
+    .data_in(bus_dout[31:0]),
+    .data_out(bio_dout[31:0]),
+    .ack(bio_ack)
+  );
+
   //--------------------------------------
   // address decoder (16 MB addr space)
   //--------------------------------------
@@ -100,6 +114,8 @@ module risc5(clk_in,
   assign i_o_stb =
     (bus_stb == 1'b1 && bus_addr[23:8] == 16'hFFFF
                      && bus_addr[7:6] == 2'b11) ? 1'b1 : 1'b0;
+  assign bio_stb =
+    (i_o_stb == 1'b1 && bus_addr[5:2] == 4'h1) ? 1'b1 : 1'b0;
 
   //--------------------------------------
   // data and acknowledge multiplexers
@@ -108,11 +124,13 @@ module risc5(clk_in,
   assign bus_din[31:0] =
     prom_stb ? prom_dout[31:0] :
     ram_stb  ? ram_dout[31:0]  :
+    bio_stb  ? bio_dout[31:0]  :
     32'h00000000;
 
   assign bus_ack =
     prom_stb ? prom_ack :
     ram_stb  ? ram_ack  :
+    bio_stb  ? bio_ack  :
     1'b0;
 
 endmodule
