@@ -308,10 +308,10 @@ static void disasmF0(unsigned int instr) {
       /* u = 1: move from special register */
       if (((instr >> 28) & 1) == 0) {
         /* v = 0: get H register */
-        sprintf(instrBuffer, "%-7s R%d,H", regOps[op], a);
+        sprintf(instrBuffer, "%-7s R%d", "GETH", a);
       } else {
         /* v = 1: get flag values and CPU ID */
-        sprintf(instrBuffer, "%-7s R%d,F", regOps[op], a);
+        sprintf(instrBuffer, "%-7s R%d", "GETF", a);
       }
     }
   } else {
