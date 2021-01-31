@@ -39,7 +39,7 @@ module risc5(clk_in,
   // bio
   wire bio_stb;				// board i/o strobe
   wire [31:0] bio_dout;			// board i/o data output
-  wire bio_ack;				// board i/O acknowledge
+  wire bio_ack;				// board i/o acknowledge
 
   //--------------------------------------
   // module instances
