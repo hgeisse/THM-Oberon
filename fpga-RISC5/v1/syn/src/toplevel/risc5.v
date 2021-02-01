@@ -9,6 +9,16 @@
 
 module risc5(clk_in,
              rst_in_n,
+             sdram_clk,
+             sdram_cke,
+             sdram_cs_n,
+             sdram_ras_n,
+             sdram_cas_n,
+             sdram_we_n,
+             sdram_ba,
+             sdram_a,
+             sdram_dqm,
+             sdram_dq,
              led_g,
              led_r,
              hex7_n,
@@ -28,6 +38,17 @@ module risc5(clk_in,
     // clock and reset
     input clk_in;
     input rst_in_n;
+    // SDRAM
+    output sdram_clk;
+    output sdram_cke;
+    output sdram_cs_n;
+    output sdram_ras_n;
+    output sdram_cas_n;
+    output sdram_we_n;
+    output [1:0] sdram_ba;
+    output [12:0] sdram_a;
+    output [3:0] sdram_dqm;
+    inout [31:0] sdram_dq;
     // board I/O
     output [8:0] led_g;
     output [17:0] led_r;
@@ -62,6 +83,10 @@ module risc5(clk_in,
   wire [31:0] prom_dout;		// prom data output
   wire prom_ack;			// prom acknowledge
   // ram
+  wire ram_stb;				// ram strobe
+  wire [26:2] ram_addr;			// ram address
+  wire [31:0] ram_dout;			// ram data output
+  wire ram_ack;				// ram acknowledge
   // i/o
   wire i_o_stb;				// i/o strobe
   // bio
@@ -77,7 +102,7 @@ module risc5(clk_in,
     .clk_in(clk_in),
     .rst_in_n(rst_in_n),
     .clk_ok(clk_ok),
-    .clk_100_ps(),
+    .clk_100_ps(sdram_clk),
     .clk_100(mclk),
     .clk_75(pclk),
     .clk_50(clk),
@@ -103,6 +128,29 @@ module risc5(clk_in,
     .addr(bus_addr[10:2]),
     .data_out(prom_dout[31:0]),
     .ack(prom_ack)
+  );
+
+  assign ram_addr[26:2] = { 3'b000, bus_addr[23:2] };
+  ram ram_0(
+    .clk_ok(clk_ok),
+    .clk2(mclk),
+    .clk(clk),
+    .rst(rst),
+    .stb(ram_stb),
+    .we(bus_we),
+    .addr(ram_addr[26:2]),
+    .data_in(bus_dout[31:0]),
+    .data_out(ram_dout[31:0]),
+    .ack(ram_ack),
+    .sdram_cke(sdram_cke),
+    .sdram_cs_n(sdram_cs_n),
+    .sdram_ras_n(sdram_ras_n),
+    .sdram_cas_n(sdram_cas_n),
+    .sdram_we_n(sdram_we_n),
+    .sdram_ba(sdram_ba[1:0]),
+    .sdram_a(sdram_a[12:0]),
+    .sdram_dqm(sdram_dqm[3:0]),
+    .sdram_dq(sdram_dq[31:0])
   );
 
   bio bio_0(
@@ -139,8 +187,8 @@ module risc5(clk_in,
                      && bus_addr[11] == 1'b0) ? 1'b1 : 1'b0;
 
   // RAM: 1 MB @ 0x000000
-//  assign ram_stb =
-//    (bus_stb == 1'b1 && bus_addr[23:20] == 4'h0) ? 1'b1 : 1'b0;
+  assign ram_stb =
+    (bus_stb == 1'b1 && bus_addr[23:20] == 4'h0) ? 1'b1 : 1'b0;
 
   // I/O: 64 bytes (16 words) @ 0xFFFFC0
   assign i_o_stb =
@@ -155,13 +203,13 @@ module risc5(clk_in,
 
   assign bus_din[31:0] =
     prom_stb ? prom_dout[31:0] :
-    //ram_stb  ? ram_dout[31:0]  :
+    ram_stb  ? ram_dout[31:0]  :
     bio_stb  ? bio_dout[31:0]  :
     32'h00000000;
 
   assign bus_ack =
     prom_stb ? prom_ack :
-    //ram_stb  ? ram_ack  :
+    ram_stb  ? ram_ack  :
     bio_stb  ? bio_ack  :
     1'b0;
 
