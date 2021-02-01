@@ -50,6 +50,24 @@ module risc5(clk_in,
   wire pclk;				// pixel clock, 75 MHz
   wire clk;				// system clock, 50 MHz
   wire rst;				// system reset
+  // cpu
+  wire bus_stb;				// bus strobe
+  wire bus_we;				// bus write enable
+  wire [23:2] bus_addr;			// bus address (word address)
+  wire [31:0] bus_din;			// bus data input, for reads
+  wire [31:0] bus_dout;			// bus data output, for writes
+  wire bus_ack;				// bus acknowledge
+  // prom
+  wire prom_stb;			// prom strobe
+  wire [31:0] prom_dout;		// prom data output
+  wire prom_ack;			// prom acknowledge
+  // ram
+  // i/o
+  wire i_o_stb;				// i/o strobe
+  // bio
+  wire bio_stb;				// board i/o strobe
+  wire [31:0] bio_dout;			// board i/o data output
+  wire bio_ack;				// board i/o acknowledge
 
   //--------------------------------------
   // module instances
@@ -66,55 +84,85 @@ module risc5(clk_in,
     .rst(rst)
   );
 
+  cpu cpu_0(
+    .clk(clk),
+    .rst(rst),
+    .bus_stb(bus_stb),
+    .bus_we(bus_we),
+    .bus_addr(bus_addr[23:2]),
+    .bus_din(bus_din[31:0]),
+    .bus_dout(bus_dout[31:0]),
+    .bus_ack(bus_ack)
+  );
+
+  prom prom_0(
+    .clk(clk),
+    .rst(rst),
+    .stb(prom_stb),
+    .we(bus_we),
+    .addr(bus_addr[10:2]),
+    .data_out(prom_dout[31:0]),
+    .ack(prom_ack)
+  );
+
+  bio bio_0(
+    .clk(clk),
+    .rst(rst),
+    .stb(bio_stb),
+    .we(bus_we),
+    .data_in(bus_dout[31:0]),
+    .data_out(bio_dout[31:0]),
+    .ack(bio_ack),
+    .led_g(led_g[8:0]),
+    .led_r(led_r[17:0]),
+    .hex7_n(hex7_n[6:0]),
+    .hex6_n(hex6_n[6:0]),
+    .hex5_n(hex5_n[6:0]),
+    .hex4_n(hex4_n[6:0]),
+    .hex3_n(hex3_n[6:0]),
+    .hex2_n(hex2_n[6:0]),
+    .hex1_n(hex1_n[6:0]),
+    .hex0_n(hex0_n[6:0]),
+    .key3_n(key3_n),
+    .key2_n(key2_n),
+    .key1_n(key1_n),
+    .sw(sw[17:0])
+  );
+
   //--------------------------------------
-  // test
+  // address decoder (16 MB addr space)
   //--------------------------------------
 
-  reg [25:0] counter0;
-  reg [25:0] counter1;
-  reg [25:0] counter2;
+  // PROM: 2 KB @ 0xFFE000
+  assign prom_stb =
+    (bus_stb == 1'b1 && bus_addr[23:12] == 12'hFFE
+                     && bus_addr[11] == 1'b0) ? 1'b1 : 1'b0;
 
-  always @(posedge clk) begin
-    if (rst) begin
-      counter0 <= 26'd0;
-    end else begin
-      counter0 <= counter0 + 26'd1;
-    end
-  end
-  always @(posedge pclk) begin
-    if (rst) begin
-      counter1 <= 26'd0;
-    end else begin
-      counter1 <= counter1 + 26'd1;
-    end
-  end
-  always @(posedge mclk) begin
-    if (rst) begin
-      counter2 <= 26'd0;
-    end else begin
-      counter2 <= counter2 + 26'd1;
-    end
-  end
+  // RAM: 1 MB @ 0x000000
+//  assign ram_stb =
+//    (bus_stb == 1'b1 && bus_addr[23:20] == 4'h0) ? 1'b1 : 1'b0;
 
-  assign led_g[0] = clk_ok;
-  assign led_g[1] = rst;
-  assign led_g[2] = counter0[25];
-  assign led_g[3] = counter1[25];
-  assign led_g[4] = counter2[25];
-  assign led_g[5] = ~key1_n;
-  assign led_g[6] = ~key2_n;
-  assign led_g[7] = ~key3_n;
-  assign led_g[8] = 1'b0;
+  // I/O: 64 bytes (16 words) @ 0xFFFFC0
+  assign i_o_stb =
+    (bus_stb == 1'b1 && bus_addr[23:8] == 16'hFFFF
+                     && bus_addr[7:6] == 2'b11) ? 1'b1 : 1'b0;
+  assign bio_stb =
+    (i_o_stb == 1'b1 && bus_addr[5:2] == 4'h1) ? 1'b1 : 1'b0;
 
-  assign led_r[17:0] = sw[17:0];
+  //--------------------------------------
+  // data and acknowledge multiplexers
+  //--------------------------------------
 
-  assign hex7_n[6:0] = 7'h7F;
-  assign hex6_n[6:0] = 7'h7F;
-  assign hex5_n[6:0] = 7'h7F;
-  assign hex4_n[6:0] = 7'h7F;
-  assign hex3_n[6:0] = 7'h7F;
-  assign hex2_n[6:0] = 7'h7F;
-  assign hex1_n[6:0] = 7'h7F;
-  assign hex0_n[6:0] = 7'h7F;
+  assign bus_din[31:0] =
+    prom_stb ? prom_dout[31:0] :
+    //ram_stb  ? ram_dout[31:0]  :
+    bio_stb  ? bio_dout[31:0]  :
+    32'h00000000;
+
+  assign bus_ack =
+    prom_stb ? prom_ack :
+    //ram_stb  ? ram_ack  :
+    bio_stb  ? bio_ack  :
+    1'b0;
 
 endmodule
