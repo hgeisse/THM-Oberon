@@ -381,6 +381,7 @@ set_location_assignment PIN_W2 -to sdram_dq[1]
 set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to sdram_dq[1]
 set_location_assignment PIN_W3 -to sdram_dq[0]
 set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to sdram_dq[0]
+set_global_assignment -name VERILOG_FILE ../src/tmr/tmr.v
 set_global_assignment -name VERILOG_FILE ../src/ram/ramctrl.v
 set_global_assignment -name VERILOG_FILE ../src/ram/ram.v
 set_global_assignment -name VERILOG_FILE ../src/cpu/fpu.v

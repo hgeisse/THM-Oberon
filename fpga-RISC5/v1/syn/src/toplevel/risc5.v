@@ -89,6 +89,10 @@ module risc5(clk_in,
   wire ram_ack;				// ram acknowledge
   // i/o
   wire i_o_stb;				// i/o strobe
+  // tmr
+  wire tmr_stb;				// timer strobe
+  wire [31:0] tmr_dout;			// timer data output
+  wire tmr_ack;				// timer acknowledge
   // bio
   wire bio_stb;				// board i/o strobe
   wire [31:0] bio_dout;			// board i/o data output
@@ -153,6 +157,14 @@ module risc5(clk_in,
     .sdram_dq(sdram_dq[31:0])
   );
 
+  tmr tmr_0(
+    .clk(clk),
+    .rst(rst),
+    .stb(tmr_stb),
+    .data_out(tmr_dout[31:0]),
+    .ack(tmr_ack)
+  );
+
   bio bio_0(
     .clk(clk),
     .rst(rst),
@@ -194,6 +206,8 @@ module risc5(clk_in,
   assign i_o_stb =
     (bus_stb == 1'b1 && bus_addr[23:8] == 16'hFFFF
                      && bus_addr[7:6] == 2'b11) ? 1'b1 : 1'b0;
+  assign tmr_stb =
+    (i_o_stb == 1'b1 && bus_addr[5:2] == 4'h0) ? 1'b1 : 1'b0;
   assign bio_stb =
     (i_o_stb == 1'b1 && bus_addr[5:2] == 4'h1) ? 1'b1 : 1'b0;
 
@@ -204,12 +218,14 @@ module risc5(clk_in,
   assign bus_din[31:0] =
     prom_stb ? prom_dout[31:0] :
     ram_stb  ? ram_dout[31:0]  :
+    tmr_stb  ? tmr_dout[31:0]  :
     bio_stb  ? bio_dout[31:0]  :
     32'h00000000;
 
   assign bus_ack =
     prom_stb ? prom_ack :
     ram_stb  ? ram_ack  :
+    tmr_stb  ? tmr_ack  :
     bio_stb  ? bio_ack  :
     1'b0;
 
