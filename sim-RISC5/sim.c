@@ -88,7 +88,7 @@ Word readTimer(void) {
 
 
 /*
- * write dev 1: ignore
+ * write dev 0: ignore
  */
 void writeTimer(Word data) {
 }
