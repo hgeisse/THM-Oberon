@@ -13,6 +13,7 @@ SRCS = risc5test.v \
        src/cpu/fpu.v \
        src/prom/prom.v \
        src/ram/ram.v \
+       src/tmr/tmr.v \
        src/bio/bio.v
 
 all:		show
