@@ -241,6 +241,7 @@ module alu(clk, run, stall,
     output reg Z;
     output reg C;
     output reg V;
+    output reg H;
 
   wire [31:0] lsl_res;
   wire [31:0] asr_res;
@@ -262,6 +263,7 @@ module alu(clk, run, stall,
   wire res_Z;
   wire res_C;
   wire res_V;
+  wire res_H;
 
   lsl lsl_0(
     .value(op1),
@@ -372,6 +374,10 @@ module alu(clk, run, stall,
     (fnc == 4'h8) ? (~x & ~y & z) | (x & y & ~z) :
     (fnc == 4'h9) ? (~x & y & z) | (x & ~y & ~z) :
     V;
+  assign res_H =
+    (fnc == 4'hA) ? mul_res_hi :
+    (fnc == 4'hB) ? div_res_rem :
+    H;
 
   always @(posedge clk) begin
     if (setf) begin
@@ -379,6 +385,7 @@ module alu(clk, run, stall,
       Z <= res_Z;
       C <= res_C;
       V <= res_V;
+      H <= res_H;
     end
   end
 
