@@ -19,6 +19,8 @@ module risc5(clk_in,
              sdram_a,
              sdram_dqm,
              sdram_dq,
+             rs232_0_rxd,
+             rs232_0_txd,
              led_g,
              led_r,
              hex7_n,
@@ -49,6 +51,9 @@ module risc5(clk_in,
     output [12:0] sdram_a;
     output [3:0] sdram_dqm;
     inout [31:0] sdram_dq;
+    // RS-232
+    input rs232_0_rxd;
+    output rs232_0_txd;
     // board I/O
     output [8:0] led_g;
     output [17:0] led_r;
@@ -97,6 +102,10 @@ module risc5(clk_in,
   wire bio_stb;				// board i/o strobe
   wire [31:0] bio_dout;			// board i/o data output
   wire bio_ack;				// board i/o acknowledge
+  // ser
+  wire ser_stb;				// serial line strobe
+  wire [31:0] ser_dout;			// serial line data output
+  wire ser_ack;				// serial line acknowledge
 
   //--------------------------------------
   // module instances
@@ -189,6 +198,19 @@ module risc5(clk_in,
     .sw(sw[17:0])
   );
 
+  ser ser_0(
+    .clk(clk),
+    .rst(rst),
+    .stb(ser_stb),
+    .we(bus_we),
+    .addr(bus_addr[2]),
+    .data_in(bus_dout[31:0]),
+    .data_out(ser_dout[31:0]),
+    .ack(ser_ack),
+    .rxd(rs232_0_rxd),
+    .txd(rs232_0_txd)
+  );
+
   //--------------------------------------
   // address decoder (16 MB addr space)
   //--------------------------------------
@@ -207,9 +229,11 @@ module risc5(clk_in,
     (bus_stb == 1'b1 && bus_addr[23:8] == 16'hFFFF
                      && bus_addr[7:6] == 2'b11) ? 1'b1 : 1'b0;
   assign tmr_stb =
-    (i_o_stb == 1'b1 && bus_addr[5:2] == 4'h0) ? 1'b1 : 1'b0;
+    (i_o_stb == 1'b1 && bus_addr[5:2] == 4'b0000) ? 1'b1 : 1'b0;
   assign bio_stb =
-    (i_o_stb == 1'b1 && bus_addr[5:2] == 4'h1) ? 1'b1 : 1'b0;
+    (i_o_stb == 1'b1 && bus_addr[5:2] == 4'b0001) ? 1'b1 : 1'b0;
+  assign ser_stb =
+    (i_o_stb == 1'b1 && bus_addr[5:3] == 3'b001) ? 1'b1 : 1'b0;
 
   //--------------------------------------
   // data and acknowledge multiplexers
@@ -220,6 +244,7 @@ module risc5(clk_in,
     ram_stb  ? ram_dout[31:0]  :
     tmr_stb  ? tmr_dout[31:0]  :
     bio_stb  ? bio_dout[31:0]  :
+    ser_stb  ? ser_dout[31:0]  :
     32'h00000000;
 
   assign bus_ack =
@@ -227,6 +252,7 @@ module risc5(clk_in,
     ram_stb  ? ram_ack  :
     tmr_stb  ? tmr_ack  :
     bio_stb  ? bio_ack  :
+    ser_stb  ? ser_ack  :
     1'b0;
 
 endmodule
