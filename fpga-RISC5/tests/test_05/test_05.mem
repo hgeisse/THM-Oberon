@@ -1,7 +1,8 @@
 //
 // test_05.mem -- copy a program from PROM to RAM and run it from there
-// CAUTION: The current implementation does not allow LDWs from PROM!
-//          So this program fails badly.
+// CAUTION: NW's current implementation does not allow LDWs from PROM!
+//          So this program fails badly there. The new implementation
+//          by HG doesn't suffer from this problem.
 //
 600000FF	//		MOV     R0,0x00FF0000
 4006E040	//		IOR     R0,R0,0x0000E040
