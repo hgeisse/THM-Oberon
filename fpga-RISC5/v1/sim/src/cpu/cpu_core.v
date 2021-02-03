@@ -241,7 +241,7 @@ module alu(clk, run, stall,
     output reg Z;
     output reg C;
     output reg V;
-    output reg H;
+    output reg [31:0] H;
 
   wire [31:0] lsl_res;
   wire [31:0] asr_res;
@@ -263,7 +263,7 @@ module alu(clk, run, stall,
   wire res_Z;
   wire res_C;
   wire res_V;
-  wire res_H;
+  wire [31:0] res_H;
 
   lsl lsl_0(
     .value(op1),
