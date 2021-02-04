@@ -22,6 +22,10 @@
 
 #define SERDEV_FILE	"serial.dev"		/* serial dev file */
 
+#define CPU_MANUFACT	0x4847			/* HG */
+#define CPU_VERSION	0x54			/* 5.4 */
+#define CPU_ID		((CPU_MANUFACT << 8) | CPU_VERSION)
+
 #define INST_PER_MSEC	17000			/* execution speed */
 #define INST_PER_CHAR	10000			/* serial line speed */
 
@@ -923,11 +927,6 @@ void memInit(char *promName) {
 /*
  * CPU
  */
-
-
-#define CPU_MANUFACTURER	0x4847
-#define CPU_VERSION		0x53
-#define CPU_ID			((CPU_MANUFACTURER << 8) | CPU_VERSION)
 
 
 static Word pc;			/* program counter, as word index */
