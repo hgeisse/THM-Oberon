@@ -7,6 +7,9 @@
 `default_nettype none
 
 
+`define CPU_ID	{ 16'h4847, 8'h54 }	// Mfr. = HG, Version = 5.4
+
+
 module cpu_core(clk, rst,
                 bus_stb, bus_we, bus_ben, bus_addr,
                 bus_din, bus_dout, bus_ack);
@@ -62,6 +65,7 @@ module cpu_core(clk, rst,
   wire [31:0] alu_imm3;		// alu immediate data from 24 bits dist
   wire [31:0] alu_imm4;		// alu immediate data from 16 bits imm << 16
   wire [31:0] alu_spc1;		// alu special value 1 (H register)
+  wire [31:0] alu_spc2;		// alu special value 2 (flags, CPU ID)
   wire [2:0] alu_src2;		// alu source 2 selector
   wire [31:0] alu_op2;		// alu operand 2
   wire [3:0] alu_fnc;		// alu function
@@ -148,6 +152,7 @@ module cpu_core(clk, rst,
   assign alu_imm3 = { {6{ir_dist[23]}}, ir_dist, 2'b00 };
   assign alu_imm4 = { ir_imm, 16'h0000 };
   assign alu_spc1 = H;
+  assign alu_spc2 = { N, Z, C, V, 4'b0000, `CPU_ID };
   assign alu_op2 =
     (alu_src2 == 3'b000) ? 32'h00000004 :	// next instr
     (alu_src2 == 3'b001) ? reg_do2 :		// arithmetic
@@ -156,6 +161,7 @@ module cpu_core(clk, rst,
     (alu_src2 == 3'b100) ? alu_imm3 :		// branch distance
     (alu_src2 == 3'b101) ? alu_imm4 :		// immediate data << 16
     (alu_src2 == 3'b110) ? alu_spc1 :		// H register content
+    (alu_src2 == 3'b111) ? alu_spc2 :		// flags, CPU ID
     32'hxxxxxxxx;
   alu alu_0(
     .clk(clk),
@@ -555,10 +561,15 @@ module ctrl(clk, rst,
           alu_run = 1'b1;
           alu_src1 = 1'b1;
           if ((ir_op == 4'h0) & ir_u) begin
-            // H
-            alu_src2 = 3'b110;
+            if (ir_v) begin
+              // flags, CPU ID
+              alu_src2 = 3'b111;
+            end else begin
+              // H register
+              alu_src2 = 3'b110;
+            end
           end else begin
-            // reg
+            // general register
             alu_src2 = 3'b001;
           end
           alu_fnc = ir_op;
