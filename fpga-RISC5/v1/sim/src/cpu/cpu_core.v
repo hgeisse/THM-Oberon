@@ -57,11 +57,10 @@ module cpu_core(clk, rst,
   wire alu_stall;		// alu needs additional clock cycles
   wire alu_src1;		// alu source 1 selector
   wire [31:0] alu_op1;		// alu operand 1
-  wire [31:0] alu_imm1a;	// alu immediate auxiliary data
-  wire [31:0] alu_imm1b;	// alu immediate auxiliary data
   wire [31:0] alu_imm1;		// alu immediate data from 16 bits imm
   wire [31:0] alu_imm2;		// alu immediate data from 20 bits off
   wire [31:0] alu_imm3;		// alu immediate data from 24 bits dist
+  wire [31:0] alu_imm4;		// alu immediate data from 16 bits imm << 16
   wire [2:0] alu_src2;		// alu source 2 selector
   wire [31:0] alu_op2;		// alu operand 2
   wire [3:0] alu_fnc;		// alu function
@@ -142,18 +141,17 @@ module cpu_core(clk, rst,
     (alu_src1 == 1'b0) ? { 8'h00, pc } :	// next instr, branch
     (alu_src1 == 1'b1) ? reg_do1 :		// arith, eff. memory addr
     32'hxxxxxxxx;
-  assign alu_imm1a = { {16{ir_v}}, ir_imm };
-  assign alu_imm1b = { ir_imm, 16'h0000 };
-  assign alu_imm1 =
-    ((ir_pq == 2'b01) & ir_u & (ir_op == 4'h0)) ? alu_imm1b : alu_imm1a;
+  assign alu_imm1 = { {16{ir_v}}, ir_imm };
   assign alu_imm2 = { {12{ir_off[19]}}, ir_off };
   assign alu_imm3 = { {6{ir_dist[23]}}, ir_dist, 2'b00 };
+  assign alu_imm4 = { ir_imm, 16'h0000 };
   assign alu_op2 =
     (alu_src2 == 3'b000) ? 32'h00000004 :	// next instr
     (alu_src2 == 3'b001) ? reg_do2 :		// arithmetic
     (alu_src2 == 3'b010) ? alu_imm1 :		// immediate data
     (alu_src2 == 3'b011) ? alu_imm2 :		// memory offset
     (alu_src2 == 3'b100) ? alu_imm3 :		// branch distance
+    (alu_src2 == 3'b101) ? alu_imm4 :		// immediate data << 16
     32'hxxxxxxxx;
   alu alu_0(
     .clk(clk),
@@ -597,7 +595,13 @@ module ctrl(clk, rst,
           reg_we2 = 1'b0;
           alu_run = 1'b1;
           alu_src1 = 1'b1;
-          alu_src2 = 3'b010;
+          if ((ir_op == 4'h0) & ir_u) begin
+            // imm << 16
+            alu_src2 = 3'b101;
+          end else begin
+            // imm
+            alu_src2 = 3'b010;
+          end
           alu_fnc = ir_op;
           if (alu_stall) begin
             alu_setf = 1'b0;
