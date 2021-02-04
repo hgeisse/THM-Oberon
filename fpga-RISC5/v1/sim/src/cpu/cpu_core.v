@@ -61,6 +61,7 @@ module cpu_core(clk, rst,
   wire [31:0] alu_imm2;		// alu immediate data from 20 bits off
   wire [31:0] alu_imm3;		// alu immediate data from 24 bits dist
   wire [31:0] alu_imm4;		// alu immediate data from 16 bits imm << 16
+  wire [31:0] alu_spc1;		// alu special value 1 (H register)
   wire [2:0] alu_src2;		// alu source 2 selector
   wire [31:0] alu_op2;		// alu operand 2
   wire [3:0] alu_fnc;		// alu function
@@ -71,6 +72,7 @@ module cpu_core(clk, rst,
   wire Z;			// condition flag "zero"
   wire C;			// condition flag "carry"
   wire V;			// condition flag "overflow"
+  wire [31:0] H;		// auxiliary register H
   // branch unit
   reg cond;			// condition is true
   wire branch;			// take the branch
@@ -145,6 +147,7 @@ module cpu_core(clk, rst,
   assign alu_imm2 = { {12{ir_off[19]}}, ir_off };
   assign alu_imm3 = { {6{ir_dist[23]}}, ir_dist, 2'b00 };
   assign alu_imm4 = { ir_imm, 16'h0000 };
+  assign alu_spc1 = H;
   assign alu_op2 =
     (alu_src2 == 3'b000) ? 32'h00000004 :	// next instr
     (alu_src2 == 3'b001) ? reg_do2 :		// arithmetic
@@ -152,6 +155,7 @@ module cpu_core(clk, rst,
     (alu_src2 == 3'b011) ? alu_imm2 :		// memory offset
     (alu_src2 == 3'b100) ? alu_imm3 :		// branch distance
     (alu_src2 == 3'b101) ? alu_imm4 :		// immediate data << 16
+    (alu_src2 == 3'b110) ? alu_spc1 :		// H register content
     32'hxxxxxxxx;
   alu alu_0(
     .clk(clk),
@@ -167,7 +171,8 @@ module cpu_core(clk, rst,
     .N(N),
     .Z(Z),
     .C(C),
-    .V(V)
+    .V(V),
+    .H(H)
   );
 
   // branch unit
@@ -224,7 +229,7 @@ endmodule
 module alu(clk, run, stall,
            op1, op2, fnc, ir_u,
            res, out,
-           setf, N, Z, C, V);
+           setf, N, Z, C, V, H);
     input clk;
     input run;
     output stall;
@@ -549,7 +554,13 @@ module ctrl(clk, rst,
           reg_we2 = 1'b0;
           alu_run = 1'b1;
           alu_src1 = 1'b1;
-          alu_src2 = 3'b001;
+          if ((ir_op == 4'h0) & ir_u) begin
+            // H
+            alu_src2 = 3'b110;
+          end else begin
+            // reg
+            alu_src2 = 3'b001;
+          end
           alu_fnc = ir_op;
           if (alu_stall) begin
             alu_setf = 1'b0;
