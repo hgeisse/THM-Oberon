@@ -267,6 +267,7 @@ module alu(clk, run, stall,
   wire [31:0] fpmul_res;
   wire fpdiv_stall;
   wire [31:0] fpdiv_res;
+  wire [31:0] op3;
   wire x, y, z;
   wire res_N;
   wire res_Z;
@@ -345,6 +346,7 @@ module alu(clk, run, stall,
   assign stall = mul_stall | div_stall |
                  fpadd_stall | fpmul_stall | fpdiv_stall;
 
+  assign op3 = { 31'b0, run & ir_u & C };
   always @(*) begin
     case (fnc)
       4'h0: res = op2;
@@ -355,8 +357,8 @@ module alu(clk, run, stall,
       4'h5: res = op1 & ~op2;
       4'h6: res = op1 | op2;
       4'h7: res = op1 ^ op2;
-      4'h8: res = op1 + op2;
-      4'h9: res = op1 - op2;
+      4'h8: res = op1 + op2 + op3;
+      4'h9: res = op1 - op2 - op3;
       4'hA: res = mul_res_lo;
       4'hB: res = div_res_quo;
       4'hC: res = fpadd_res;
