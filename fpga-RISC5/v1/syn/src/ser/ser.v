@@ -61,9 +61,9 @@ module ser(clk, rst,
   );
 
   assign data_out =
-    rd_data ? { 24'hxxxxxx, rcv_data[7:0] } :
-    rd_ctrl ? { 30'hxxxxxxxx, xmt_rdy, rcv_rdy } :
-    32'hxxxxxxxx;
+    rd_data ? { 24'h000000, rcv_data[7:0] } :
+    rd_ctrl ? { 28'h0000000, 2'b00, xmt_rdy, rcv_rdy } :
+    32'h00000000;
 
   always @(posedge clk) begin
     if (rst) begin
