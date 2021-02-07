@@ -250,7 +250,8 @@ MODULE ORG; (* N.Wirth, 16.4.2016 / 4.4.2017 / 31.5.2019  Oberon compiler; code 
       IF x.type.form = ORB.Bool THEN
         IF x.mode = ORB.Const THEN x.r := 15 - x.a*8
         ELSE load(x);
-          IF code[pc-1] DIV C30 # F2 THEN Put1(Cmp, x.r, x.r, 0) END ;
+          (* IF code[pc-1] DIV C30 # F2 THEN Put1(Cmp, x.r, x.r, 0) END ; *)
+          Put1(Cmp, x.r, x.r, 0);
           x.r := NE; DEC(RH)
         END ;
         x.mode := Cond; x.a := 0; x.b := 0
