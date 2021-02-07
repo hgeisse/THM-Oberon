@@ -14,7 +14,10 @@ SRCS = risc5test.v \
        src/prom/prom.v \
        src/ram/ram.v \
        src/tmr/tmr.v \
-       src/bio/bio.v
+       src/bio/bio.v \
+       src/ser/ser.v \
+       src/ser/rcvr.v \
+       src/ser/xmtr.v
 
 all:		show
 

@@ -44,6 +44,10 @@ module risc5(clk_in,
   wire bio_stb;				// board i/o strobe
   wire [31:0] bio_dout;			// board i/o data output
   wire bio_ack;				// board i/o acknowledge
+  // ser
+  wire ser_stb;				// serial line strobe
+  wire [31:0] ser_dout;			// serial line data output
+  wire ser_ack;				// serial line acknowledge
 
   //--------------------------------------
   // module instances
@@ -109,6 +113,17 @@ module risc5(clk_in,
     .ack(bio_ack)
   );
 
+  ser ser_0(
+    .clk(clk),
+    .rst(rst),
+    .stb(ser_stb),
+    .we(bus_we),
+    .addr(bus_addr[2]),
+    .data_in(bus_dout[31:0]),
+    .data_out(ser_dout[31:0]),
+    .ack(ser_ack)
+  );
+
   //--------------------------------------
   // address decoder (16 MB addr space)
   //--------------------------------------
@@ -130,6 +145,8 @@ module risc5(clk_in,
     (i_o_stb == 1'b1 && bus_addr[5:2] == 4'h0) ? 1'b1 : 1'b0;
   assign bio_stb =
     (i_o_stb == 1'b1 && bus_addr[5:2] == 4'h1) ? 1'b1 : 1'b0;
+  assign ser_stb =
+    (i_o_stb == 1'b1 && bus_addr[5:3] == 3'b001) ? 1'b1 : 1'b0;
 
   //--------------------------------------
   // data and acknowledge multiplexers
@@ -140,6 +157,7 @@ module risc5(clk_in,
     ram_stb  ? ram_dout[31:0]  :
     tmr_stb  ? tmr_dout[31:0]  :
     bio_stb  ? bio_dout[31:0]  :
+    ser_stb  ? ser_dout[31:0]  :
     32'h00000000;
 
   assign bus_ack =
@@ -147,6 +165,7 @@ module risc5(clk_in,
     ram_stb  ? ram_ack  :
     tmr_stb  ? tmr_ack  :
     bio_stb  ? bio_ack  :
+    ser_stb  ? ser_ack  :
     1'b0;
 
 endmodule
