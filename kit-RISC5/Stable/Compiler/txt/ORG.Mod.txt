@@ -250,6 +250,7 @@ MODULE ORG; (* N.Wirth, 16.4.2016 / 4.4.2017 / 31.5.2019  Oberon compiler; code 
       IF x.type.form = ORB.Bool THEN
         IF x.mode = ORB.Const THEN x.r := 15 - x.a*8
         ELSE load(x);
+          (* HG: memory instructions do not necessarily set the flags! *)
           (* IF code[pc-1] DIV C30 # F2 THEN Put1(Cmp, x.r, x.r, 0) END ; *)
           Put1(Cmp, x.r, x.r, 0);
           x.r := NE; DEC(RH)
@@ -635,7 +636,9 @@ MODULE ORG; (* N.Wirth, 16.4.2016 / 4.4.2017 / 31.5.2019  Oberon compiler; code 
   BEGIN
     IF (y.mode = ORB.Const) & (y.type.form # ORB.Proc) THEN
       load(x);
-      IF (y.a # 0) OR ~(op IN {ORS.eql, ORS.neq}) OR (code[pc-1] DIV C30 # F2) THEN Put1a(Cmp, x.r, x.r, y.a) END ;
+      (* HG: memory instructions do not necessarily set the flags! *)
+      (* IF (y.a # 0) OR ~(op IN {ORS.eql, ORS.neq}) OR (code[pc-1] DIV C30 # F2) THEN Put1a(Cmp, x.r, x.r, y.a) END ; *)
+      Put1a(Cmp, x.r, x.r, y.a);
       DEC(RH)
     ELSE
       IF (x.mode = Cond) OR (y.mode = Cond) THEN ORS.Mark("not implemented") END ;
