@@ -7,6 +7,9 @@
 `default_nettype none
 
 
+`define VIDEO_BUF	18'h39FC0	// word address of video buffer
+
+
 module risc5(clk_in,
              rst_in_n,
              sdram_clk,
@@ -19,6 +22,14 @@ module risc5(clk_in,
              sdram_a,
              sdram_dqm,
              sdram_dq,
+             vga_hsync,
+             vga_vsync,
+             vga_clk,
+             vga_sync_n,
+             vga_blank_n,
+             vga_r,
+             vga_g,
+             vga_b,
              rs232_0_rxd,
              rs232_0_txd,
              led_g,
@@ -51,6 +62,15 @@ module risc5(clk_in,
     output [12:0] sdram_a;
     output [3:0] sdram_dqm;
     inout [31:0] sdram_dq;
+    // VGA display
+    output vga_hsync;
+    output vga_vsync;
+    output vga_clk;
+    output vga_sync_n;
+    output vga_blank_n;
+    output [7:0] vga_r;
+    output [7:0] vga_g;
+    output [7:0] vga_b;
     // RS-232
     input rs232_0_rxd;
     output rs232_0_txd;
@@ -92,6 +112,9 @@ module risc5(clk_in,
   wire [26:2] ram_addr;			// ram address
   wire [31:0] ram_dout;			// ram data output
   wire ram_ack;				// ram acknowledge
+  // vid
+  wire vid_stb;				// video buffer strobe
+  wire [19:2] vid_addr;			// video buffer address
   // i/o
   wire i_o_stb;				// i/o strobe
   // tmr
@@ -166,6 +189,25 @@ module risc5(clk_in,
     .sdram_dq(sdram_dq[31:0])
   );
 
+  assign vid_addr[19:2] = bus_addr[19:2] - `VIDEO_BUF;
+  vid vid_0(
+    .pclk(pclk),
+    .clk(clk),
+    .rst(rst),
+    .stb(vid_stb),
+    .we(bus_we),
+    .addr(vid_addr[16:2]),
+    .data_in(bus_dout[31:0]),
+    .hsync(vga_hsync),
+    .vsync(vga_vsync),
+    .pxclk(vga_clk),
+    .sync_n(vga_sync_n),
+    .blank_n(vga_blank_n),
+    .r(vga_r[7:0]),
+    .g(vga_g[7:0]),
+    .b(vga_b[7:0])
+  );
+
   tmr tmr_0(
     .clk(clk),
     .rst(rst),
@@ -223,6 +265,11 @@ module risc5(clk_in,
   // RAM: 1 MB @ 0x000000
   assign ram_stb =
     (bus_stb == 1'b1 && bus_addr[23:20] == 4'h0) ? 1'b1 : 1'b0;
+
+  // VID: 96 KB @ 0x0E7F00
+  assign vid_stb =
+    (bus_stb == 1'b1 && bus_addr[23:20] == 4'h0
+                     && bus_addr[19:2] >= `VIDEO_BUF) ? 1'b1 : 1'b0;
 
   // I/O: 64 bytes (16 words) @ 0xFFFFC0
   assign i_o_stb =
