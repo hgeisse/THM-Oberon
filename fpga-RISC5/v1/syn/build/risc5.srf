@@ -6,3 +6,4 @@
 { "" "" "" "Inferred dual-clock RAM node \"vid:vid_0\|video_mem_rtl_0\" from synchronous design logic.  The read-during-write behavior of a dual-clock RAM is undefined and may not match the behavior of the original design." {  } {  } 0 276027 "" 0 0 "Design Software" 0 -1 0 ""}
 { "" "" "" "Output pins are stuck at VCC or GND" {  } {  } 0 13024 "" 0 0 "Design Software" 0 -1 0 ""}
 { "" "" "" "Some pins have incomplete I/O assignments. Refer to the I/O Assignment Warnings report for details" {  } {  } 0 15714 "" 0 0 "Design Software" 0 -1 0 ""}
+{ "" "" "" "PLL \"clk_rst:clk_rst_0\|altpll:clk_pll\|altpll_tfh1:auto_generated\|pll1\" output port clk\[1\] feeds output pin \"vga_clk~output\" via non-dedicated routing -- jitter performance depends on switching rate of other design elements. Use PLL dedicated clock outputs to ensure jitter performance" {  } {  } 0 15064 "" 0 0 "Design Software" 0 -1 0 ""}
