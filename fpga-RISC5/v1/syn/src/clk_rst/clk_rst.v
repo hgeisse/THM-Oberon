@@ -43,7 +43,7 @@ module clk_rst(clk_in, rst_in_n,
     .clk3_multiply_by(16),
     .clk3_divide_by(8),
     .clk3_duty_cycle(50),		// in %
-    .clk3_phase_shift(8000),		// in picosec
+    .clk3_phase_shift(7917),		// in picosec
     // 100 MHz output, in-phase
     .clk2_multiply_by(16),
     .clk2_divide_by(8),
