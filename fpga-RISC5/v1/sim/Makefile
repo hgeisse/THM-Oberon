@@ -13,6 +13,7 @@ SRCS = risc5test.v \
        src/cpu/fpu.v \
        src/prom/prom.v \
        src/ram/ram.v \
+       src/vid/vid.v \
        src/tmr/tmr.v \
        src/bio/bio.v \
        src/ser/ser.v \
@@ -31,3 +32,4 @@ risc5test:	$(SRCS)
 clean:
 		rm -f *~
 		rm -f risc5test dump.vcd
+		rm -f serial.in serial.out video.out
