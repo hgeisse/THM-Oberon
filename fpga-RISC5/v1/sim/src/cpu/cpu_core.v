@@ -55,6 +55,14 @@ module cpu_core(clk, rst,
   wire reg_di2_src;		// register data in 2 source selector
   wire [31:0] reg_di2;		// register data in 2
   wire reg_we2;			// register write enable 2
+  reg N;			// flag register "negative"
+  reg Z;			// flag register "zero"
+  reg C;			// flag register "carry"
+  reg V;			// flag register "overflow"
+  reg [31:0] H;			// auxiliary register H
+  wire reg_set_NZ;		// set flags N, Z
+  wire reg_set_CV;		// set flags C, V
+  wire reg_set_H;		// set register H
   // alu
   wire alu_run;			// signal to start alu running
   wire alu_stall;		// alu needs additional clock cycles
@@ -71,12 +79,9 @@ module cpu_core(clk, rst,
   wire [3:0] alu_fnc;		// alu function
   wire [31:0] alu_res;		// alu result
   wire [31:0] alu_out;		// alu result, 1 cycle delay
-  wire alu_setf;		// alu must set the condition flags
-  wire N;			// condition flag "negative"
-  wire Z;			// condition flag "zero"
-  wire C;			// condition flag "carry"
-  wire V;			// condition flag "overflow"
-  wire [31:0] H;		// auxiliary register H
+  wire alu_out_C;		// alu carry, 1 cycle delay
+  wire alu_out_V;		// alu overflow, 1 cycle delay
+  wire [31:0] alu_out_H;	// alu auxiliary result, 1 cycle delay
   // branch unit
   reg cond;			// condition is true
   wire branch;			// take the branch
@@ -141,6 +146,19 @@ module cpu_core(clk, rst,
       regs[reg_a2] <= reg_di2;
     end
   end
+  always @(posedge clk) begin
+    if (reg_set_NZ) begin
+      N <= reg_di2[31];
+      Z <= ~|reg_di2[31:0];
+    end
+    if (reg_set_CV) begin
+      C <= alu_out_C;
+      V <= alu_out_V;
+    end
+    if (reg_set_H) begin
+      H <= alu_out_H;
+    end
+  end
 
   // alu
   assign alu_op1 =
@@ -169,16 +187,14 @@ module cpu_core(clk, rst,
     .stall(alu_stall),
     .op1(alu_op1),
     .op2(alu_op2),
+    .cin(C),
     .fnc(alu_fnc),
     .ir_u(ir_u),
     .res(alu_res),
     .out(alu_out),
-    .setf(alu_setf),
-    .N(N),
-    .Z(Z),
-    .C(C),
-    .V(V),
-    .H(H)
+    .out_C(alu_out_C),
+    .out_V(alu_out_V),
+    .out_H(alu_out_H)
   );
 
   // branch unit
@@ -217,11 +233,13 @@ module cpu_core(clk, rst,
     .reg_a2_src(reg_a2_src),
     .reg_di2_src(reg_di2_src),
     .reg_we2(reg_we2),
+    .reg_set_NZ(reg_set_NZ),
+    .reg_set_CV(reg_set_CV),
+    .reg_set_H(reg_set_H),
     .alu_run(alu_run),
     .alu_src1(alu_src1),
     .alu_src2(alu_src2),
-    .alu_fnc(alu_fnc),
-    .alu_setf(alu_setf)
+    .alu_fnc(alu_fnc)
   );
 
 endmodule
@@ -233,24 +251,21 @@ endmodule
 
 
 module alu(clk, run, stall,
-           op1, op2, fnc, ir_u,
-           res, out,
-           setf, N, Z, C, V, H);
+           op1, op2, cin, fnc, ir_u,
+           res, out, out_C, out_V, out_H);
     input clk;
     input run;
     output stall;
     input [31:0] op1;
     input [31:0] op2;
+    input cin;
     input [3:0] fnc;
     input ir_u;
     output reg [31:0] res;
     output reg [31:0] out;
-    input setf;
-    output reg N;
-    output reg Z;
-    output reg C;
-    output reg V;
-    output reg [31:0] H;
+    output reg out_C;
+    output reg out_V;
+    output reg [31:0] out_H;
 
   wire [31:0] lsl_res;
   wire [31:0] asr_res;
@@ -269,8 +284,6 @@ module alu(clk, run, stall,
   wire [31:0] fpdiv_res;
   wire [31:0] op3;
   wire x, y, z;
-  wire res_N;
-  wire res_Z;
   wire res_C;
   wire res_V;
   wire [31:0] res_H;
@@ -346,7 +359,7 @@ module alu(clk, run, stall,
   assign stall = mul_stall | div_stall |
                  fpadd_stall | fpmul_stall | fpdiv_stall;
 
-  assign op3 = { 31'b0, run & ir_u & C };
+  assign op3 = { 31'b0, run & ir_u & cin };
   always @(*) begin
     case (fnc)
       4'h0: res = op2;
@@ -375,29 +388,23 @@ module alu(clk, run, stall,
   assign x = op1[31];
   assign y = op2[31];
   assign z = res[31];
-  assign res_N = z;
-  assign res_Z = ~|res[31:0];
   assign res_C =
     (fnc == 4'h8) ? (x & y) | (x & ~z) | (y & ~z) :
     (fnc == 4'h9) ? (~x & y) | (~x & z) | (y & z) :
-    C;
+    1'bx;
   assign res_V =
     (fnc == 4'h8) ? (~x & ~y & z) | (x & y & ~z) :
     (fnc == 4'h9) ? (~x & y & z) | (x & ~y & ~z) :
-    V;
+    1'bx;
   assign res_H =
     (fnc == 4'hA) ? mul_res_hi :
     (fnc == 4'hB) ? div_res_rem :
-    H;
+    32'hxxxxxxxx;
 
   always @(posedge clk) begin
-    if (setf) begin
-      N <= res_N;
-      Z <= res_Z;
-      C <= res_C;
-      V <= res_V;
-      H <= res_H;
-    end
+    out_C <= res_C;
+    out_V <= res_V;
+    out_H <= res_H;
   end
 
 endmodule
@@ -414,7 +421,8 @@ module ctrl(clk, rst,
             pc_src, pc_we,
             bus_addr_src, bus_stb, bus_we, bus_ben,
             ir_we, reg_a2_src, reg_di2_src, reg_we2,
-            alu_run, alu_src1, alu_src2, alu_fnc, alu_setf);
+            reg_set_NZ, reg_set_CV, reg_set_H,
+            alu_run, alu_src1, alu_src2, alu_fnc);
     input clk;
     input rst;
     input [1:0] ir_pq;
@@ -434,14 +442,19 @@ module ctrl(clk, rst,
     output reg [1:0] reg_a2_src;
     output reg reg_di2_src;
     output reg reg_we2;
+    output reg reg_set_NZ;
+    output reg reg_set_CV;
+    output reg reg_set_H;
     output reg alu_run;
     output reg alu_src1;
     output reg [2:0] alu_src2;
     output reg [3:0] alu_fnc;
-    output reg alu_setf;
 
   reg [3:0] state;
   reg [3:0] next_state;
+
+  wire add_or_sub;
+  wire mul_or_div;
 
   // state machine
   always @(posedge clk) begin
@@ -453,6 +466,8 @@ module ctrl(clk, rst,
   end
 
   // output logic
+  assign add_or_sub = (ir_op == 4'h8) | (ir_op == 4'h9);
+  assign mul_or_div = (ir_op == 4'hA) | (ir_op == 4'hB);
   always @(*) begin
     case (state)
       4'd0:  // reset
@@ -468,11 +483,13 @@ module ctrl(clk, rst,
           reg_a2_src = 2'bxx;
           reg_di2_src = 1'bx;
           reg_we2 = 1'b0;
+          reg_set_NZ = 1'b0;
+          reg_set_CV = 1'b0;
+          reg_set_H = 1'b0;
           alu_run = 1'b0;
           alu_src1 = 1'bx;
           alu_src2 = 3'bxxx;
           alu_fnc = 4'hx;
-          alu_setf = 1'b0;
         end
       4'd1:  // fetch instr
         begin
@@ -495,11 +512,13 @@ module ctrl(clk, rst,
           reg_a2_src = 2'bxx;
           reg_di2_src = 1'bx;
           reg_we2 = 1'b0;
+          reg_set_NZ = 1'b0;
+          reg_set_CV = 1'b0;
+          reg_set_H = 1'b0;
           alu_run = 1'b0;
           alu_src1 = 1'bx;
           alu_src2 = 3'bxxx;
           alu_fnc = 4'hx;
-          alu_setf = 1'b0;
         end
       4'd2:  // inc pc by 4, decode instr, fetch register operands
         begin
@@ -537,11 +556,13 @@ module ctrl(clk, rst,
           reg_a2_src = 2'b00;
           reg_di2_src = 1'bx;
           reg_we2 = 1'b0;
+          reg_set_NZ = 1'b0;
+          reg_set_CV = 1'b0;
+          reg_set_H = 1'b0;
           alu_run = 1'b0;
           alu_src1 = 1'b0;
           alu_src2 = 3'b000;
           alu_fnc = 4'h8;
-          alu_setf = 1'b0;
         end
       4'd3:  // format 0: execute
         begin
@@ -560,6 +581,9 @@ module ctrl(clk, rst,
           reg_a2_src = 2'b00;
           reg_di2_src = 1'bx;
           reg_we2 = 1'b0;
+          reg_set_NZ = 1'b0;
+          reg_set_CV = 1'b0;
+          reg_set_H = 1'b0;
           alu_run = 1'b1;
           alu_src1 = 1'b1;
           if ((ir_op == 4'h0) & ir_u) begin
@@ -575,11 +599,6 @@ module ctrl(clk, rst,
             alu_src2 = 3'b001;
           end
           alu_fnc = ir_op;
-          if (alu_stall) begin
-            alu_setf = 1'b0;
-          end else begin
-            alu_setf = 1'b1;
-          end
         end
       4'd4:  // format 0: write-back
         begin
@@ -594,11 +613,13 @@ module ctrl(clk, rst,
           reg_a2_src = 2'b01;
           reg_di2_src = 1'b0;
           reg_we2 = 1'b1;
+          reg_set_NZ = 1'b1;
+          reg_set_CV = add_or_sub;
+          reg_set_H = mul_or_div;
           alu_run = 1'b0;
           alu_src1 = 1'bx;
           alu_src2 = 3'bxxx;
           alu_fnc = 4'hx;
-          alu_setf = 1'b0;
         end
       4'd5:  // format 1: execute
         begin
@@ -617,6 +638,9 @@ module ctrl(clk, rst,
           reg_a2_src = 2'b00;
           reg_di2_src = 1'bx;
           reg_we2 = 1'b0;
+          reg_set_NZ = 1'b0;
+          reg_set_CV = 1'b0;
+          reg_set_H = 1'b0;
           alu_run = 1'b1;
           alu_src1 = 1'b1;
           if ((ir_op == 4'h0) & ir_u) begin
@@ -627,11 +651,6 @@ module ctrl(clk, rst,
             alu_src2 = 3'b010;
           end
           alu_fnc = ir_op;
-          if (alu_stall) begin
-            alu_setf = 1'b0;
-          end else begin
-            alu_setf = 1'b1;
-          end
         end
       4'd6:  // format 1: write-back
         begin
@@ -646,11 +665,13 @@ module ctrl(clk, rst,
           reg_a2_src = 2'b01;
           reg_di2_src = 1'b0;
           reg_we2 = 1'b1;
+          reg_set_NZ = 1'b1;
+          reg_set_CV = add_or_sub;
+          reg_set_H = mul_or_div;
           alu_run = 1'b0;
           alu_src1 = 1'bx;
           alu_src2 = 3'bxxx;
           alu_fnc = 4'hx;
-          alu_setf = 1'b0;
         end
       4'd7:  // format 2: address calculation
         begin
@@ -671,11 +692,13 @@ module ctrl(clk, rst,
           reg_a2_src = 2'b01;
           reg_di2_src = 1'bx;
           reg_we2 = 1'b0;
+          reg_set_NZ = 1'b0;
+          reg_set_CV = 1'b0;
+          reg_set_H = 1'b0;
           alu_run = 1'b0;
           alu_src1 = 1'b1;
           alu_src2 = 3'b011;
           alu_fnc = 4'h8;
-          alu_setf = 1'b0;
         end
       4'd8:  // format 2 (load): bus read
         begin
@@ -694,11 +717,13 @@ module ctrl(clk, rst,
           reg_a2_src = 2'bxx;
           reg_di2_src = 1'bx;
           reg_we2 = 1'b0;
+          reg_set_NZ = 1'b0;
+          reg_set_CV = 1'b0;
+          reg_set_H = 1'b0;
           alu_run = 1'b0;
           alu_src1 = 1'b1;
           alu_src2 = 3'b011;
           alu_fnc = 4'h8;
-          alu_setf = 1'b0;
         end
       4'd9:  // format 2 (load): write-back
         begin
@@ -713,11 +738,13 @@ module ctrl(clk, rst,
           reg_a2_src = 2'b01;
           reg_di2_src = 1'b1;
           reg_we2 = 1'b1;
+          reg_set_NZ = 1'b1;
+          reg_set_CV = 1'b0;
+          reg_set_H = 1'b0;
           alu_run = 1'b0;
           alu_src1 = 1'bx;
           alu_src2 = 3'bxxx;
           alu_fnc = 4'hx;
-          alu_setf = 1'b0;
         end
       4'd10:  // format 2 (store): bus write
         begin
@@ -736,11 +763,13 @@ module ctrl(clk, rst,
           reg_a2_src = 2'b01;
           reg_di2_src = 1'bx;
           reg_we2 = 1'b0;
+          reg_set_NZ = 1'b0;
+          reg_set_CV = 1'b0;
+          reg_set_H = 1'b0;
           alu_run = 1'b0;
           alu_src1 = 1'b1;
           alu_src2 = 3'b011;
           alu_fnc = 4'h8;
-          alu_setf = 1'b0;
         end
       4'd11:  // format 3: branch register
         begin
@@ -755,11 +784,13 @@ module ctrl(clk, rst,
           reg_a2_src = 2'b10;
           reg_di2_src = 1'b0;
           reg_we2 = ir_v & branch;
+          reg_set_NZ = 1'b0;
+          reg_set_CV = 1'b0;
+          reg_set_H = 1'b0;
           alu_run = 1'b0;
           alu_src1 = 1'bx;
           alu_src2 = 3'b001;
           alu_fnc = 4'h0;
-          alu_setf = 1'b0;
         end
       4'd12:  // format 3: branch pc relative
         begin
@@ -774,11 +805,13 @@ module ctrl(clk, rst,
           reg_a2_src = 2'b10;
           reg_di2_src = 1'b0;
           reg_we2 = ir_v & branch;
+          reg_set_NZ = 1'b0;
+          reg_set_CV = 1'b0;
+          reg_set_H = 1'b0;
           alu_run = 1'b0;
           alu_src1 = 1'b0;
           alu_src2 = 3'b100;
           alu_fnc = 4'h8;
-          alu_setf = 1'b0;
         end
       default:  // all other states: unused
         begin
@@ -793,11 +826,13 @@ module ctrl(clk, rst,
           reg_a2_src = 2'bxx;
           reg_di2_src = 1'bx;
           reg_we2 = 1'b0;
+          reg_set_NZ = 1'b0;
+          reg_set_CV = 1'b0;
+          reg_set_H = 1'b0;
           alu_run = 1'b0;
           alu_src1 = 1'bx;
           alu_src2 = 3'bxxx;
           alu_fnc = 4'hx;
-          alu_setf = 1'b0;
         end
     endcase
   end
