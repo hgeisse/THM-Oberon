@@ -1,5 +1,5 @@
 //
-// spi.v -- SPI for SD card
+// sdc.v -- SD card interface
 //
 
 
@@ -7,7 +7,7 @@
 `default_nettype none
 
 
-module spi(clk, rst,
+module sdc(clk, rst,
            stb, we, addr,
            data_in, data_out, ack,
            ss_n, sclk, mosi, miso);
@@ -53,7 +53,7 @@ module spi(clk, rst,
 
   assign ss_n = ~spi_ctrl[0];
 
-  sdc sdc_0(
+  sdc_spi sdc_spi_0(
     .clk(clk),
     .rst(rst),
     .fast(spi_ctrl[2]),

@@ -138,10 +138,10 @@ module risc5(clk_in,
   wire ser_stb;				// serial line strobe
   wire [31:0] ser_dout;			// serial line data output
   wire ser_ack;				// serial line acknowledge
-  // spi
-  wire spi_stb;				// SPI strobe
-  wire [31:0] spi_dout;			// SPI data output
-  wire spi_ack;				// SPI acknowledge
+  // sdc
+  wire sdc_stb;				// SDC strobe
+  wire [31:0] sdc_dout;			// SDC data output
+  wire sdc_ack;				// SDC acknowledge
 
   //--------------------------------------
   // module instances
@@ -266,15 +266,15 @@ module risc5(clk_in,
     .txd(rs232_0_txd)
   );
 
-  spi spi_0(
+  sdc sdc_0(
     .clk(clk),
     .rst(rst),
-    .stb(spi_stb),
+    .stb(sdc_stb),
     .we(bus_we),
     .addr(bus_addr[2]),
     .data_in(bus_dout[31:0]),
-    .data_out(spi_dout[31:0]),
-    .ack(spi_ack),
+    .data_out(sdc_dout[31:0]),
+    .ack(sdc_ack),
     .ss_n(sdcard_ss_n),
     .sclk(sdcard_sclk),
     .mosi(sdcard_mosi),
@@ -309,7 +309,7 @@ module risc5(clk_in,
     (i_o_stb == 1'b1 && bus_addr[5:2] == 4'b0001) ? 1'b1 : 1'b0;
   assign ser_stb =
     (i_o_stb == 1'b1 && bus_addr[5:3] == 3'b001) ? 1'b1 : 1'b0;
-  assign spi_stb =
+  assign sdc_stb =
     (i_o_stb == 1'b1 && bus_addr[5:3] == 3'b010) ? 1'b1 : 1'b0;
 
   //--------------------------------------
@@ -322,7 +322,7 @@ module risc5(clk_in,
     tmr_stb  ? tmr_dout[31:0]  :
     bio_stb  ? bio_dout[31:0]  :
     ser_stb  ? ser_dout[31:0]  :
-    spi_stb  ? spi_dout[31:0]  :
+    sdc_stb  ? sdc_dout[31:0]  :
     32'h00000000;
 
   assign bus_ack =
@@ -331,7 +331,7 @@ module risc5(clk_in,
     tmr_stb  ? tmr_ack  :
     bio_stb  ? bio_ack  :
     ser_stb  ? ser_ack  :
-    spi_stb  ? spi_ack  :
+    sdc_stb  ? sdc_ack  :
     1'b0;
 
 endmodule

@@ -1,5 +1,5 @@
 //
-// sdc.v -- SD card interface
+// sdc_spi.v -- SD card SPI interface
 //
 
 
@@ -7,9 +7,9 @@
 `default_nettype none
 
 
-module sdc(clk, rst,
-           fast, start, dataTx, dataRx, rdy,
-           sclk, mosi, miso);
+module sdc_spi(clk, rst,
+               fast, start, dataTx, dataRx, rdy,
+               sclk, mosi, miso);
     input clk;
     input rst;
     input fast;
