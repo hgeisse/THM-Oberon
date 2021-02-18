@@ -148,14 +148,14 @@ vga_b[0],Output,PIN_B10,8,B8_N0,3.3-V LVTTL,
 #
 # keyboard
 #
-#ps2_0_clk,Input,PIN_G6,1,B1_N0,3.3-V LVTTL,
-#ps2_0_data,Input,PIN_H5,1,B1_N1,3.3-V LVTTL,
+ps2_0_clk,Input,PIN_G6,1,B1_N0,3.3-V LVTTL,
+ps2_0_data,Input,PIN_H5,1,B1_N1,3.3-V LVTTL,
 
 #
 # mouse
 #
-#ps2_1_clk,Bidir,PIN_G5,1,B1_N0,3.3-V LVTTL,
-#ps2_1_data,Bidir,PIN_F5,1,B1_N0,3.3-V LVTTL,
+ps2_1_clk,Bidir,PIN_G5,1,B1_N0,3.3-V LVTTL,
+ps2_1_data,Bidir,PIN_F5,1,B1_N0,3.3-V LVTTL,
 
 #
 # serial line 0

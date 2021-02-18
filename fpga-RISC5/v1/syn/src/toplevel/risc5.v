@@ -30,6 +30,10 @@ module risc5(clk_in,
              vga_r,
              vga_g,
              vga_b,
+             ps2_0_clk,
+             ps2_0_data,
+             ps2_1_clk,
+             ps2_1_data,
              rs232_0_rxd,
              rs232_0_txd,
              sdcard_ss_n,
@@ -75,6 +79,12 @@ module risc5(clk_in,
     output [7:0] vga_r;
     output [7:0] vga_g;
     output [7:0] vga_b;
+    // keyboard
+    input ps2_0_clk;
+    input ps2_0_data;
+    // mouse
+    inout ps2_1_clk;
+    inout ps2_1_data;
     // RS-232
     input rs232_0_rxd;
     output rs232_0_txd;
@@ -142,6 +152,10 @@ module risc5(clk_in,
   wire sdc_stb;				// SDC strobe
   wire [31:0] sdc_dout;			// SDC data output
   wire sdc_ack;				// SDC acknowledge
+  // kbd
+  wire kbd_stb;				// keyboard strobe
+  wire [31:0] kbd_dout;			// keyboard data output
+  wire kbd_ack;				// keyboard acknowledge
 
   //--------------------------------------
   // module instances
@@ -281,6 +295,20 @@ module risc5(clk_in,
     .miso(sdcard_miso)
   );
 
+  kbd kbd_0(
+    .clk(clk),
+    .rst(rst),
+    .stb(kbd_stb),
+    .we(bus_we),
+    .addr(bus_addr[2]),
+    .data_out(kbd_dout[31:0]),
+    .ack(kbd_ack),
+    .keybd_clk(ps2_0_clk),
+    .keybd_data(ps2_0_data),
+    .mouse_clk(ps2_1_clk),
+    .mouse_data(ps2_1_data)
+  );
+
   //--------------------------------------
   // address decoder (16 MB addr space)
   //--------------------------------------
@@ -311,6 +339,8 @@ module risc5(clk_in,
     (i_o_stb == 1'b1 && bus_addr[5:3] == 3'b001) ? 1'b1 : 1'b0;
   assign sdc_stb =
     (i_o_stb == 1'b1 && bus_addr[5:3] == 3'b010) ? 1'b1 : 1'b0;
+  assign kbd_stb =
+    (i_o_stb == 1'b1 && bus_addr[5:3] == 3'b011) ? 1'b1 : 1'b0;
 
   //--------------------------------------
   // data and acknowledge multiplexers
@@ -323,6 +353,7 @@ module risc5(clk_in,
     bio_stb  ? bio_dout[31:0]  :
     ser_stb  ? ser_dout[31:0]  :
     sdc_stb  ? sdc_dout[31:0]  :
+    kbd_stb  ? kbd_dout[31:0]  :
     32'h00000000;
 
   assign bus_ack =
@@ -332,6 +363,7 @@ module risc5(clk_in,
     bio_stb  ? bio_ack  :
     ser_stb  ? ser_ack  :
     sdc_stb  ? sdc_ack  :
+    kbd_stb  ? kbd_ack  :
     1'b0;
 
 endmodule

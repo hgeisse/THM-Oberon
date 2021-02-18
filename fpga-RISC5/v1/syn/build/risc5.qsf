@@ -451,6 +451,17 @@ set_location_assignment PIN_AD14 -to sdcard_mosi
 set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to sdcard_mosi
 set_location_assignment PIN_AE14 -to sdcard_miso
 set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to sdcard_miso
+set_location_assignment PIN_G6 -to ps2_0_clk
+set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to ps2_0_clk
+set_location_assignment PIN_H5 -to ps2_0_data
+set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to ps2_0_data
+set_location_assignment PIN_G5 -to ps2_1_clk
+set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to ps2_1_clk
+set_location_assignment PIN_F5 -to ps2_1_data
+set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to ps2_1_data
+set_global_assignment -name VERILOG_FILE ../src/kbd/mouse.v
+set_global_assignment -name VERILOG_FILE ../src/kbd/keybd.v
+set_global_assignment -name VERILOG_FILE ../src/kbd/kbd.v
 set_global_assignment -name VERILOG_FILE ../src/sdc/sdc_spi.v
 set_global_assignment -name VERILOG_FILE ../src/sdc/sdc.v
 set_global_assignment -name VERILOG_FILE ../src/vid/vid.v
