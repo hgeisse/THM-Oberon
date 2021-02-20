@@ -190,6 +190,7 @@ module cpu_core(clk, rst,
     .cin(C),
     .fnc(alu_fnc),
     .ir_u(ir_u),
+    .ir_v(ir_v),
     .res(alu_res),
     .out(alu_out),
     .out_C(alu_out_C),
@@ -251,7 +252,7 @@ endmodule
 
 
 module alu(clk, run, stall,
-           op1, op2, cin, fnc, ir_u,
+           op1, op2, cin, fnc, ir_u, ir_v,
            res, out, out_C, out_V, out_H);
     input clk;
     input run;
@@ -261,6 +262,7 @@ module alu(clk, run, stall,
     input cin;
     input [3:0] fnc;
     input ir_u;
+    input ir_v;
     output reg [31:0] res;
     output reg [31:0] out;
     output reg out_C;
@@ -332,7 +334,7 @@ module alu(clk, run, stall,
     .clk(clk),
     .run(run & ((fnc == 4'hC) | (fnc == 4'hD))),
     .stall(fpadd_stall),
-    .op_sub(fnc == 4'hD),
+    .op(fnc == 4'hD ? 2'b11 : { ir_u, ir_v }),
     .x(op1),
     .y(op2),
     .z(fpadd_res)
