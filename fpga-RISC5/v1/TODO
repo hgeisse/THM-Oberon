@@ -1,0 +1,12 @@
+1. Add the following modules to the simulator
+   (they are already implemented in the FPGA):
+   - keyboard/mouse
+   - SD card
+
+2. Replace the following modules with my own
+   (and possibly enhanced) implementations:
+   - floating-point unit (should become IEEE 754 compliant)
+   - PS/2 interfaces for keyboard and mouse (send data to kbd)
+   - SD card interface (should become a 4-bit interface)
+
+3. Define and implement a reasonable interrupt system.
