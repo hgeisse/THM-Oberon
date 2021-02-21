@@ -10,7 +10,7 @@ Current status of development
    kit-RISC5/rebuild/sim	done
 
 3) RISC5 hardware
-   fpga-RISC5			not yet
+   fpga-RISC5			done
 
 4) Extended Oberon on RISC5 hardware
    kit-RISC5/install/fpga	not yet
