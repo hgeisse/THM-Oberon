@@ -26,11 +26,11 @@ module sdc_spi(clk, rst,
   reg [6:0] tick;
   reg [4:0] bitcnt;
 
-  assign endtick = fast ? (tick == 2) : (tick == 127);
+  assign endtick = fast ? (tick == 3) : (tick == 127);
   assign endbit = fast ? (bitcnt == 31) : (bitcnt == 7);
   assign dataRx = fast ? shreg : {24'b0, shreg[7:0]};
   assign mosi = (rst | rdy) ? 1'b1 : shreg[7];
-  assign sclk = (rst | rdy) ? 1'b0 : fast ? endtick : tick[6];
+  assign sclk = (rst | rdy) ? 1'b0 : fast ? tick[1] : tick[6];
 
   always @ (posedge clk) begin
     tick <= (rst | rdy | endtick) ? 7'd0 : tick + 7'd1;
