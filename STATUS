@@ -13,8 +13,8 @@ Current status of development
    fpga-RISC5			done
 
 4) Extended Oberon on RISC5 hardware
-   kit-RISC5/install/fpga	not yet
-   kit-RISC5/rebuild/fpga	not yet
+   kit-RISC5/install/fpga	done
+   kit-RISC5/rebuild/fpga	done
 
 5) ECO32 simulator
    sim-ECO32			done
