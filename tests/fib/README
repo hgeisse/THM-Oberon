@@ -1,0 +1,23 @@
+1) Choose an argument ARG for the root call such that the
+   total runtime can be neasured easily with a stopwatch.
+   Consulting the table, check that all numbers are below
+   the 2G barrier for 32-bit signed integers. Compile the
+   Module.
+
+2) Run the command Fib.Fib and either use a stopwatch to
+   time it (observe the LEDs), or let the program do that
+   itself, using the system millisecond timer. Then the
+   following numbers are displayed:
+   ARG together with Fib(ARG), the ARGth Fiboacci number
+   number of instructions executed
+   runtime in milliseconds
+   speed in instructions per second
+
+3) If the experiment is conducted on a real FPGA board, the
+   CPI value (cycles per instruction) is:
+   CPI = clock cycles per second / instructions per second
+
+4) Please keep in mind that this little benchmark does
+   not represent a generally meaningful instruction mix.
+   In particular, it does not contain any floating-point
+   operations at all in its timing loop.

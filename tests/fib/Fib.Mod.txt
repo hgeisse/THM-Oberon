@@ -1,0 +1,62 @@
+MODULE Fib;
+
+  IMPORT Out, Kernel;
+
+  CONST ARG = 30;  (* choose amount of work *)
+        IPBC = 18;  (* instrs per base call *)
+        IPRC = 28;  (* instrs per recursive call *)
+
+  VAR numBaseCalls, numRecCalls: INTEGER;
+
+  PROCEDURE F(k: INTEGER): INTEGER;
+    VAR j: INTEGER;
+    BEGIN
+      IF k < 2 THEN
+        numBaseCalls := numBaseCalls + 1;
+        j := k
+      ELSE
+        numRecCalls := numRecCalls + 1;
+        j := F(k - 2) + F(k - 1)
+      END;
+      RETURN j
+    END F;
+
+  PROCEDURE Fib*;
+    VAR n, m, t1, t2, t: INTEGER;
+        speed: REAL;
+    BEGIN
+      numBaseCalls := 0;
+      numRecCalls := 0;
+      LED(0);
+      t1 := Kernel.Time();
+      n := F(ARG);
+      t2 := Kernel.Time();
+      LED(255);
+      Out.Str("Fib(");
+      Out.Int(ARG, 3);
+      Out.Str(") = ");
+      Out.Int(n, 15);
+      Out.Ln();
+      m := numBaseCalls * IPBC +
+           numRecCalls * IPRC;
+      Out.Str("num inst = ");
+      Out.Int(m, 15);
+      Out.Ln();
+      t := t2 - t1;
+      IF t = 0 THEN
+        Out.Str("runtime < 1 ms");
+        Out.Ln()
+      ELSE
+        Out.Str("runtime = ");
+        Out.Int(t, 15);
+        Out.Str(" ms");
+        Out.Ln();
+        speed := FLT(m) / (FLT(t) / 1000.0);
+        Out.Str("speed = ");
+        Out.Real(speed, 15);
+        Out.Str(" inst/s");
+        Out.Ln();
+      END
+    END Fib;
+
+END Fib.
