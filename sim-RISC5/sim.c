@@ -14,7 +14,7 @@
 #include <fcntl.h>
 
 #include "common.h"
-#include "fp.h"
+#include "fpu.h"
 #include "graph.h"
 
 #include "getline.h"

@@ -1,5 +1,5 @@
 /*
- * fp.c -- floating-point operations
+ * fpu.c -- floating-point unit
  */
 
 
@@ -8,7 +8,7 @@
 #include <string.h>
 
 #include "common.h"
-#include "fp.h"
+#include "fpu.h"
 
 
 /*
