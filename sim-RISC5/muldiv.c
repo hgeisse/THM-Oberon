@@ -11,87 +11,118 @@
 #include "muldiv.h"
 
 
-void intMul(Word op1, Word op2, Bool u, Word *loResPtr, Word *hiResPtr) {
-  Bool neg1, neg2;
-  Word op1abs, op2abs;
-  Word hiRes, loRes;
-  int i;
+/**************************************************************/
 
-  neg1 = (op1 >> 31) & 1;
-  neg2 = (op2 >> 31) & 1;
-  op1abs = (!u && neg1) ? -op1 : op1;
-  op2abs = (!u && neg2) ? -op2 : op2;
-  hiRes = 0;
-  loRes = 0;
-  for (i = 0; i < 32; i++) {
-    if (loRes & 0x80000000) {
-      hiRes <<= 1;
-      hiRes++;
-    } else {
-      hiRes <<= 1;
-    }
-    loRes <<= 1;
-    if (op2abs & 0x80000000) {
-      loRes += op1abs;
-      if (loRes < op1abs) {
-        hiRes++;
-      }
-    }
-    op2abs <<= 1;
-  }
-  if (!u && (neg1 != neg2)) {
-    hiRes = ~hiRes;
-    loRes = ~loRes;
-    if (loRes == 0xFFFFFFFF) {
-      loRes = 0;
-      hiRes++;
-    } else {
-      loRes++;
-    }
-  }
-  *loResPtr = loRes;
-  *hiResPtr = hiRes;
+
+static Word addWord(Word x, Word y, Bool *carry) {
+  Word res;
+
+  res = x + y;
+  *carry = (res < x);
+  return res;
 }
 
 
-void intDiv(Word op1, Word op2, Bool u, Word *quoPtr, Word *remPtr) {
-  Bool neg1, neg2;
-  Word op1abs, op2abs;
-  Word quo, rem;
+void intMul(Word x, Word y, Bool u, Word *loResPtr, Word *hiResPtr) {
+  Bool x_neg;
+  Bool y_neg;
+  Word y_abs;
+  Word upper;
+  Word lower;
   int i;
+  Bool carry;
 
-  neg1 = (op1 >> 31) & 1;
-  neg2 = (op2 >> 31) & 1;
-  op1abs = (!u && neg1) ? -op1 : op1;
-  op2abs = (!u && neg2) ? -op2 : op2;
-  quo = 0;
-  rem = 0;
+  x_neg = !u && ((x & 0x80000000) != 0);
+  if (x_neg) {
+    upper = 0;
+    lower = ~x + 1;
+  } else {
+    upper = 0;
+    lower = x;
+  }
+  y_neg = !u && ((y & 0x80000000) != 0);
+  if (y_neg) {
+    y_abs = ~y + 1;
+  } else {
+    y_abs = y;
+  }
   for (i = 0; i < 32; i++) {
-    if (op1abs & 0x80000000) {
-      rem <<= 1;
-      rem++;
+    upper = addWord(upper, (lower & 1) ? y_abs : 0, &carry);
+    lower >>= 1;
+    if (upper & 1) {
+      lower |= 0x80000000;
+    }
+    upper >>= 1;
+    if (carry) {
+      upper |= 0x80000000;
+    }
+  }
+  if (x_neg != y_neg) {
+    upper = ~upper;
+    lower = ~lower;
+    lower++;
+    if (lower == 0) {
+      upper++;
+    }
+  }
+  *loResPtr = lower;
+  *hiResPtr = upper;
+}
+
+
+/**************************************************************/
+
+
+static Word subWord(Word x, Word y, Bool *borrow) {
+  Word res;
+
+  res = x - y;
+  *borrow = (res > x);
+  return res;
+}
+
+
+void intDiv(Word x, Word y, Bool u, Word *quoPtr, Word *remPtr) {
+  Bool x_neg;
+  Bool y_neg;
+  Word y_abs;
+  Word upper;
+  Word lower;
+  int i;
+  Word aux1;
+  Word aux2;
+  Bool borrow;
+  Bool corr;
+  Word quot;
+
+  x_neg = !u && ((x & 0x80000000) != 0);
+  if (x_neg) {
+    upper = 0;
+    lower = ~x + 1;
+  } else {
+    upper = 0;
+    lower = x;
+  }
+  y_neg = !u && ((y & 0x80000000) != 0);
+  if (y_neg) {
+    y_abs = ~y + 1;
+  } else {
+    y_abs = y;
+  }
+  for (i = 0; i < 32; i++) {
+    aux1 = (upper << 1) | (lower >> 31);
+    aux2 = subWord(aux1, y_abs, &borrow);
+    if (borrow) {
+      upper = aux1;
+      lower <<= 1;
     } else {
-      rem <<= 1;
-    }
-    op1abs <<= 1;
-    quo <<= 1;
-    if (rem >= op2abs) {
-      rem -= op2abs;
-      quo++;
+      upper = aux2;
+      lower <<= 1;
+      lower |= 1;
     }
   }
-  if (!u) {
-    if (neg1 != neg2) {
-      quo = -quo;
-      if (rem != 0) {
-        quo--;
-        rem -= op2abs;
-      }
-    }
-    if (neg1) {
-      rem = -rem;
-    }
-  }
-  *quoPtr = quo;
-  *remPtr = rem;
+  corr = x_neg && (upper != 0);
+  quot = corr ? lower + 1 : lower;
+  *quoPtr = (x_neg == y_neg) ? quot : -quot;
+  *remPtr = corr ? y_abs - upper : upper;
 }
