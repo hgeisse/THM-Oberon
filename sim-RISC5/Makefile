@@ -9,7 +9,7 @@ CFLAGS = -g -Wall -I./getline -I/usr/X11R7/include
 LDFLAGS = -g -L./getline -L/usr/X11R7/lib -Wl,-rpath -Wl,/usr/X11R7/lib
 LDLIBS = -lgetline -lX11 -lpthread -lm
 
-SRCS = sim.c common.c fpu.c graph.c
+SRCS = sim.c common.c muldiv.c fpu.c graph.c
 OBJS = $(patsubst %.c,%.o,$(SRCS))
 BIN = sim-RISC5
 
