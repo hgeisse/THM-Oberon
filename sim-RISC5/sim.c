@@ -1048,12 +1048,28 @@ static void execNextInstruction(void) {
         intDiv(b, d, u, &res, &H);
         break;
       case 0x0C:
-        /* FAD */
-        res = fpAdd(b, c, u, v);
+        /* FAD, FLT, FLR */
+        if (u == 0) {
+          if (v == 0) {
+            /* uv = 00 : FAD */
+            res = fpAdd(b, c, false);
+          } else {
+            /* uv = 01 : FLR */
+            res = fpFlr(b);
+          }
+        } else {
+          if (v == 0) {
+            /* uv = 10 : FLT */
+            res = fpFlt(b);
+          } else {
+            /* uv = 11 : illegal */
+            error("FAD with uv = 11 is illegal");
+          }
+        }
         break;
       case 0x0D:
         /* FSB */
-        res = fpAdd(b, c ^ 0x80000000, u, v);
+        res = fpAdd(b, c, true);
         break;
       case 0x0E:
         /* FML */
