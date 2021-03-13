@@ -7,6 +7,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
+#include <fenv.h>
 
 #include "common.h"
 #include "fpu.h"
@@ -65,4 +66,23 @@ Word fpFlr(Word x) {
 
   X.w = x;
   return (Word) (int) floorf(X.f);
+}
+
+
+Word fpGetFlags(void) {
+  fexcept_t fe;
+  Word flags;
+
+  fegetexceptflag(&fe, FE_ALL_EXCEPT);
+  flags = ((fe & FE_DIVBYZERO) ? _FP_I_FLAG : 0) |
+          ((fe & FE_INEXACT)   ? _FP_X_FLAG : 0) |
+          ((fe & FE_INVALID)   ? _FP_V_FLAG : 0) |
+          ((fe & FE_OVERFLOW)  ? _FP_O_FLAG : 0) |
+          ((fe & FE_UNDERFLOW) ? _FP_U_FLAG : 0);
+  return flags;
+}
+
+
+void fpClrFlags(void) {
+  feclearexcept(FE_ALL_EXCEPT);
 }
