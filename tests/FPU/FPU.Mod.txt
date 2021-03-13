@@ -1,0 +1,57 @@
+MODULE FPU;
+
+IMPORT SYSTEM, Out;
+
+PROCEDURE Clear* ;
+BEGIN
+  SYSTEM.PUT(-24, 0)
+END Clear;
+
+PROCEDURE Invalid*;
+  VAR x: REAL;
+      n: INTEGER;
+BEGIN
+  x := 0.0 / (123.0 - 20.0 - 103.0);
+  SYSTEM.GET(-24, n);
+  Out.Hex(n)
+END Invalid;
+
+PROCEDURE Infinite*;
+  VAR x: REAL;
+      n: INTEGER;
+BEGIN
+  x := 1.0 / (123.0 - 20.0 - 103.0);
+  SYSTEM.GET(-24, n);
+  Out.Hex(n)
+END Infinite;
+
+PROCEDURE Overflow*;
+  (* sets also "inexact" *)
+  VAR x: REAL;
+      n: INTEGER;
+BEGIN
+  x := 1.0E20 * 1.0E20;
+  SYSTEM.GET(-24, n);
+  Out.Hex(n)
+END Overflow;
+
+PROCEDURE Underflow*;
+  (* sets also "inexact" *)
+  VAR x: REAL;
+      n: INTEGER;
+BEGIN
+  x := 1.0E-20 * 1.0E-20;
+  SYSTEM.GET(-24, n);
+  Out.Hex(n)
+END Underflow;
+
+PROCEDURE Inexact*;
+  VAR x: REAL;
+      n: INTEGER;
+BEGIN
+  x := 1.0 / 3.0;
+  SYSTEM.GET(-24, n);
+  Out.Hex(n)
+END Inexact;
+
+END FPU.
