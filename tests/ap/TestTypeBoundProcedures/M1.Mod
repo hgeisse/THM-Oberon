@@ -1,4 +1,4 @@
-MODULE M1;  (*test type-bound procedures / AP 7.2.20 Extended Oberon*)
+MODULE M1;  (*test type-bound procedures / AP 1.5.21 Extended Oberon*)
   IMPORT M0, Out;
 
   TYPE
@@ -15,9 +15,9 @@ MODULE M1;  (*test type-bound procedures / AP 7.2.20 Extended Oberon*)
     ptrrec1ext1*: PtrRec1Ext1;
 
   PROCEDURE (VAR rec: Rec1Ext1) Method1* (str: ARRAY OF CHAR; p: LONGINT); (*overrides M0.Rec1.Method1*)
-  BEGIN Out.Str("  Hello from M1.Rec1Ext1.Method1 (overrides M0.Rec1.Method1); str = "); Out.Str(str);
-    Out.Str(", cnt ="); Out.Int(p, 4); Out.Ln;
-    Out.Str("  Calling super method M1.Rec1Ext1.Method1^ = M0.Rec1.Method1 with str = "); Out.Str(str); Out.Ln;
+  BEGIN Out.String("  Hello from M1.Rec1Ext1.Method1 (overrides M0.Rec1.Method1); str = "); Out.String(str);
+    Out.String(", cnt ="); Out.Int(p, 4); Out.Ln;
+    Out.String("  Calling super method M1.Rec1Ext1.Method1^ = M0.Rec1.Method1 with str = "); Out.String(str); Out.Ln;
     rec.Method1^(str, p)
   END Method1;
 
@@ -30,20 +30,20 @@ MODULE M1;  (*test type-bound procedures / AP 7.2.20 Extended Oberon*)
   END Method2P;
 
   PROCEDURE (VAR rec: Rec1Ext1) Method2* (str: ARRAY OF CHAR; p: LONGINT); (*exported*)
-  BEGIN Out.Str("  Hello from M1.Rec1Ext1.Method2 (overwritten method); str = "); Out.Str(str);
-    Out.Str(", cnt ="); Out.Int(p, 4); Out.Str(", rec.x1 ="); Out.Int(rec.x1, 4); INC(rec.x1); Out.Ln;
-    Out.Str("  Calling super method M1.Rec1Ext1.Method1^ = M0.Rec1.Method1 with str = Method1"); Out.Ln;
+  BEGIN Out.String("  Hello from M1.Rec1Ext1.Method2 (overwritten method); str = "); Out.String(str);
+    Out.String(", cnt ="); Out.Int(p, 4); Out.String(", rec.x1 ="); Out.Int(rec.x1, 4); INC(rec.x1); Out.Ln;
+    Out.String("  Calling super method M1.Rec1Ext1.Method1^ = M0.Rec1.Method1 with str = Method1"); Out.Ln;
     rec.Method1^("Method1", p)
   END Method2;
 
   PROCEDURE (ptr: PtrRec1Ext1) Method3* (str: ARRAY OF CHAR; p: LONGINT);
-  BEGIN Out.Str("  Hello from M1.PtrRec1Ext1.Method3; str = "); Out.Str(str); Out.Str(", cnt ="); Out.Int(p, 4); Out.Ln;
-    Out.Str("  Calling super method M1.PtrRec1Ext1.Method3^ = M0.PtrRec1.Method3 with str = "); Out.Str(str); Out.Ln;
+  BEGIN Out.String("  Hello from M1.PtrRec1Ext1.Method3; str = "); Out.String(str); Out.String(", cnt ="); Out.Int(p, 4); Out.Ln;
+    Out.String("  Calling super method M1.PtrRec1Ext1.Method3^ = M0.PtrRec1.Method3 with str = "); Out.String(str); Out.Ln;
     ptr.Method3^(str, p)
   END Method3;
 
   PROCEDURE (VAR rec: Rec1Ext12) Method2b* (str: ARRAY OF CHAR; p: LONGINT);
-    BEGIN Out.Str("  Hello from M1.Rec1Ext12.Method2b"); Out.Ln
+    BEGIN Out.String("  Hello from M1.Rec1Ext12.Method2b"); Out.Ln
   END Method2b;
 
   PROCEDURE (VAR rec: Rec1Ext2) Method1c* (str: ARRAY OF CHAR; p: LONGINT); (*method at lower ext level OK if not a base type*)
@@ -51,7 +51,7 @@ MODULE M1;  (*test type-bound procedures / AP 7.2.20 Extended Oberon*)
   END Method1c;
 
   PROCEDURE (VAR rec: Rec1Ext11) Method2a* (str: ARRAY OF CHAR; p: LONGINT);
-  BEGIN Out.Str("  Hello from M1.Rec1Ext11.Method2a"); Out.Ln
+  BEGIN Out.String("  Hello from M1.Rec1Ext11.Method2a"); Out.Ln
     (*rec.Method2a^(str, p)*)  (*would lead to "method undefined in base types"* error mesage*)
   END Method2a;
 
@@ -60,9 +60,9 @@ MODULE M1;  (*test type-bound procedures / AP 7.2.20 Extended Oberon*)
   END Method2c;
 
   PROCEDURE (VAR rec: Rec1Ext11) Method2* (str: ARRAY OF CHAR; p: LONGINT); (*overrides Rec1Ext1.Method2 declared above*)
-  BEGIN Out.Str("  Hello from M1.Rec1Ext11.Method2 (overrides M1.Rec1Ext1.Method2); str = "); Out.Str(str);
-    Out.Str(", cnt = "); Out.Int(p, 4); Out.Ln;
-    Out.Str("  Calling super method M1.Rec1Ext11.Method2^ = M1.Rec1Ext1.Method2 with str = Method2, cnt = "); Out.Int(p, 4); Out.Ln;
+  BEGIN Out.String("  Hello from M1.Rec1Ext11.Method2 (overrides M1.Rec1Ext1.Method2); str = "); Out.String(str);
+    Out.String(", cnt = "); Out.Int(p, 4); Out.Ln;
+    Out.String("  Calling super method M1.Rec1Ext11.Method2^ = M1.Rec1Ext1.Method2 with str = Method2, cnt = "); Out.Int(p, 4); Out.Ln;
     rec.Method2^(str, p)
   END Method2;
 
@@ -71,23 +71,23 @@ MODULE M1;  (*test type-bound procedures / AP 7.2.20 Extended Oberon*)
   END M3;
 
   PROCEDURE Go1*;
-  BEGIN Out.Str("Calling M1.Rec1Ext1.Method1 with str = Method1, count = "); Out.Int(count, 4); Out.Ln;
+  BEGIN Out.String("Calling M1.Rec1Ext1.Method1 with str = Method1, count = "); Out.Int(count, 4); Out.Ln;
     rec1ext1.x1 := 11; rec1ext1.Method1("Method1", count); INC(count)
   END Go1;
 
   PROCEDURE Go2*;
-  BEGIN Out.Str("Calling M1.Rec1Ext11.Method2 with str = Method2, count = "); Out.Int(count, 4); Out.Ln;
+  BEGIN Out.String("Calling M1.Rec1Ext11.Method2 with str = Method2, count = "); Out.Int(count, 4); Out.Ln;
     rec1ext11.x1 := 22; rec1ext11.Method2("Method2", count); INC(count)
   END Go2;
 
   PROCEDURE Go3*;
-  BEGIN Out.Str("Calling M0.ptrrec1.Method3 with str = Method3, count = "); Out.Int(count, 4); Out.Ln;
+  BEGIN Out.String("Calling M0.ptrrec1.Method3 with str = Method3, count = "); Out.Int(count, 4); Out.Ln;
     (*M0.ptrrec1.x1 := 33;*) (*would lead to a "read-only" error*)
     M0.ptrrec1.Method3("Method3", count); INC(count)  (*external pointer value parameter as receiver is ok*)
   END Go3;
 
   PROCEDURE Go4*;
-  BEGIN Out.Str("Calling M1.ptrrec1ext1.Method3 with str = Method3, count = "); Out.Int(count, 4); Out.Ln;
+  BEGIN Out.String("Calling M1.ptrrec1ext1.Method3 with str = Method3, count = "); Out.Int(count, 4); Out.Ln;
     ptrrec1ext1.Method3("Method3", count); INC(count)
   END Go4;
 

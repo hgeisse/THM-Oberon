@@ -1,4 +1,4 @@
-MODULE M0;  (*test type-bound procedures / AP 7.2.20 Extended Oberon*)
+MODULE M0;  (*test type-bound procedures / AP 1.5.21 Extended Oberon*)
   IMPORT Out;
 
   TYPE
@@ -23,55 +23,55 @@ MODULE M0;  (*test type-bound procedures / AP 7.2.20 Extended Oberon*)
     arrrec1: ARRAY 10 OF Rec1;
 
   PROCEDURE (VAR rec: Rec1) Method1* (str: ARRAY OF CHAR; p: LONGINT); (*exported*)
-  BEGIN Out.Str("  Hello from M0.Rec1.Method1; str = "); Out.Str(str);
-    Out.Str(", cnt ="); Out.Int(p, 4); Out.Str(", rec.x1 ="); Out.Int(rec.x1, 4); INC(rec.x1); Out.Ln
+  BEGIN Out.String("  Hello from M0.Rec1.Method1; str = "); Out.String(str);
+    Out.String(", cnt ="); Out.Int(p, 4); Out.String(", rec.x1 ="); Out.Int(rec.x1, 4); INC(rec.x1); Out.Ln
   END Method1;
 
   PROCEDURE (ptr: PtrRec1) Method3* (str: ARRAY OF CHAR; p: LONGINT); (*exported*)
-  BEGIN Out.Str("  Hello from M0.PtrRec1.Method3; str = "); Out.Str(str);
-    Out.Str(", cnt ="); Out.Int(p, 4); Out.Str(", ptr.x1 ="); Out.Int(ptr.x1, 4); INC(ptr.x1); Out.Ln
+  BEGIN Out.String("  Hello from M0.PtrRec1.Method3; str = "); Out.String(str);
+    Out.String(", cnt ="); Out.Int(p, 4); Out.String(", ptr.x1 ="); Out.Int(ptr.x1, 4); INC(ptr.x1); Out.Ln
   END Method3;
 
   PROCEDURE (ptr: PtrRec1) Method5* (str: ARRAY OF CHAR; p: LONGINT); (*exported*)
-  BEGIN Out.Str("  Hello from M0.PtrRec1.Method5; str = "); Out.Str(str);
-    Out.Str(", cnt ="); Out.Int(p, 4); Out.Str(", ptr.x1 ="); Out.Int(ptr.x1, 4); INC(ptr.x1); Out.Ln
+  BEGIN Out.String("  Hello from M0.PtrRec1.Method5; str = "); Out.String(str);
+    Out.String(", cnt ="); Out.Int(p, 4); Out.String(", ptr.x1 ="); Out.Int(ptr.x1, 4); INC(ptr.x1); Out.Ln
   END Method5;
 
   PROCEDURE (VAR rec: Rec1) Method1Q (str: ARRAY OF CHAR; p: LONGINT); (*private*)
   BEGIN END Method1Q;
 
   PROCEDURE (ptr: PtrRec2) Method6* (str: ARRAY OF CHAR; p: LONGINT); (*exported*)
-  BEGIN Out.Str("  Hello from M0.PtrRec2.Method6; str = "); Out.Str(str);
-    Out.Str(", count ="); Out.Int(p, 4); Out.Str(", ptr.x ="); Out.Int(ptr.x, 6); INC(ptr.x); Out.Ln
+  BEGIN Out.String("  Hello from M0.PtrRec2.Method6; str = "); Out.String(str);
+    Out.String(", count ="); Out.Int(p, 4); Out.String(", ptr.x ="); Out.Int(ptr.x, 6); INC(ptr.x); Out.Ln
   END Method6;
 
   PROCEDURE Go1*;
-  BEGIN Out.Str("Calling rec1.Method1 with str = Method1, count = "); Out.Int(count, 4); Out.Ln;
+  BEGIN Out.String("Calling rec1.Method1 with str = Method1, count = "); Out.Int(count, 4); Out.Ln;
     rec1.Method1("Method1", count); INC(count)
   END Go1;
 
   PROCEDURE Go2*;
-  BEGIN Out.Str("Calling arrrec1[3].Method1 with str = Method1, count = "); Out.Int(count, 4); Out.Ln;
+  BEGIN Out.String("Calling arrrec1[3].Method1 with str = Method1, count = "); Out.Int(count, 4); Out.Ln;
     arrrec1[3].Method1("Method1", count); INC(count)
   END Go2;
 
   PROCEDURE Go3*;
-  BEGIN Out.Str("Calling arrrec3[5].arrrec1[8].Method1 with str = Method1, count = "); Out.Int(count, 4); Out.Ln;
+  BEGIN Out.String("Calling arrrec3[5].arrrec1[8].Method1 with str = Method1, count = "); Out.Int(count, 4); Out.Ln;
     arrrec3[5].arrrec1[8].Method1("Method1", count); INC(count)
   END Go3;
 
   PROCEDURE Go4*;
-  BEGIN Out.Str("Calling arrrec3[12].arrptrrec1[2].Method3 with str = Method3, count = "); Out.Int(count, 4); Out.Ln;
+  BEGIN Out.String("Calling arrrec3[12].arrptrrec1[2].Method3 with str = Method3, count = "); Out.Int(count, 4); Out.Ln;
     arrrec3[12].arrptrrec1[2]^.Method3("Method3", count); INC(count)
   END Go4;
 
   PROCEDURE Go5*;
-  BEGIN Out.Str("Calling arrrec3[14].ptrarrrec3[3].arrptrrec1[6].Method5 with str = Method5, count = "); Out.Int(count, 4); Out.Ln;
+  BEGIN Out.String("Calling arrrec3[14].ptrarrrec3[3].arrptrrec1[6].Method5 with str = Method5, count = "); Out.Int(count, 4); Out.Ln;
     arrrec3[14].ptrarrrec3[3].arrptrrec1[6].Method5("Method5", count); INC(count)
   END Go5;
 
   PROCEDURE Go6*;
-  BEGIN Out.Str("Calling arrptrrec2[12].ptrrec2.Method6 with str = Method6, count = "); Out.Int(count, 4); Out.Ln;
+  BEGIN Out.String("Calling arrptrrec2[12].ptrrec2.Method6 with str = Method6, count = "); Out.Int(count, 4); Out.Ln;
     arrptrrec2[12].ptrrec2.Method6("Method6", count); INC(count)
   END Go6;
 

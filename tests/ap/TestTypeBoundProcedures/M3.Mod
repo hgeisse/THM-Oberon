@@ -1,4 +1,4 @@
-MODULE M3;  (*test type-bound procedures / AP 7.2.20 Extended Oberon*)
+MODULE M3;  (*test type-bound procedures / AP 1.5.21 Extended Oberon*)
   IMPORT Out;
 
   TYPE
@@ -12,78 +12,78 @@ MODULE M3;  (*test type-bound procedures / AP 7.2.20 Extended Oberon*)
   VAR ptr: Ptr; rec: Rec; ptrext: PtrExt; recext: RecExt; B: INTEGER;
 
   PROCEDURE Write(x0, x1, x2, x3, x4, x5, x6, a, b: INTEGER);
-  BEGIN Out.Str("; x0 ="); Out.Int(x0, 3); Out.Str(", x1 ="); Out.Int(x1, 3); Out.Str(", x2 ="); Out.Int(x2, 3);
-    Out.Str(", x3 ="); Out.Int(x3, 3); Out.Str(", x4 ="); Out.Int(x4, 3); Out.Str(", x5 ="); Out.Int(x5, 3);
-    Out.Str(", x6 ="); Out.Int(x6, 3); Out.Str(";  a ="); Out.Int(a, 3); Out.Str(",  b ="); Out.Int(b, 3)
+  BEGIN Out.String("; x0 ="); Out.Int(x0, 3); Out.String(", x1 ="); Out.Int(x1, 3); Out.String(", x2 ="); Out.Int(x2, 3);
+    Out.String(", x3 ="); Out.Int(x3, 3); Out.String(", x4 ="); Out.Int(x4, 3); Out.String(", x5 ="); Out.Int(x5, 3);
+    Out.String(", x6 ="); Out.Int(x6, 3); Out.String(";  a ="); Out.Int(a, 3); Out.String(",  b ="); Out.Int(b, 3)
   END Write;
  
   PROCEDURE (p: Ptr) Method1*(str: ARRAY OF CHAR; a: INTEGER; VAR b: INTEGER);
-  BEGIN Out.Str("  Hello from M3.Ptr.Method1; str = "); Out.Str(str);
+  BEGIN Out.String("  Hello from M3.Ptr.Method1; str = "); Out.String(str);
     Write(p.x0, p.x1, p.x2, p.x3, p.x4, p.x5, p.x6, a, b); INC(b)
   END Method1;
 
   PROCEDURE (VAR r: Rec) Method2*(str: ARRAY OF CHAR; a: INTEGER; VAR b: INTEGER);
-  BEGIN Out.Str("  Hello from M3.Rec.Method2; str = "); Out.Str(str);
+  BEGIN Out.String("  Hello from M3.Rec.Method2; str = "); Out.String(str);
     Write(r.x0, r.x1, r.x2, r.x3, r.x4, r.x5, r.x6, a, b); INC(b)
   END Method2;
 
   PROCEDURE (VAR r: Rec) Method3*(str: ARRAY OF CHAR; a: INTEGER; VAR b: INTEGER): INTEGER;
-  BEGIN Out.Str("  Hello from M3.Rec.Method3; str = "); Out.Str(str);
+  BEGIN Out.String("  Hello from M3.Rec.Method3; str = "); Out.String(str);
     Write(r.x0, r.x1, r.x2, r.x3, r.x4, r.x5, r.x6, a, b); INC(b); Out.Ln; RETURN r.x4
   END Method3;
 
   PROCEDURE (VAR r: Rec) Method5*(str: ARRAY OF CHAR; a: INTEGER; VAR b: INTEGER);
-  BEGIN Out.Str("  Hello from M3.Rec.Method5; str = "); Out.Str(str);
+  BEGIN Out.String("  Hello from M3.Rec.Method5; str = "); Out.String(str);
     Write(r.x0, r.x1, r.x2, r.x3, r.x4, r.x5, r.x6, a, b); INC(b)
   END Method5;
 
   PROCEDURE (VAR r: Rec) Method6*(str: ARRAY OF CHAR; a: INTEGER; VAR b: INTEGER);
-  BEGIN Out.Str("  Hello from M3.Rec.Method6; str = "); Out.Str(str);
+  BEGIN Out.String("  Hello from M3.Rec.Method6; str = "); Out.String(str);
     Write(r.x0, r.x1, r.x2, r.x3, r.x4, r.x5, r.x6, a, b); INC(b)
   END Method6;
 
   PROCEDURE (r: Ptr) Method6pdp*(str: ARRAY OF CHAR; a: INTEGER; VAR b: INTEGER);
-  BEGIN Out.Str("  Hello from M3.Ptr.Method6pdp; str = "); Out.Str(str);
+  BEGIN Out.String("  Hello from M3.Ptr.Method6pdp; str = "); Out.String(str);
     Write(r.x0, r.x1, r.x2, r.x3, r.x4, r.x5, r.x6, a, b); INC(b)
   END Method6pdp;
 
   PROCEDURE (VAR r: RecExt) Method2*(str: ARRAY OF CHAR; a: INTEGER; VAR b: INTEGER);
-  BEGIN Out.Str("  Hello from M3.RecExt.Method2; str = "); Out.Str(str);
+  BEGIN Out.String("  Hello from M3.RecExt.Method2; str = "); Out.String(str);
     Write(r.x0, r.x1, r.x2, r.x3, r.x4, r.x5, r.x6, a, b); INC(b)
   END Method2;
 
   PROCEDURE (VAR r: RecExt) Method4*(str: ARRAY OF CHAR; a: INTEGER; VAR b: INTEGER);
-  BEGIN Out.Str("  Hello from M3.RecExt.Method4; str = "); Out.Str(str);
+  BEGIN Out.String("  Hello from M3.RecExt.Method4; str = "); Out.String(str);
     Write(r.x0, r.x1, r.x2, r.x3, r.x4, r.x5, r.x6, a, b); INC(b)
   END Method4;
 
   PROCEDURE (VAR r: RecExt) Method6*(str: ARRAY OF CHAR; a: INTEGER; VAR b: INTEGER);
-  BEGIN Out.Str("  Hello from M3.RecExt.Method6; str = "); Out.Str(str);
+  BEGIN Out.String("  Hello from M3.RecExt.Method6; str = "); Out.String(str);
     Write(r.x0, r.x1, r.x2, r.x3, r.x4, r.x5, r.x6, a, b); INC(b)
   END Method6;
 
   PROCEDURE (r: PtrExt) Method6pdp*(str: ARRAY OF CHAR; a: INTEGER; VAR b: INTEGER);
-  BEGIN Out.Str("  Hello from M3.PtrExt.Method6pdp; str = "); Out.Str(str);
+  BEGIN Out.String("  Hello from M3.PtrExt.Method6pdp; str = "); Out.String(str);
     Write(r.x0, r.x1, r.x2, r.x3, r.x4, r.x5, r.x6, a, b); INC(b)
   END Method6pdp;
 
   PROCEDURE Handler1(p: Ptr; str: ARRAY OF CHAR; a: INTEGER; VAR b: INTEGER);
-  BEGIN Out.Str("  Hello from M3.Ptr.Handler1; str = "); Out.Str(str);
+  BEGIN Out.String("  Hello from M3.Ptr.Handler1; str = "); Out.String(str);
     Write(p.x0, p.x1, p.x2, p.x3, p.x4, p.x5, p.x6, a, b); INC(b)
   END Handler1;
 
   PROCEDURE Go0*;  (*call to a regular handler that is not a method*)
-  BEGIN Out.Str("Calling ptr.handle with str = Handler1"); Out.Ln;
+  BEGIN Out.String("Calling ptr.handle with str = Handler1"); Out.Ln;
     INC(ptr.x0); ptr.handle(ptr, "Handler1", ptr.x0, B); Out.Ln
   END Go0;
 
   PROCEDURE Go1*;  (*caller AUTOMATICALLY passes the de-referenced ptr^ to the method which accepts a POINTER*)
-  BEGIN Out.Str("Calling ptr.Method1 with str = Method1"); Out.Ln;
+  BEGIN Out.String("Calling ptr.Method1 with str = Method1"); Out.Ln;
     INC(ptr.x1); ptr.Method1("Method1", ptr.x1, B); Out.Ln
   END Go1;
 
   PROCEDURE Go1b*;  (*caller EXPLICITLY de-references ptr^ BEFORE calling the method which accepts a POINTER*)
-  BEGIN Out.Str("Calling ptr^.Method1 with str = Method1b"); Out.Ln;
+  BEGIN Out.String("Calling ptr^.Method1 with str = Method1b"); Out.Ln;
     INC(ptr^.x1); ptr.Method1("Method1b", ptr^.x1, B); Out.Ln
   END Go1b;
 
@@ -92,43 +92,43 @@ MODULE M3;  (*test type-bound procedures / AP 7.2.20 Extended Oberon*)
   END Go1r;*)
 
   PROCEDURE Go2*;  (*caller AUTOMATICALLY passes the de-referenced ptr^ to the method which accepts a VAR record*)
-  BEGIN Out.Str("Calling ptr.Method2 with str = Method2"); Out.Ln;
+  BEGIN Out.String("Calling ptr.Method2 with str = Method2"); Out.Ln;
     INC(ptr.x2); ptr.Method2("Method2", ptr.x2, B); Out.Ln
   END Go2;
 
   PROCEDURE Go2r*;  (*a statically declared global record can also be a receiver*)
-  BEGIN Out.Str("Calling rec.Method2 with str = Method2r"); Out.Ln;
+  BEGIN Out.String("Calling rec.Method2 with str = Method2r"); Out.Ln;
     INC(rec.x2); rec.Method2("Method2r", rec.x2, B); Out.Ln
   END Go2r;
 
   PROCEDURE Go2e*;  (*call a method that is bound to a record extension*)
-  BEGIN Out.Str("Calling ptrext.Method2 with str = Method2e"); Out.Ln;
+  BEGIN Out.String("Calling ptrext.Method2 with str = Method2e"); Out.Ln;
     INC(ptrext.x2); ptrext.Method2("Method2e", ptrext.x2, B); Out.Ln
   END Go2e;
 
   PROCEDURE Go2s*;  (*super call of a method bound to the base type of an extension) via pointer*)
-  BEGIN Out.Str("Calling ptrext.Method2 with str = Method2s (super call via pointer)"); Out.Ln;
+  BEGIN Out.String("Calling ptrext.Method2 with str = Method2s (super call via pointer)"); Out.Ln;
     INC(ptrext.x2); ptrext.Method2^("Method2s (super call via pointer)", ptrext.x2, B); Out.Ln
   END Go2s;
 
   PROCEDURE Go2sr*;  (*super call of a method bound to the base type of an extension) via record*)
-  BEGIN Out.Str("Calling recext.Method2^ with str = Method2s (super call via record)"); Out.Ln;
+  BEGIN Out.String("Calling recext.Method2^ with str = Method2s (super call via record)"); Out.Ln;
     recext.x2 := 1; recext.Method2^("Method2s (super call via record)", recext.x2, B); Out.Ln END
   Go2sr;
 
   PROCEDURE Go3*;  (*call of a method that is a function procedure*)
     VAR res: INTEGER;
-  BEGIN Out.Str("Calling ptr.Method3 twice, with str = Method3a and with str = Method3b"); Out.Ln;
+  BEGIN Out.String("Calling ptr.Method3 twice, with str = Method3a and with str = Method3b"); Out.Ln;
     INC(ptr.x3); res := ptr.Method3("Method3a", ptr.x3, B) + ptr.Method3("Method3b", ptr.x3+1, B)
   END Go3;
 
   PROCEDURE Go4r*;  (*a statically declared global record EXTENSION can also be a receiver*)
-  BEGIN Out.Str("Calling recext.Method4 with str = Method4r"); Out.Ln;
+  BEGIN Out.String("Calling recext.Method4 with str = Method4r"); Out.Ln;
     INC(recext.x4); recext.Method4("Method4r", recext.x3, B); Out.Ln
   END Go4r;
 
   PROCEDURE Go4e*;  (*call a method that is bound to a record extension*)
-  BEGIN Out.Str("Calling ptrext.Method4 with str = Method4e"); Out.Ln;
+  BEGIN Out.String("Calling ptrext.Method4 with str = Method4e"); Out.Ln;
     INC(ptrext.x4); ptrext.Method4("Method4e", ptrext.x4, B); Out.Ln
   END Go4e;
 
@@ -137,42 +137,42 @@ MODULE M3;  (*test type-bound procedures / AP 7.2.20 Extended Oberon*)
   END Go4s;*)
 
   PROCEDURE Go5*;  (*ptr is automatically dereferenced by the caller when the method is called*)
-  BEGIN Out.Str("Calling ptr.Method5 with str = Method5"); Out.Ln;
+  BEGIN Out.String("Calling ptr.Method5 with str = Method5"); Out.Ln;
     INC(ptr.x5); ptr.Method5("Method5", ptr.x5, B); Out.Ln
   END Go5;
   
   PROCEDURE Go5b*;  (*caller explicitly de-references ptr^ BEFORE calling the method*)
-  BEGIN Out.Str("Calling ptr.Method5 with str = Method5b"); Out.Ln;
+  BEGIN Out.String("Calling ptr.Method5 with str = Method5b"); Out.Ln;
     INC(ptr^.x5); ptr.Method5("Method5b", ptr.x5, B); Out.Ln
   END Go5b;
 
   PROCEDURE Go5pe*;  (*ptr to an EXTENSION is passed to VAR param of a BASE type*)
-  BEGIN Out.Str("Calling ptrext.Method5 with str = Method5pe"); Out.Ln;
+  BEGIN Out.String("Calling ptrext.Method5 with str = Method5pe"); Out.Ln;
     INC(ptrext.x5); ptrext.Method5("Method5pe", ptrext.x5, B); Out.Ln
   END Go5pe;
 
   PROCEDURE Go6*;  (*caller AUTOMATICALLY passes the de-referenced ptr^ to a method which accepts a VAR record*)
-  BEGIN Out.Str("Calling ptr.Method6 with str = Method6"); Out.Ln;
+  BEGIN Out.String("Calling ptr.Method6 with str = Method6"); Out.Ln;
     INC(ptr.x6); ptr.Method6("Method6", ptr.x6, B); Out.Ln
   END Go6;
 
   PROCEDURE Go6b*;  (*caller EXPLICITLY passes the de-referenced ptr^ to a method which accepts a VAR record*)
-  BEGIN Out.Str("Calling ptr.Method6 with str = Method6b"); Out.Ln;
+  BEGIN Out.String("Calling ptr.Method6 with str = Method6b"); Out.Ln;
     INC(ptr^.x6); ptr.Method6("Method6b", ptr.x6, B); Out.Ln
   END Go6b;
 
   PROCEDURE Go6pe*;  (*ptr to an extension is passed to a VAR param of a base type*)
-  BEGIN Out.Str("Calling ptrext.Method6 with str = Method6pe"); Out.Ln;
+  BEGIN Out.String("Calling ptrext.Method6 with str = Method6pe"); Out.Ln;
     INC(ptrext.x6); ptrext.Method6("Method6pe", ptrext.x6, B); Out.Ln
   END Go6pe;
   
   PROCEDURE Go6pd*;  (*dynamic type of receiver set to an extension through an assignment*)
-  BEGIN Out.Str("Calling ptr.Method6 with str = Method6pd"); Out.Ln;
+  BEGIN Out.String("Calling ptr.Method6 with str = Method6pd"); Out.Ln;
     INC(ptrext.x6); ptr := ptrext; ptr.Method6("Method6pd", ptr.x6, B); Out.Ln
   END Go6pd;
 
   PROCEDURE Go6pdp*;  (*dynamic type of receiver set to an extension through an assignment AND and an overwritten method is called*)
-  BEGIN Out.Str("Calling ptr.Method6pdp with str = Method6pdp"); Out.Ln;
+  BEGIN Out.String("Calling ptr.Method6pdp with str = Method6pdp"); Out.Ln;
     INC(ptrext.x6); ptr := ptrext; ptr.Method6pdp("Method6pdp", ptr.x6, B); Out.Ln
   END Go6pdp;
 
