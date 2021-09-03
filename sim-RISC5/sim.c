@@ -24,15 +24,15 @@
 #define SERDEV_FILE	"serial.dev"		/* serial dev file */
 
 #define CPU_MANUFACT	0x4847			/* HG */
-#define CPU_VERSION	0x54			/* 5.4 */
+#define CPU_VERSION	0x55			/* 5.5 */
 #define CPU_ID		((CPU_MANUFACT << 8) | CPU_VERSION)
 
 #define INST_PER_MSEC	17000			/* execution speed */
 #define INST_PER_CHAR	10000			/* serial line speed */
 
 #define RAM_BASE	0x00000000		/* byte address */
-#define RAM_SIZE	0x00100000		/* counted in bytes */
-#define GRAPH_BASE	0x000E7F00		/* frame buffer memory */
+#define RAM_SIZE	0x00FFE000		/* counted in bytes */
+#define GRAPH_BASE	0x00FE0000		/* frame buffer memory */
 #define GRAPH_SIZE	0x00018000		/* located within RAM */
 #define ROM_BASE	0x00FFE000		/* byte address */
 #define ROM_SIZE	0x00000800		/* counted in bytes */
