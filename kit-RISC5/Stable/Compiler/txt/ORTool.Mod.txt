@@ -1,4 +1,4 @@
-MODULE ORTool;  (*NW 18.2.2013 / 12.4.2017 / AP 27.4.20 Extended Oberon*)
+MODULE ORTool;  (*NW 18.2.2013 / 12.4.2017 / AP 19.5.21 Extended Oberon*)
   IMPORT SYSTEM, Files, Modules, Texts, Oberon, ORB;
   CONST TAB = 09X;  (*copied from Input for use as cross development tool*)
   VAR W: Texts.Writer;
@@ -31,13 +31,11 @@ MODULE ORTool;  (*NW 18.2.2013 / 12.4.2017 / AP 27.4.20 Extended Oberon*)
         Texts.Write(W, " "); Texts.Write(W, "{"); Read(R, class);
         WHILE class # 0 DO  (*fields*)
           Files.ReadString(R, name);
-          IF name[0] # 0X THEN Texts.Write(W, " "); Texts.WriteString(W, name); ReadType(R)
-          ELSE Texts.WriteString(W, " --")
+          IF name[0] # 0X THEN Texts.Write(W, " "); Texts.WriteString(W, name); ReadType(R);
+            IF class = ORB.Const THEN Files.ReadNum(R, off); Texts.WriteInt(W, off, 4) END  (*exno*)
+          ELSE (*hidden*) Texts.WriteString(W, " --")
           END ;
-          Files.ReadNum(R, off); Texts.WriteInt(W, off, 4); (*offset / mthno*)
-          IF (class = ORB.Const) & (name[0] # 0X) THEN (*exported type-bound procedure*)
-            Files.ReadNum(R, off); Texts.WriteInt(W, off, 4) (*exno*)
-          END ;
+          Files.ReadNum(R, off); Texts.WriteInt(W, off, 4);  (*mthno/offset*)
           Read(R, class)
         END ;
         Texts.Write(W, "}")
@@ -73,7 +71,7 @@ MODULE ORTool;  (*NW 18.2.2013 / 12.4.2017 / AP 27.4.20 Extended Oberon*)
       IF F # NIL THEN
         Files.Set(R, F, 0); Files.ReadInt(R, k); Files.ReadInt(R, k);
         Files.ReadString(R, name); Texts.WriteString(W, name); Texts.WriteHex(W, k);
-        Read(R, class); Texts.WriteInt(W, class, 3); (*sym file version*)
+        Read(R, class); Texts.WriteInt(W, class, 3);  (*sym file version*)
         IF class = ORB.versionkey THEN
           Texts.WriteLn(W); Read(R, class);
           WHILE class # 0 DO
@@ -111,66 +109,76 @@ MODULE ORTool;  (*NW 18.2.2013 / 12.4.2017 / AP 27.4.20 Extended Oberon*)
   END WriteReg;
 
   PROCEDURE opcode(w: LONGINT; fixP, fixD: BOOLEAN);
-    VAR k, op, a, b, c: LONGINT; U, V: BOOLEAN;
+    VAR k, u, v, a, b, op: LONGINT;
   BEGIN
-      k := w DIV 40000000H MOD 4;
-      a := w DIV 1000000H MOD 10H;
-      b := w DIV 100000H MOD 10H;
-      op := w DIV 10000H MOD 10H;
-      U := ODD(w DIV 20000000H);
-      V := ODD(w DIV 10000000H);
-      IF k = 0 THEN
+    k := w DIV 40000000H MOD 4;
+    u := w DIV 20000000H MOD 2;
+    v := w DIV 10000000H MOD 2;
+    a := w DIV 1000000H MOD 10H;
+    b := w DIV 100000H MOD 10H;
+    op := w DIV 10000H MOD 10H;
+    IF k = 0 THEN  (*F0 register instruction*)
+      IF (op = 12) & (u = 0) & (v = 1) THEN Texts.WriteString(W, "FLR"); WriteReg(a); WriteReg(b)
+      ELSIF (op = 12) & (u = 1) & (v = 0) THEN Texts.WriteString(W, "FLT"); WriteReg(a); WriteReg(b)
+      ELSE
         Texts.WriteString(W, mnemo0[op]);
-        IF U THEN Texts.Write(W, "'") END ;
+        IF u = 1 THEN Texts.Write(W, "'") END ;
         WriteReg(a); WriteReg(b); WriteReg(w MOD 10H)
-      ELSIF k = 1 THEN
-        IF fixD THEN
-          Texts.WriteString(W, "MOV'");
-          a := w DIV 4000000H MOD 10H; (*RH*)
-          WriteReg(a);
-          b := w DIV 100000H MOD 40H; (*mno*)
-          Texts.WriteString(W, " mno "); Texts.WriteInt(W, b, 3)
-        ELSE
-          Texts.WriteString(W, mnemo0[op]);
-          IF U THEN Texts.Write(W, "'") END ;
-          WriteReg(a); WriteReg(b); w := w MOD 10000H;
-          IF w >= 8000H THEN w := w - 10000H END ;
-          Texts.WriteInt(W, w, 7)
+      END
+    ELSIF k = 1 THEN  (*F1 register instruction*)
+      IF fixD THEN
+        a := w DIV 4000000H MOD 10H;  (*RH*)
+        b := w DIV 100000H MOD 40H;  (*mno*)
+        Texts.WriteString(W, "MOV'"); WriteReg(a);
+        Texts.WriteString(W, " mno "); Texts.WriteInt(W, b, 3)
+      ELSE
+        Texts.WriteString(W, mnemo0[op]);
+        IF u = 1 THEN Texts.Write(W, "'") END ;
+        WriteReg(a); WriteReg(b); w := w MOD 10000H;
+        IF w >= 8000H THEN w := w - 10000H END ;
+        Texts.WriteInt(W, w, 7)
+      END
+    ELSIF k = 2 THEN  (*F2 memory instruction*)
+      IF u = 1 THEN Texts.WriteString(W, "ST") ELSE Texts.WriteString(W, "LD") END ;
+      IF v = 1 THEN Texts.Write(W, "B") ELSE Texts.Write(W, "W") END ;
+      WriteReg(a); WriteReg(b); w := w MOD 100000H;
+      IF w >= 80000H THEN w := w - 100000H END ;
+      Texts.WriteInt(W, w, 8)
+    ELSIF k = 3 THEN  (*F3 branch instruction*)
+      k := w DIV 10H MOD 10H;
+      IF (u = 0) & (v = 0) & (k # 0) THEN  (*interrupt*)
+        IF k = 1 THEN Texts.WriteString(W, "RTI"); WriteReg(w MOD 10H)
+        ELSIF k = 2 THEN
+          IF ODD(w) THEN Texts.WriteString(W, "STI") ELSE Texts.WriteString(W, "CLI") END
         END
-      ELSIF k = 2 THEN  (*LDR/STR*)
-        IF U THEN Texts.WriteString(W, "ST") ELSE Texts.WriteString(W, "LD") END ;
-        IF V THEN Texts.Write(W, "B") ELSE Texts.Write(W, "W") END ;
-        WriteReg(a); WriteReg(b); w := w MOD 100000H;
-        IF w >= 80000H THEN w := w - 100000H END ;
-        Texts.WriteInt(W, w, 8)
-      ELSIF k = 3 THEN  (*Branch instr*)
+      ELSE
         Texts.Write(W, "B");
-        IF V THEN Texts.Write(W, "L") END ;
-        IF U THEN
-          IF fixP THEN
-            a := w DIV 4000H MOD 100H; (*pno*)
-            b := w DIV 400000H MOD 40H; (*mno*)
-            Texts.WriteString(W, " mno "); Texts.WriteInt(W, b, 3);
-            Texts.WriteString(W, ", pno "); Texts.WriteInt(W, a, 3)
-          ELSE Texts.WriteString(W, mnemo1[a]); w := w MOD 100000H;
-            IF w >= 80000H THEN w := w - 100000H END ;
-            Texts.WriteInt(W, w, 8)
-          END
-        ELSE Texts.WriteString(W, mnemo1[a]); WriteReg(w MOD 10H)
+        IF v = 1 THEN Texts.Write(W, "L") END ;
+        IF u = 0 THEN Texts.WriteString(W, mnemo1[a]); WriteReg(w MOD 10H)
+        ELSIF fixP THEN
+          a := w DIV 400000H MOD 40H;  (*mno*)
+          b := w DIV 4000H MOD 100H;  (*pno*)
+          Texts.WriteString(W, " mno "); Texts.WriteInt(W, a, 3);
+          Texts.WriteString(W, ", pno "); Texts.WriteInt(W, b, 3)
+        ELSE
+          Texts.WriteString(W, mnemo1[a]); w := w MOD 100000H;
+          IF w >= 80000H THEN w := w - 100000H END ;
+          Texts.WriteInt(W, w, 8)
         END
       END
+    END
   END opcode;
 
   PROCEDURE Write(VAR R: Files.Rider; x: INTEGER);
   BEGIN Files.WriteByte(R, x)  (* -128 <= x < 128 *)
   END Write;
 
-  PROCEDURE DecObj*;   (*decode object file*)
+  PROCEDURE DecObj*;  (*decode object file*)
     VAR class, i, n, key, size, adr, data, code: INTEGER;
       ch: CHAR;
       name: ARRAY 32 OF CHAR;
       fixorgP, fixorgD, nofP, nofD: LONGINT;
-      fixP, fixD: ARRAY 1000 OF LONGINT; (*fixup positions*)
+      fixP, fixD: ARRAY 1000 OF LONGINT;  (*fixup positions*)
       F: Files.File; R: Files.Rider;
       S: Texts.Scanner;
   BEGIN Texts.OpenScanner(S, Oberon.Par.text, Oberon.Par.pos); Texts.Scan(S);
@@ -178,7 +186,7 @@ MODULE ORTool;  (*NW 18.2.2013 / 12.4.2017 / AP 27.4.20 Extended Oberon*)
       Texts.WriteString(W, "decode "); Texts.WriteString(W, S.s); F := Files.Old(S.s);
       IF F # NIL THEN
         Files.Set(R, F, 0); Files.ReadString(R, name); Texts.WriteLn(W); Texts.WriteString(W, name);
-        Files.ReadInt(R, key); Texts.WriteHex(W, key); Read(R, class); Texts.WriteInt(W, class, 4); (*version*)
+        Files.ReadInt(R, key); Texts.WriteHex(W, key); Read(R, class); Texts.WriteInt(W, class, 4);  (*version*)
         Files.ReadInt(R, size); Texts.WriteInt(W, size, 6); Texts.WriteLn(W);
         Texts.WriteString(W, "imports:"); Texts.WriteLn(W); Files.ReadString(R, name);
         WHILE name[0] # 0X DO
@@ -196,27 +204,27 @@ MODULE ORTool;  (*NW 18.2.2013 / 12.4.2017 / AP 27.4.20 Extended Oberon*)
         WHILE i < n DO Files.ReadInt(R, data); Texts.WriteHex(W, data); INC(i) END ;
         Texts.WriteLn(W);
         (*first pass*)
-        Files.ReadInt(R, n); code := Files.Pos(R); Files.Set(R, F, code + n*4); (*code*)
+        Files.ReadInt(R, n); code := Files.Pos(R); Files.Set(R, F, code + n*4);  (*code*)
         Files.ReadString(R, name);
-        WHILE name[0] # 0X DO Files.ReadInt(R, data); Files.ReadString(R, name) END ; (*commands*)
-        Files.ReadInt(R, n); Files.Set(R, F, Files.Pos(R) + n*4); (*entries*)
+        WHILE name[0] # 0X DO Files.ReadInt(R, data); Files.ReadString(R, name) END ;  (*commands*)
+        Files.ReadInt(R, n); Files.Set(R, F, Files.Pos(R) + n*4);  (*entries*)
         Files.ReadInt(R, data);
-        WHILE data >= 0 DO Files.ReadInt(R, data) END ; (*pointer references*)
+        WHILE data >= 0 DO Files.ReadInt(R, data) END ;  (*pointer references*)
         Files.ReadInt(R, data);
-        WHILE data >= 0 DO Files.ReadInt(R, data) END ; (*procedure variable references*)
+        WHILE data >= 0 DO Files.ReadInt(R, data) END ;  (*procedure variable references*)
         Files.ReadInt(R, fixorgP); Files.ReadInt(R, fixorgD);
         (*record fixup positions*)
         adr := code + fixorgP*4; nofP := 0;
         WHILE adr # code DO
           Files.Set(R, F, adr);
-          Files.ReadInt(R, data); (*inst*)
+          Files.ReadInt(R, data);  (*inst*)
           fixP[nofP] := (adr - code) DIV 4; INC(nofP);
           adr := adr - (data MOD 4000H)*4
         END ;
         adr := code + fixorgD*4; nofD := 0;
         WHILE adr # code DO
           Files.Set(R, F, adr);
-          Files.ReadInt(R, data); (*inst*)
+          Files.ReadInt(R, data);  (*inst*)
           fixD[nofD] := (adr - code) DIV 4; INC(nofD);
           adr := adr - (data MOD 10000H)*4
         END ;
@@ -255,6 +263,7 @@ MODULE ORTool;  (*NW 18.2.2013 / 12.4.2017 / AP 27.4.20 Extended Oberon*)
         Files.ReadInt(R, data); Texts.WriteString(W, "fixT = "); Texts.WriteInt(W, data, 8); Texts.WriteLn(W);
         Files.ReadInt(R, data); Texts.WriteString(W, "fixM = "); Texts.WriteInt(W, data, 8); Texts.WriteLn(W);
         Files.ReadInt(R, data); Texts.WriteString(W, "entry = "); Texts.WriteInt(W, data, 8); Texts.WriteLn(W);
+        Files.ReadInt(R, data); Texts.WriteString(W, "final = "); Texts.WriteInt(W, data, 8); Texts.WriteLn(W);
         Files.Read(R, ch);
         IF ch # "O" THEN Texts.WriteString(W, "format error"); Texts.WriteLn(W) END
       ELSE Texts.WriteString(W, " not found"); Texts.WriteLn(W)
@@ -285,7 +294,7 @@ MODULE ORTool;  (*NW 18.2.2013 / 12.4.2017 / AP 27.4.20 Extended Oberon*)
      END
   END DecMod;
 
-BEGIN Texts.OpenWriter(W); Texts.WriteString(W, "ORTool 18.2.2013 / AP 27.4.20");
+BEGIN Texts.OpenWriter(W); Texts.WriteString(W, "ORTool 18.2.2013 / AP 19.5.21");
   Texts.WriteLn(W); Texts.Append(Oberon.Log, W.buf);
   mnemo0[0] := "MOV";
   mnemo0[1] := "LSL";

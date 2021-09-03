@@ -1,8 +1,8 @@
-MODULE Graphics;   (*NW 21.12.89 / 18.11.201 / 8.4.2016 / AP 9.3.20*)
-  IMPORT SYSTEM, Files, Modules, Input, Fonts, (*Printer,*) Texts, Oberon;
+MODULE Graphics;   (*NW 21.12.89 / 18.11.201 / 8.4.2016 / AP 15.9.20 Extended Oberon*)
+  IMPORT SYSTEM, Files, Modules, Fonts, (*Printer,*) Texts, Oberon;
 
   CONST NameLen* = 32; GraphFileId = 0FAX; LibFileId = 0FBX;
-    TAB = Input.TAB; CR = Input.CR;
+    TAB = 09X; CR = 0DX;
 
   TYPE
     Graph* = POINTER TO GraphDesc;

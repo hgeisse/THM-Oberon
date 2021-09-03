@@ -1,8 +1,8 @@
-MODULE Tools;   (*NW 22.2.14 / AP 22.3.20 Extended Oberon*)
-  IMPORT SYSTEM, Kernel, Disk, Files, Modules, Input, Texts, Viewers, Oberon, MenuViewers, TextFrames;
+MODULE Tools;   (*NW 22.2.14 / AP 15.9.20 Extended Oberon*)
+  IMPORT SYSTEM, Disk, Files, Viewers, Texts, Oberon, MenuViewers, TextFrames;
 
   CONST StandardMenu = "Tools.Close System.Copy System.Grow Edit.Search Edit.Store | System.Expand System.Spread System.Clone";
-    BS = Input.BS; TAB = Input.TAB; LF = Input.LF; CR = Input.CR; DEL = Input.DEL;
+    TAB = 09X; LF = 0AX; CR = 0DX;
 
   VAR T: Texts.Text; W: Texts.Writer; open: BOOLEAN;
 

@@ -8,7 +8,7 @@ D2O=$(BUILD)/bin/dos2oberon
 
 DISK_SIZE=64M
 
-MODGRPS=Apps BootLink BootLoad Compiler Editor Fonts Graphics \
+MODGRPS=Apps BootLink BootLoad Compiler Editor Fonts Graphics In \
         InnerCore MacroTool Math Oberon0 Out OuterCore PCLink2 Tools
 
 all:
@@ -79,6 +79,9 @@ Graphics:
 		cp $(KIT)/Graphics/rsc/* .
 		$(D2O) $(KIT)/Graphics/tools/Draw.Tool.txt Draw.Tool
 		cp $(KIT)/Graphics/libs/* .
+
+In:
+		cp $(KIT)/In/rsc/* .
 
 InnerCore:
 		cp $(KIT)/InnerCore/rsc/* .

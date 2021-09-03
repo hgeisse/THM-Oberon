@@ -7,7 +7,7 @@ KIT=../../Stable
 INSTALL=../../install/sim
 D2O=$(BUILD)/bin/dos2oberon
 O2U=$(BUILD)/bin/oberon2unix
-M2B=$(BUILD)/bin/mem2bin-RISC5
+M2B=$(BUILD)/bin/mem2bin
 NEW=../../New
 
 all:
@@ -85,6 +85,10 @@ prologue:
 		mkdir -p $(NEW)/Graphics/libs
 		cp $(KIT)/Graphics/libs/* $(NEW)/Graphics/libs
 		cp $(NEW)/Graphics/libs/* .
+		#
+		mkdir -p $(NEW)/In/txt
+		cp $(KIT)/In/txt/* $(NEW)/In/txt
+		$(D2O) $(NEW)/In/txt/In.Mod.txt In.Mod
 		#
 		mkdir -p $(NEW)/InnerCore/txt
 		cp $(KIT)/InnerCore/txt/* $(NEW)/InnerCore/txt
@@ -181,6 +185,9 @@ epilogue:
 		mv GraphicFrames.rsc GraphicFrames.smb $(NEW)/Graphics/rsc
 		mv Graphics.rsc Graphics.smb $(NEW)/Graphics/rsc
 		mv Rectangles.rsc Rectangles.smb $(NEW)/Graphics/rsc
+		#
+		mkdir -p $(NEW)/In/rsc
+		mv In.rsc In.smb $(NEW)/In/rsc
 		#
 		mkdir -p $(NEW)/InnerCore/rsc
 		mv Disk.rsc Disk.smb $(NEW)/InnerCore/rsc

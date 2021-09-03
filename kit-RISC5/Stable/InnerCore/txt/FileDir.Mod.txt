@@ -287,7 +287,7 @@ MODULE FileDir;   (*NW 12.1.86 / 23.8.90 / 15.8.2013 / AP 22.3.20 Extended Obero
 
   PROCEDURE Attributes*(fad: INTEGER; VAR length, date: INTEGER);
     VAR hd: FileHeader;
-  BEGIN Disk.GetSector(fad, hd); length := hd.aleng * SectorSize + hd.bleng - HeaderSize; date := hd.date;
+  BEGIN Disk.GetSector(fad, hd); length := hd.aleng * SectorSize + hd.bleng - HeaderSize; date := hd.date
   END Attributes;
 
   (* ----- initialization ----- *)

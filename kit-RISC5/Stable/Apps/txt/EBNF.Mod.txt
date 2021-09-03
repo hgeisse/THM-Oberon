@@ -1,7 +1,7 @@
-MODULE EBNF;  (*NW 3.9.97 / 12.9.97 / 1.3.2014 / AP 9.3.20 Extended Oberon*)
-  IMPORT Input, Texts, Oberon;
+MODULE EBNF;  (*NW 3.9.97 / 12.9.97 / 1.3.2014 / AP 15.9.20 Extended Oberon*)
+  IMPORT Texts, Oberon;
 
-  CONST TAB = Input.TAB; IdLen = 16;
+  CONST IdLen = 16; TAB = 09X;
     ident = 0; literal = 2; lparen = 3; lbrak = 4; lbrace = 5; bar = 6; eql = 7;
     rparen = 8; rbrak = 9; rbrace = 10; period = 11; other = 12;
 

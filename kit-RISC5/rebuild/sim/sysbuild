@@ -166,6 +166,10 @@ calln System.DeleteFiles Rectangles.rsc
 calln System.DeleteFiles Rectangles.smb
 calln System.DeleteFiles Draw.Tool
 #
+calln System.DeleteFiles In.Mod
+calln System.DeleteFiles In.rsc
+calln System.DeleteFiles In.smb
+#
 calln System.DeleteFiles Disk.Mod
 calln System.DeleteFiles Disk.rsc
 calln System.DeleteFiles Disk.smb
@@ -398,6 +402,13 @@ h2o Out.Mod
 calln ORP.Compile Out.Mod
 o2h Out.rsc
 o2h Out.smb
+#
+# In
+#
+h2o In.Mod
+calln ORP.Compile In.Mod
+o2h In.rsc
+o2h In.smb
 #
 # Math
 #

@@ -74,6 +74,9 @@ h2o Tools.smb
 h2o Out.rsc
 h2o Out.smb
 
+h2o In.rsc
+h2o In.smb
+
 h2o Math.rsc
 h2o Math.smb
 

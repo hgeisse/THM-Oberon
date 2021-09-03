@@ -1,10 +1,9 @@
-MODULE Fonts; (*JG 18.11.90; PDR 8.6.12; NW 18.1.2019 / AP 12.2.20 Extended Oberon*)
+MODULE Fonts; (*JG 18.11.90; PDR 8.6.12; NW 18.1.2019 / AP 16.9.20 Extended Oberon*)
   IMPORT SYSTEM, Files;
+  CONST FontFileId = 0DBH; RasterBase = 512;
 
-  CONST FontFileId = 0DBH;
-
-  TYPE Raster = POINTER TO RasterDesc;
-    RasterDesc = ARRAY OF BYTE;
+  TYPE Raster* = POINTER TO RasterDesc;
+    RasterDesc* = ARRAY OF BYTE;
 
     Font* = POINTER TO FontDesc;
     FontDesc* = RECORD
@@ -22,23 +21,33 @@ MODULE Fonts; (*JG 18.11.90; PDR 8.6.12; NW 18.1.2019 / AP 12.2.20 Extended Ober
 
   VAR Default*, root*: Font;
 
+  PROCEDURE Base(r: Raster): INTEGER;
+  BEGIN RETURN SYSTEM.ADR(r[0])
+  END Base;
+
+  PROCEDURE Put(r: Raster; i, x: INTEGER);
+  BEGIN r[i] := x MOD 100H;
+    r[i+1] := x DIV 100H MOD 100H;
+    r[i+2] := x DIV 10000H MOD 100H;
+    r[i+3] := x DIV 1000000H MOD 100H
+  END Put;
+
+  PROCEDURE Get(r: Raster; i: INTEGER; VAR x: INTEGER);
+  BEGIN x := ((r[i+3] * 100H + r[i+2]) * 100H + r[i+1]) * 100H + r[i]
+  END Get;
+
   PROCEDURE GetPat*(fnt: Font; ch: CHAR; VAR dx, x, y, w, h, patadr: INTEGER);
-    VAR pa: INTEGER; dxb, xb, yb, wb, hb: BYTE;
-  BEGIN SYSTEM.GET(fnt.base + (ORD(ch) MOD 80H)*4, pa); patadr := pa;
-    SYSTEM.GET(pa-3, dxb); SYSTEM.GET(pa-2, xb); SYSTEM.GET(pa-1, yb); SYSTEM.GET(pa, wb); SYSTEM.GET(pa+1, hb);
-    dx := dxb; x := xb; y := yb; w := wb; h := hb;
+    VAR pa: INTEGER; yb: BYTE;
+  BEGIN Get(fnt.raster, (ORD(ch) MOD 80H)*4, pa); patadr := fnt.base + pa;
+    dx := fnt.raster[pa-3]; x := fnt.raster[pa-2]; yb := fnt.raster[pa-1]; w := fnt.raster[pa]; h := fnt.raster[pa+1];
     IF yb < 128 THEN y := yb ELSE y := yb - 256 END
   END GetPat;
 
   PROCEDURE Load*(name: ARRAY OF CHAR): Font;
     VAR F: Font;
       f: Files.File; R: Files.Rider;
-      NofRuns, NofBoxes: BYTE;
-      NofBytes: INTEGER;
-      height, minX, maxX, minY, maxY: BYTE;
-      i, j, k, m, n: INTEGER;
-      A, a, a0: INTEGER;
-      b, beg, end: BYTE;
+      NofRuns, NofBoxes, height, minX, maxX, minY, maxY, b: BYTE;
+      NofBytes, i, j, k, m, n: INTEGER;
       run: ARRAY 16 OF RunRec;
       box: ARRAY 512 OF BoxRec;
 
@@ -54,44 +63,41 @@ MODULE Fonts; (*JG 18.11.90; PDR 8.6.12; NW 18.1.2019 / AP 12.2.20 Extended Ober
       IF f # NIL THEN
         Files.Set(R, f, 0); Files.ReadByte(R, b);
         IF b = FontFileId THEN
-          Files.ReadByte(R, b); (*abstraction*)
-          Files.ReadByte(R, b); (*family*)
-          Files.ReadByte(R, b); (*variant*)
+          Files.ReadByte(R, b);  (*abstraction*)
+          Files.ReadByte(R, b);  (*family*)
+          Files.ReadByte(R, b);  (*variant*)
           RdInt16(R, height); RdInt16(R, minX); RdInt16(R, maxX); RdInt16(R, minY); RdInt16(R, maxY); RdInt16(R, NofRuns);
           NofBoxes := 0; k := 0;
-          WHILE k # NofRuns DO
-            RdInt16(R, beg); run[k].beg := beg;
-            RdInt16(R, end); run[k].end := end;
-            NofBoxes := NofBoxes + end - beg;
+          WHILE k # NofRuns DO  (*read runs*)
+            RdInt16(R, run[k].beg); RdInt16(R, run[k].end);
+            NofBoxes := NofBoxes + run[k].end - run[k].beg;
             INC(k)
           END ;
-          NofBytes := 512 + 5; j := 0;
-          WHILE j # NofBoxes DO
+          NofBytes := RasterBase + 5; j := 0;
+          WHILE j # NofBoxes DO  (*read boxes*)
             RdInt16(R, box[j].dx); RdInt16(R, box[j].x); RdInt16(R, box[j].y);
             RdInt16(R, box[j].w); RdInt16(R, box[j].h);
             NofBytes := NofBytes + 5 + (box[j].w + 7) DIV 8 * box[j].h;
             INC(j)
           END ;
           NEW(F); NEW(F.raster, NofBytes);
-          F.name := name;
+          F.name := name; F.base := Base(F.raster);
           F.height := height; F.minX := minX; F.maxX := maxX; F.maxY := maxY;
           IF minY >= 80H THEN F.minY := minY - 100H ELSE F.minY := minY END ;
-          A := SYSTEM.ADR(F.raster^); F.base := A; a0 := A + 512;
-          SYSTEM.PUT(a0, 0X); SYSTEM.PUT(a0+1, 0X); SYSTEM.PUT(a0+2, 0X); SYSTEM.PUT(a0+3, 0X); SYSTEM.PUT(a0+4, 0X);
-          (*null pattern for characters not in a run*)
-          INC(a0, 3); a := a0+2; j := 0; k := 0; m := 0;
+          FOR i := RasterBase TO RasterBase+4 DO F.raster[i] := 0 END ;  (*null pattern for characters not in a run*)
+          i := RasterBase + 5; j := 0; k := 0; m := 0;
           WHILE k < NofRuns DO
-            WHILE (m < run[k].beg) & (m < 128) DO SYSTEM.PUT(A+m*4, a0); INC(m) END ;
-            WHILE (m < run[k].end) & (m < 128) DO SYSTEM.PUT(A+m*4, a+3);
-              SYSTEM.PUT(a, box[j].dx); SYSTEM.PUT(a+1, box[j].x); SYSTEM.PUT(a+2, box[j].y);
-              SYSTEM.PUT(a+3, box[j].w); SYSTEM.PUT(a+4, box[j].h); INC(a, 5);
-              n := (box[j].w + 7) DIV 8 * box[j].h;
-              WHILE n # 0 DO DEC(n); Files.ReadByte(R, b); SYSTEM.PUT(a, b); INC(a) END ;
+            WHILE (m < run[k].beg) & (m < 128) DO Put(F.raster, m*4, RasterBase + 3); INC(m) END ;
+            WHILE (m < run[k].end) & (m < 128) DO Put(F.raster, m*4, i + 3);
+              F.raster[i] := box[j].dx; F.raster[i+1] := box[j].x; F.raster[i+2] := box[j].y;
+              F.raster[i+3] := box[j].w; F.raster[i+4] := box[j].h; INC(i, 5);
+              n := (box[j].w + 7) DIV 8 * box[j].h;  (*pattern length*)
+              WHILE n # 0 DO DEC(n); Files.ReadByte(R, b); F.raster[i] := b; INC(i) END ;
               INC(j); INC(m)
             END ;
             INC(k)
           END ;
-          WHILE m < 128 DO SYSTEM.PUT(A+m*4, a0); INC(m) END ;
+          WHILE m < 128 DO Put(F.raster, m*4, RasterBase + 3); INC(m) END ;
           F.next := root; root := F
         ELSE (*bad file id*) F := Default
         END

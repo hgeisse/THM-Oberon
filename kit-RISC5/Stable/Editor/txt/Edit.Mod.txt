@@ -1,7 +1,7 @@
-MODULE Edit; (*JG 2.11.90 / NW 28.11.15 / AP 9.3.20 Extended Oberon*)
-  IMPORT Files, Fonts, Texts, Input, Display, Viewers, Oberon, MenuViewers, TextFrames;
+MODULE Edit; (*JG 2.11.90 / NW 28.11.15 / AP 15.9.20 Extended Oberon*)
+  IMPORT Files, Display, Viewers, Fonts, Texts, Oberon, MenuViewers, TextFrames;
 
-  CONST CR = Input.CR; maxlen = 32;
+  CONST CR = 0DX; maxlen = 32;
     StandardMenu = "System.Close System.Copy System.Grow Edit.Search Edit.Store | System.Expand System.Spread System.Clone";
 
   VAR W: Texts.Writer;
@@ -97,7 +97,7 @@ MODULE Edit; (*JG 2.11.90 / NW 28.11.15 / AP 9.3.20 Extended Oberon*)
     IF time >= 0 THEN
       Texts.OpenScanner(S, Oberon.Par.text, Oberon.Par.pos); Texts.Scan(S);
       IF S.class = Texts.Name THEN
-        Texts.ChangeLooks(T, beg, end, {0}, Fonts.This(S.s), 0, 0)
+        Texts.ChangeLooks(T, beg, end, {0}, Fonts.Load(S.s), 0, 0)
       END
     END
   END ChangeFont;
@@ -231,5 +231,3 @@ MODULE Edit; (*JG 2.11.90 / NW 28.11.15 / AP 9.3.20 Extended Oberon*)
 
 BEGIN Texts.OpenWriter(W)
 END Edit.
-
-

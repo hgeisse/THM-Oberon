@@ -2,7 +2,8 @@ MODULE PCLink2;
 
   (* NW 25.07.2013
      HG 13.11.2019
-     HG 20.05.2020 Extended Oberon *)
+     HG 20.05.2020 Extended Oberon
+     HG 30.08.2021 Extended Oberon 1.6 *)
 
   IMPORT SYSTEM, Files, Modules, Texts, TextFrames, Oberon;
 
@@ -203,9 +204,8 @@ MODULE PCLink2;
     Texts.OpenBuf(buf);
     Texts.Delete(T, 0, T.len, buf);
     Texts.Append(T, W.buf);
-    Oberon.SetPar(F, T, 0);
-    Modules.Call(name);
-    res := Modules.res;
+    Oberon.SetPar(F, T, 0, 0, 0);
+    Modules.Call(name, res);
     IF res > 0 THEN
       IF res = 1 THEN
         SndString("module not found")

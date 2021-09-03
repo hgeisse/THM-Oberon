@@ -4,13 +4,14 @@ MODULE* BootLoad;
      HG 09.06.2018: re-definition of switches
      HG 24.11.2019: send ACK at end of load from serial line
      AP 13.03.2020: eliminate MT and MTOrg, set TR to TrapAdr
-     HG 30.05.2020: set file system offset to zero *)
+     HG 30.05.2020: set file system offset to zero
+     HG 21.07.2021: enlarge memory to 16 MB *)
   IMPORT SYSTEM;
   (* sw1: boot from serial line/not SDHC disk
      sw0: enforce cold boot *)
   CONST
     TR = 13; SP = 14; LNK = 15;
-    TrapAdr = 04H; MemLim = 0E7EF0H; stackOrg = 80000H;
+    TrapAdr = 04H; MemLim = 0FE0000H; stackOrg = 800000H;
     swi = -60; led = -60; rsData = -56; rsCtrl = -52;
     spiData = -48; spiCtrl = -44;
     CARD0 = 1; SPIFAST = 4;

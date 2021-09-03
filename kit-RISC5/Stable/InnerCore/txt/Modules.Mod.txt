@@ -1,12 +1,11 @@
-MODULE Modules;  (*Link and load on RISC; NW 20.10.2013 / 8.1.2019 / AP 27.4.20 Extended Oberon*)
+MODULE Modules;  (*Link and load on RISC; NW 20.10.2013 / 8.1.2019 / AP 1.4.21 Extended Oberon*)
   IMPORT SYSTEM, Kernel, Files;
-  CONST versionkey = 1X; TR = 13; DescSize = 92; MnLength = 32;
-    noerr* = 0; nofile* = 1; badversion* = 2; badkey* = 3; badfile* = 4; nospace* = 5; nocmd* = 6; badcmd* = 7; nomod* = 8;
-    noref* = 0; clients* = 9; dyntypes* = 10; dynptrs* = 11; dynpvrs* = 12; statptrs* = 13; statpvrs* = 14;
+  CONST versionkey = 1X; TR = 13; LNK = 15; DescSize = 96; MnLength = 32;
+    noerr* = 0; nofile* = 1; badversion* = 2; badkey* = 3; badfile* = 4;
+    nospace* = 5; nocmd* = 6; badcmd* = 7; nomod* = 8; badfin* = 9;
+    noref* = 0; clients* = 10; dyntypes* = 11; dynptrs* = 12; dynpvrs* = 13; statptrs* = 14; statpvrs* = 15;
     U = 20000000H; V = 10000000H; B = 100000H;  (*modifier bits*)
-    MOV = 40000000H; IOR = 40060000H;  (*F1 register instructions*)
-    F2 = -2;  (*F2 memory instruction*)
-    F3 = -3; BCT = 0E7000000H; BLT = 0F7000000H;  (*F3 branch instructions*)
+    MOV = 40000000H; IOR = 40060000H; BCT = 0E7000000H; BLT = 0F7000000H; F2 = -2;  (*instructions*)
     C4 = 10H; C6 = 40H; C8 = 100H; C10 = 400H; C12 = 1000H; C14 = 4000H; C16 = 10000H; C18 = 40000H;
     C20 = 100000H; C22 = 400000H; C24 = 1000000H; C26 = 4000000H; C28 = 10000000H; C30 = 40000000H;
 
@@ -19,7 +18,8 @@ MODULE Modules;  (*Link and load on RISC; NW 20.10.2013 / 8.1.2019 / AP 27.4.20 
       next*: Module;
       key*, num*, size*, refcnt*: INTEGER;
       data*, str*, tdx*, code*, imp*, cmd*, ent*, ptr*, pvr*: INTEGER;  (*addresses*)
-      selected*, marked, hidden, sel: BOOLEAN
+      selected*, marked, hidden, sel: BOOLEAN;
+      finalize: Command
     END ;
 
     ClientHandler* = PROCEDURE(mod, imp: Module; VAR continue: BOOLEAN): INTEGER;
@@ -80,7 +80,7 @@ MODULE Modules;  (*Link and load on RISC; NW 20.10.2013 / 8.1.2019 / AP 27.4.20 
         Files.Set(R, F, 0); Files.ReadString(R, name1); Files.ReadInt(R, key); Files.Read(R, ch);
         Files.ReadInt(R, size); importing := name1;
         IF ch = versionkey THEN
-          Files.ReadString(R, impname);   (*imports*)
+          Files.ReadString(R, impname);  (*imports*)
           WHILE (impname[0] # 0X) & (res = noerr) DO
             Files.ReadInt(R, impkey);
             Load(impname, impmod); import[nofimps] := impmod; importing := name1;
@@ -151,6 +151,8 @@ MODULE Modules;  (*Link and load on RISC; NW 20.10.2013 / 8.1.2019 / AP 27.4.20 
         Files.ReadInt(R, fixorgP); Files.ReadInt(R, fixorgD);
         Files.ReadInt(R, fixorgT); Files.ReadInt(R, fixorgM);
         Files.ReadInt(R, w); body := SYSTEM.VAL(Command, mod.code + w);
+        Files.ReadInt(R, w);
+        IF w >= 0 THEN mod.finalize := SYSTEM.VAL(Command, mod.code + w) ELSE mod.finalize := NIL END ;
         Files.Read(R, ch);
         IF ch # "O" THEN mod := NIL; error(badfile, name) END
       END ;
@@ -164,7 +166,7 @@ MODULE Modules;  (*Link and load on RISC; NW 20.10.2013 / 8.1.2019 / AP 27.4.20 
           SYSTEM.GET(mod.imp + (mno-1)*4, impmod);
           SYSTEM.GET(impmod.ent + pno*4, dest); dest := dest + impmod.code;
           offset := (dest - adr - 4) DIV 4;
-          SYSTEM.PUT(adr, (offset MOD C24) + BLT);
+          SYSTEM.PUT(adr, BLT + offset MOD C24);
           adr := adr - disp*4
         END ;
         (*fixup of MOV/LDR/STR/ADD*)
@@ -184,9 +186,9 @@ MODULE Modules;  (*Link and load on RISC; NW 20.10.2013 / 8.1.2019 / AP 27.4.20 
             SYSTEM.GET(impmod.ent + vno*4, offset);
             IF ODD(inst DIV C8) THEN INC(offset, impmod.code) ELSE INC(offset, impmod.data) END
           END ;
-          SYSTEM.PUT(adr, MOV+U+B + pno*C24 + offset DIV C16);  (*mark as fixed up*)
+          SYSTEM.PUT(adr, MOV+U+B + pno*C24 + offset DIV C16);  (*mark as fixed up by setting the B bit*)
           IF inst DIV C30 = F2 THEN inst := inst DIV C20 * C20
-          ELSE inst := IOR + (inst DIV C24 MOD C4) * C24 + (inst DIV C20 MOD C4) * C20
+          ELSE inst := IOR + inst DIV C24 MOD C4 * C24 + inst DIV C20 MOD C4 * C20
           END ;
           SYSTEM.PUT(adr+4, inst + offset MOD C16);
           adr := adr - disp*4
@@ -245,11 +247,11 @@ MODULE Modules;  (*Link and load on RISC; NW 20.10.2013 / 8.1.2019 / AP 27.4.20 
         SYSTEM.GET(adr, k); INC(adr, 4);
         IF s = name THEN res := noerr; w := mod.code + k ELSE SYSTEM.GET(adr, ch) END
       END
-    END
+    END ;
     RETURN SYSTEM.VAL(Command, w)
   END ThisCommand;
 
-  PROCEDURE Call*(name: ARRAY OF CHAR);
+  PROCEDURE Call*(name: ARRAY OF CHAR; VAR err: INTEGER);
     (*call the command named 'name' of the form M.P, where M is either a module name or
       a module number; if M is not loaded, load module hierarchy M* before calling P.
       res = noerr: module loaded, command found and executed;
@@ -260,7 +262,8 @@ MODULE Modules;  (*Link and load on RISC; NW 20.10.2013 / 8.1.2019 / AP 27.4.20 
       res = nospace: insufficient space;
       res = nocmd: command not found;
       res = badcmd: invalid command;
-      res = nomod: module not found in module list*)
+      res = nomod: module not found in module list;
+      err = the value of res before the command is called (for recursion)*)
     VAR mod: Module; P: Command;
       i, j: INTEGER; ch: CHAR;
       Mname, Cname: ModuleName;
@@ -275,7 +278,7 @@ MODULE Modules;  (*Link and load on RISC; NW 20.10.2013 / 8.1.2019 / AP 27.4.20 
         END
       ELSE res := badcmd
       END
-    ELSIF (ch >= "A") & (ch <= "Z") OR (ch >= "a") & (ch <= "z") OR (ch = "*") THEN (*module name*)
+    ELSIF ("A" <= ch) & (ch <= "Z") OR ("a" <= ch) & (ch <= "z") OR (ch = "*") THEN (*module name*)
       REPEAT Mname[i] := ch; INC(i); ch := name[i] UNTIL (ch = ".") OR (ch = 0X);
       IF ch = "." THEN Mname[i] := 0X; INC(i); Load(Mname, mod) ELSE res := badcmd END
     ELSE res := badcmd
@@ -286,7 +289,8 @@ MODULE Modules;  (*Link and load on RISC; NW 20.10.2013 / 8.1.2019 / AP 27.4.20 
       Cname[j] := 0X;
       P := ThisCommand(mod, Cname);
       IF res = noerr THEN P END
-    END
+    END ;
+    err := res
   END Call;
 
   (*--------------------------- selections ---------------------------*)
@@ -361,7 +365,8 @@ MODULE Modules;  (*Link and load on RISC; NW 20.10.2013 / 8.1.2019 / AP 27.4.20 
     VAR mod: Module;
   BEGIN mod := root;
     WHILE mod # NIL DO
-      IF (mod.name[0] # 0X) & ~mod.selected THEN Kernel.Mark(mod.ptr);
+      IF (mod.name[0] # 0X) & ~mod.selected THEN
+        Kernel.Mark(mod.ptr);
         IF ~all THEN Kernel.Scan(typ, ptr, pvr, mod.name, resTyp, resPtr, resPvr) END
       END ;
       mod := mod.next
@@ -374,13 +379,15 @@ MODULE Modules;  (*Link and load on RISC; NW 20.10.2013 / 8.1.2019 / AP 27.4.20 
   BEGIN resPtr := noref; resPvr := noref; mod := root; continue := (ptr # NIL) OR (pvr # NIL);
     WHILE continue & (mod # NIL) DO
       IF (mod.name[0] # 0X) & ~mod.selected THEN
-        IF ptr # NIL THEN pref := mod.ptr; SYSTEM.GET(pref, pvadr);
+        IF ptr # NIL THEN
+          pref := mod.ptr; SYSTEM.GET(pref, pvadr);
           WHILE continue & (pvadr # 0) DO (*pointers*) SYSTEM.GET(pvadr, r);
             INC(resPtr, ptr(pvadr, r, mod.name, continue));
             INC(pref, 4); SYSTEM.GET(pref, pvadr)
           END
         END ;
-        IF pvr # NIL THEN pref := mod.pvr; SYSTEM.GET(pref, pvadr);
+        IF pvr # NIL THEN
+          pref := mod.pvr; SYSTEM.GET(pref, pvadr);
           WHILE continue & (pvadr # 0) DO (*procedures*) SYSTEM.GET(pvadr, r);
             INC(resPvr, pvr(pvadr, r, mod.name, continue));
             INC(pref, 4); SYSTEM.GET(pref, pvadr)
@@ -422,20 +429,29 @@ MODULE Modules;  (*Link and load on RISC; NW 20.10.2013 / 8.1.2019 / AP 27.4.20 
       ELSIF resPtr > noref THEN res := dynptrs
       ELSIF resPvr > noref THEN res := dynpvrs
       ELSE FindStaticReferences(HandleRef, HandleRef, resPtr, resPvr);
-        IF resPtr > noerr THEN res := statptrs ELSIF resPvr > 0 THEN res := statpvrs END
+        IF resPtr > noerr THEN res := statptrs ELSIF resPvr > noerr THEN res := statpvrs END
       END
     END
   END Check;
 
   (*--------------------------- unloading ---------------------------*)
 
-  PROCEDURE Unload(mod: Module); (*module and selected imports from memory*)
+  PROCEDURE SetFinalizer*(finalize: Command);
+    VAR u, v, w: INTEGER; mod: Module;
+  BEGIN u := SYSTEM.REG(LNK); mod := root;
+    WHILE (mod # NIL) & ((u < mod.code) OR (u >= mod.imp)) DO mod := mod.next END ; (*search for caller*)
+    IF mod # NIL THEN v := SYSTEM.VAL(INTEGER, finalize);
+      SYSTEM.GET(mod.ent, w); w := mod.code + w; (*module initialization body*)
+      IF (v >= mod.code) & (v < w) & (u >= w) & (mod.finalize = NIL) THEN mod.finalize := finalize ELSE res := badfin END
+    END
+  END SetFinalizer;
+
+  PROCEDURE Unload(mod: Module); (*from memory*)
     VAR imp: Module; p, q: INTEGER;
   BEGIN (*mod.refcnt = 0 & mod.name[0] # 0X*)
+    IF mod.finalize # NIL THEN mod.finalize END ;
     mod.name[0] := 0X; p := mod.imp; q := mod.cmd;
-    WHILE p < q DO (*imports*) SYSTEM.GET(p, imp); DEC(imp.refcnt); INC(p, 4);
-      IF (imp.name[0] # 0X) & imp.selected & (imp.refcnt = 0) THEN Unload(imp) END
-    END ;
+    WHILE p < q DO (*imports*) SYSTEM.GET(p, imp); DEC(imp.refcnt); INC(p, 4) END ;
     IF mod.hidden THEN mod.hidden := FALSE; DEC(NofHidden) END ;
     IF mod.selected THEN mod.selected := FALSE; DEC(NofSelected) END ;
     IF mod = root THEN (*increase size of available module space*)
@@ -445,7 +461,7 @@ MODULE Modules;  (*Link and load on RISC; NW 20.10.2013 / 8.1.2019 / AP 27.4.20 
     END
   END Unload;
 
-  PROCEDURE Hide(mod: Module); (*module from module list*)
+  PROCEDURE Hide(mod: Module); (*from module list*)
     VAR i: INTEGER;
   BEGIN (*~mod.hidden & mod.name[0] # 0X*) i := 0;
     WHILE mod.name[i] # 0X DO INC(i) END ;
@@ -458,10 +474,12 @@ MODULE Modules;  (*Link and load on RISC; NW 20.10.2013 / 8.1.2019 / AP 27.4.20 
     VAR mod: Module;
   BEGIN res := noref;
     IF NofSelected > 0 THEN Check(res);
-      IF res = noref THEN (*unload*) mod := root;
-        WHILE mod # NIL DO
-          IF (mod.name[0] # 0X) & mod.selected & (mod.refcnt = 0) THEN Unload(mod) END ;
-          mod := mod.next
+      IF res = noref THEN (*unload*)
+        WHILE NofSelected > 0 DO mod := root;
+          WHILE mod # NIL DO
+            IF (mod.name[0] # 0X) & mod.selected & (mod.refcnt = 0) THEN Unload(mod) END ;
+            mod := mod.next
+          END
         END
       ELSIF (res > clients) & hide THEN (*hide*) mod := root;
         WHILE mod # NIL DO
@@ -490,22 +508,22 @@ MODULE Modules;  (*Link and load on RISC; NW 20.10.2013 / 8.1.2019 / AP 27.4.20 
     VAR mod, m, m1: Module; continue: BOOLEAN;
       p, q, k, res: INTEGER;
   BEGIN
-    IF NofHidden > 0 THEN k := 0;
-      IF NofSelected > 0 THEN (*save selection*) mod := root;
-        WHILE mod # NIL DO mod.sel := mod.selected; mod.selected := FALSE; mod := mod.next END
-      END ;
+    IF NofHidden > 0 THEN k := 0; NofSelected := 0; mod := root;
+      WHILE mod # NIL DO mod.sel := mod.selected; mod.selected := FALSE; mod := mod.next END ; (*save selection*)
       WHILE k < NofHidden DO INC(k);
-        mod := root; p := 0; continue := TRUE;
+        mod := root; p := 0; NofSelected := k; continue := TRUE;
         WHILE mod # NIL DO (*set first selection of k modules among hidden modules*)
           IF (mod.name[0] # 0X) & mod.hidden THEN mod.selected := p < k; INC(p) END ;
           mod := mod.next
         END ;
         WHILE continue DO Check(res);
           IF res = noref THEN (*unload current selection of k modules and start over*)
-            mod := root; k := 0; continue := FALSE;
-            WHILE mod # NIL DO
-              IF (mod.name[0] # 0X) & mod.hidden & mod.selected & (mod.refcnt = 0) THEN Unload(mod) END ;
-              mod := mod.next
+            k := 0; continue := FALSE;
+            WHILE NofSelected > 0 DO mod := root;
+              WHILE mod # NIL DO
+                IF (mod.name[0] # 0X) & mod.selected & (mod.refcnt = 0) THEN Unload(mod) END ;
+                mod := mod.next
+              END
             END
           ELSIF k < NofHidden THEN
             mod := root; q := 0; m1 := NIL;
@@ -529,19 +547,10 @@ MODULE Modules;  (*Link and load on RISC; NW 20.10.2013 / 8.1.2019 / AP 27.4.20 
           END
         END
       END ;
-      IF NofSelected > 0 THEN (*restore selection without re-selecting the just unloaded hidden modules*)
-        mod := root; NofSelected := 0;
-        WHILE mod # NIL DO
-          IF mod.sel & (mod.name[0] # 0X) THEN mod.selected := TRUE; INC(NofSelected)
-          ELSE mod.selected := FALSE
-          END ;
-          mod := mod.next
-        END
-      ELSE (*cleanup*) mod := root;
-        WHILE mod # NIL DO
-          IF mod.hidden THEN mod.selected := FALSE END ;
-          mod := mod.next
-        END
+      NofSelected := 0; mod := root; 
+      WHILE mod # NIL DO (*restore selection without re-selecting the just unloaded hidden modules*)
+        IF mod.sel & (mod.name[0] # 0X) THEN mod.selected := TRUE; INC(NofSelected) ELSE mod.selected := FALSE END ;
+        mod := mod.next
       END
     END
   END Collect;

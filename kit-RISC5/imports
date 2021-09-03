@@ -1,0 +1,139 @@
+./Stable/Apps/txt/Blink.Mod.txt
+  IMPORT SYSTEM, Oberon;
+
+./Stable/Apps/txt/Checkers.Mod.txt
+  IMPORT SYSTEM, Display, Viewers, Oberon, MenuViewers, TextFrames;
+
+./Stable/Apps/txt/Dummy.Mod.txt
+
+./Stable/Apps/txt/EBNF.Mod.txt
+  IMPORT Texts, Oberon;
+
+./Stable/Apps/txt/Hilbert.Mod.txt
+  IMPORT Display, Viewers, Texts, Oberon, MenuViewers, TextFrames;
+
+./Stable/Apps/txt/Sierpinski.Mod.txt
+  IMPORT Display, Viewers, Oberon, MenuViewers, TextFrames;
+
+./Stable/Apps/txt/Stars.Mod.txt
+  IMPORT SYSTEM, Display, Viewers, Texts, Oberon, MenuViewers, TextFrames;
+
+./Stable/BootLink/txt/ORL.Mod.txt
+  IMPORT SYSTEM, Kernel, Disk, Files, Modules, Texts, Oberon;
+
+./Stable/BootLink/txt/ORX.Mod.txt
+  IMPORT Files, Texts, Oberon;
+
+./Stable/BootLoad/txt/BootLoad.Mod.txt
+  IMPORT SYSTEM;
+
+./Stable/Compiler/txt/ORB.Mod.txt
+  IMPORT Files, ORS;
+
+./Stable/Compiler/txt/ORG.Mod.txt
+  IMPORT SYSTEM, Files, ORS, ORB;
+
+./Stable/Compiler/txt/ORP.Mod.txt
+  IMPORT Texts, Oberon, ORS, ORB, ORG;
+
+./Stable/Compiler/txt/ORS.Mod.txt
+  IMPORT SYSTEM, Texts, Oberon;
+  EnterKW(import, "IMPORT");
+
+./Stable/Compiler/txt/ORTool.Mod.txt
+  IMPORT SYSTEM, Files, Modules, Texts, Oberon, ORB;
+
+./Stable/Editor/txt/Edit.Mod.txt
+  IMPORT Files, Display, Viewers, Fonts, Texts, Oberon, MenuViewers, TextFrames;
+
+./Stable/Fonts/txt/FontTool.Mod.txt
+  IMPORT Files, Texts, Oberon;
+
+./Stable/Graphics/txt/Curves.Mod.txt
+  IMPORT Display, Files, Oberon, Graphics, GraphicFrames;
+
+./Stable/Graphics/txt/Draw.Mod.txt
+  IMPORT Files, Fonts, Viewers, Texts, Oberon,
+    TextFrames, MenuViewers, Graphics, GraphicFrames;
+
+./Stable/Graphics/txt/GraphTool.Mod.txt
+  IMPORT Files, Texts, Oberon;
+
+./Stable/Graphics/txt/GraphicFrames.Mod.txt
+  IMPORT SYSTEM, Input, Display, Viewers, Fonts, Texts, Graphics, Oberon;
+
+./Stable/Graphics/txt/Graphics.Mod.txt
+  IMPORT SYSTEM, Files, Modules, Fonts, (*Printer,*) Texts, Oberon;
+
+./Stable/Graphics/txt/Rectangles.Mod.txt
+  IMPORT SYSTEM, Files, Display, Oberon, Graphics, GraphicFrames;
+
+./Stable/In/txt/In.Mod.txt
+  IMPORT Viewers, Texts, Oberon, TextFrames;
+
+./Stable/InnerCore/txt/Disk.Mod.txt
+  IMPORT SYSTEM;
+
+./Stable/InnerCore/txt/FileDir.Mod.txt
+  IMPORT Disk;
+
+./Stable/InnerCore/txt/Files.Mod.txt
+  IMPORT SYSTEM, Kernel, Disk, FileDir;
+
+./Stable/InnerCore/txt/Kernel.Mod.txt
+  IMPORT SYSTEM;
+
+./Stable/InnerCore/txt/Modules.Mod.txt
+  IMPORT SYSTEM, Kernel, Files;
+
+./Stable/MacroTool/txt/MacroTool.Mod.txt
+  IMPORT Texts, Oberon, Graphics, GraphicFrames;
+
+./Stable/Math/txt/Math.Mod.txt
+
+./Stable/Oberon0/txt/Oberon0.Mod.txt
+  IMPORT SYSTEM, Kernel, Disk, FileDir, Files, Modules, RS232, PCLink0;
+
+./Stable/Oberon0/txt/PCLink0.Mod.txt
+  IMPORT Files, RS232;
+
+./Stable/Oberon0/txt/RS232.Mod.txt
+  IMPORT SYSTEM;
+
+./Stable/Out/txt/Out.Mod.txt
+  IMPORT Texts, Oberon, TextFrames, MenuViewers;
+
+./Stable/OuterCore/txt/Display.Mod.txt
+  IMPORT SYSTEM;
+
+./Stable/OuterCore/txt/Fonts.Mod.txt
+  IMPORT SYSTEM, Files;
+
+./Stable/OuterCore/txt/Input.Mod.txt
+  IMPORT SYSTEM;
+
+./Stable/OuterCore/txt/MenuViewers.Mod.txt
+  IMPORT Input, Display, Viewers, Oberon;
+
+./Stable/OuterCore/txt/Oberon.Mod.txt
+  IMPORT SYSTEM, Kernel, Files, Modules, Input, Display, Viewers, Fonts, Texts;
+
+./Stable/OuterCore/txt/System.Mod.txt
+  IMPORT SYSTEM, Kernel, Disk, FileDir, Files, Modules,
+    Input, Display, Viewers, Fonts, Texts, Oberon, MenuViewers, TextFrames;
+
+./Stable/OuterCore/txt/TextFrames.Mod.txt
+  IMPORT Input, Display, Viewers, Fonts, Texts, Oberon;
+
+./Stable/OuterCore/txt/Texts.Mod.txt
+  IMPORT Files, Fonts;
+
+./Stable/OuterCore/txt/Viewers.Mod.txt
+  IMPORT Display;
+
+./Stable/PCLink2/txt/PCLink2.Mod.txt
+  IMPORT SYSTEM, Files, Modules, Texts, TextFrames, Oberon;
+
+./Stable/Tools/txt/Tools.Mod.txt
+  IMPORT SYSTEM, Disk, Files, Viewers, Texts, Oberon, MenuViewers, TextFrames;
+

@@ -1,11 +1,11 @@
-MODULE System; (*JG 3.10.90 / NW 12.10.93 / NW 20.6.2016 / AP 15.5.20 Extended Oberon*)
+MODULE System; (*JG 3.10.90 / NW 12.10.93 / NW 20.6.2016 / AP 11.6.21 Extended Oberon*)
   IMPORT SYSTEM, Kernel, Disk, FileDir, Files, Modules,
     Input, Display, Viewers, Fonts, Texts, Oberon, MenuViewers, TextFrames;
 
-  CONST Version* = "Extended Oberon System  AP 15.5.20";
+  CONST Version* = "Extended Oberon System  AP 11.6.21";
     StandardMenu = "System.Close System.Copy System.Grow Edit.Search Edit.Store | System.Expand System.Spread System.Clone";
     LogMenu = "Edit.Locate Edit.Search System.Copy System.Grow System.Clear | System.Expand System.Spread System.Clone";
-    SystemLog = "System.Log"; SystemTool = "System.Tool";
+    SystemLog = "System.Log"; SystemTool = "System.Tool"; SystemBatch = "System.Batch";
     TAB = Input.TAB; CR = Input.CR; LNK = 15; TaskPeriod = 500; (*ms*)
 
   TYPE Handler = PROCEDURE(name: ARRAY OF CHAR);
@@ -116,6 +116,10 @@ MODULE System; (*JG 3.10.90 / NW 12.10.93 / NW 20.6.2016 / AP 15.5.20 Extended O
     Viewers.Close(V)
   END Close;
 
+  PROCEDURE CloseSelf*;
+  BEGIN Viewers.Close(Oberon.Par.vwr)
+  END CloseSelf;
+
   PROCEDURE CloseTrack*;
     VAR D: Viewers.DisplayArea; V: Viewers.Viewer;
   BEGIN V := Oberon.MarkedViewer(); D := Viewers.ThisDisplay(V); Viewers.CloseTrack(D, V.X)
@@ -182,7 +186,9 @@ MODULE System; (*JG 3.10.90 / NW 12.10.93 / NW 20.6.2016 / AP 15.5.20 Extended O
   END MakeDisplayName;
 
   PROCEDURE OpenViewers;  (*open log and system tool viewer in system track of current display*)
-    VAR logV, toolV, menu, main: Display.Frame; X, Y: INTEGER;
+    VAR logV, toolV: Viewers.Viewer;
+      menu, main: Display.Frame;
+      X, Y: INTEGER;
   BEGIN
     IF Viewers.CurDisplay # NIL THEN
       Texts.WriteString(W, Version); Texts.WriteString(W, " / Display ");
@@ -448,7 +454,7 @@ MODULE System; (*JG 3.10.90 / NW 12.10.93 / NW 20.6.2016 / AP 15.5.20 Extended O
       IF Modules.res = Modules.noref THEN Texts.WriteString(W, " unloading"); EndLine
       ELSE
         IF hide & (Modules.res > Modules.clients) THEN Texts.WriteString(W, " removing from module list")
-        ELSE Texts.WriteString(W, " unloading failed");
+        ELSE Texts.WriteString(W, " unloading failed, try /f option");
           IF Modules.res = Modules.clients THEN M := NIL; Modules.FindClients(WriteClient, res) END
         END ;
         EndLine; WriteReferences
@@ -668,6 +674,29 @@ MODULE System; (*JG 3.10.90 / NW 12.10.93 / NW 20.6.2016 / AP 15.5.20 Extended O
     Texts.Append(Oberon.Log, W.buf)
   END ShowFonts;
 
+  PROCEDURE Run(name: ARRAY OF CHAR);  (*execute multiple commands separated by ~ in the specified batch file*)
+    VAR F: Files.File; T: Texts.Text;
+      menu, main: Display.Frame;
+      V: Viewers.Viewer; X, Y: INTEGER;
+  BEGIN F := Files.Old(name);
+    IF F # NIL THEN T := TextFrames.Text(name);
+      Oberon.AllocateSystemViewer(0, X, Y);
+      menu := TextFrames.NewMenu(name, StandardMenu);
+      main := TextFrames.NewText(T, 0);
+      V := MenuViewers.New(menu, main, TextFrames.menuH, X, Y);
+      Oberon.Run(main, T, 0)
+    END
+  END Run;
+
+  PROCEDURE Batch*;
+    VAR S: Texts.Scanner;
+  BEGIN GetArg(S);
+    WHILE S.class = Texts.Name DO
+      Texts.WriteString(W, S.s); Texts.WriteString(W, " executing"); EndLine;
+      Run(S.s); Texts.Scan(S)
+    END
+  END Batch;
+
   PROCEDURE Trap(VAR a: INTEGER; b, c, d: INTEGER);
     VAR u, v, w: INTEGER; mod: Modules.Module;
   BEGIN u := SYSTEM.REG(LNK);  (*return address deposited in register LNK by the trap (=BLR TR) instruction*)
@@ -726,5 +755,5 @@ MODULE System; (*JG 3.10.90 / NW 12.10.93 / NW 20.6.2016 / AP 15.5.20 Extended O
 
 BEGIN Texts.OpenWriter(W); defer := FALSE; T := Oberon.NewTask(Deferred, TaskPeriod);
   Oberon.OpenLog(TextFrames.Text("")); CreateDisplay("Oberon");
-  Kernel.Install(SYSTEM.ADR(Trap), Kernel.TrapAdr); Kernel.Install(SYSTEM.ADR(Abort), 0)
+  Kernel.Install(SYSTEM.ADR(Trap), Kernel.TrapAdr); Kernel.Install(SYSTEM.ADR(Abort), 0); Run(SystemBatch)
 END System.

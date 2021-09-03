@@ -1,0 +1,23 @@
+#!/bin/bash
+
+export DIRS=`find ./Stable -name 'txt' -print | sort`
+
+export ALLFILES=""
+
+for d in $DIRS
+do
+  export FILES=`ls $d | sort`
+  export PATHS=""
+  for f in $FILES
+  do
+    export PATHS="$PATHS $d/$f"
+  done
+  export ALLFILES="$ALLFILES $PATHS"
+done
+
+for f in $ALLFILES
+do
+  echo $f
+  gawk '/IMPORT/ { print; while (index($0, ";") == 0) { getline; print } }' $f
+  echo
+done

@@ -1,13 +1,11 @@
-MODULE GraphicFrames; (*NW 18.4.88 / 18.11.2013 / 27.8.2018 / AP 9.3.20 Extended Oberon*)
-  IMPORT SYSTEM, Display, Viewers, Input, Fonts, Texts, Graphics, Oberon;
+MODULE GraphicFrames; (*NW 18.4.88 / 18.11.2013 / 27.8.2018 / AP 15.9.20 Extended Oberon*)
+  IMPORT SYSTEM, Input, Display, Viewers, Fonts, Texts, Graphics, Oberon;
 
   CONST (*update message ids*)
     drawobj = 1; drawobjs = 2; drawobjd = 3;
     drawnorm = 4; drawsel = 5; drawdel = 6;
 
-    markW = 5;
-
-    CR = Input.CR;
+    markW = 5; CR = 0DX;
 
   TYPE
     Frame* = POINTER TO FrameDesc;

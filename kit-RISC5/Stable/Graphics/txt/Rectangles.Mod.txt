@@ -1,5 +1,5 @@
-MODULE Rectangles;  (*NW 25.2.90 / 18.4.2013*)
-  IMPORT SYSTEM, Display, Files, Input, Texts, Oberon, Graphics, GraphicFrames;
+MODULE Rectangles;  (*NW 25.2.90 / 18.4.2013 / AP 15.9.20 Extended Oberon*)
+  IMPORT SYSTEM, Files, Display, Oberon, Graphics, GraphicFrames;
 
   TYPE
     Rectangle* = POINTER TO RectDesc;

@@ -1,7 +1,6 @@
-MODULE Kernel;  (*NW/PR  11.4.86 / 27.12.95 / 4.2.2014 / AP 15.5.20 Extended Oberon*)
+MODULE Kernel;  (*NW/PR  11.4.86 / 27.12.95 / 4.2.2014 / AP 1.3.21 Extended Oberon*)
   IMPORT SYSTEM;
-  CONST TrapAdr* = 04H;
-    timer = -64;
+  CONST TrapAdr* = 04H; timer = -64;
 
   TYPE Handler* = PROCEDURE(src, dst: LONGINT; s: ARRAY OF CHAR; VAR continue: BOOLEAN): INTEGER;
 
@@ -10,7 +9,7 @@ MODULE Kernel;  (*NW/PR  11.4.86 / 27.12.95 / 4.2.2014 / AP 15.5.20 Extended Obe
     stackOrg*, stackSize*, MemLim*: INTEGER;
     clock: INTEGER;
     list0, list1, list2, list3: INTEGER;  (*lists of free blocks of size n*256, 128, 64, 32 bytes*)
-    
+
 (* ---------- New: heap allocation ----------*)
 
   PROCEDURE GetBlock(VAR p: LONGINT; len: LONGINT);
@@ -36,9 +35,8 @@ MODULE Kernel;  (*NW/PR  11.4.86 / 27.12.95 / 4.2.2014 / AP 15.5.20 Extended Obe
     VAR q: LONGINT;
   BEGIN
     IF list1 # 0 THEN p := list1; SYSTEM.GET(list1+8, list1)
-    ELSE GetBlock(q, 256);
-      IF q # 0 THEN SYSTEM.PUT(q+128, 128); SYSTEM.PUT(q+132, -1); SYSTEM.PUT(q+136, list1); list1 := q + 128 END ;
-      p := q
+    ELSE GetBlock(q, 256); p := q;
+      IF q # 0 THEN SYSTEM.PUT(q+128, 128); SYSTEM.PUT(q+132, -1); SYSTEM.PUT(q+136, list1); list1 := q + 128 END
     END
   END GetBlock128;
 
@@ -46,9 +44,8 @@ MODULE Kernel;  (*NW/PR  11.4.86 / 27.12.95 / 4.2.2014 / AP 15.5.20 Extended Obe
     VAR q: LONGINT;
   BEGIN
     IF list2 # 0 THEN p := list2; SYSTEM.GET(list2+8, list2)
-    ELSE GetBlock128(q);
-      IF q # 0 THEN SYSTEM.PUT(q+64, 64); SYSTEM.PUT(q+68, -1); SYSTEM.PUT(q+72, list2); list2 := q + 64 END ;
-      p := q
+    ELSE GetBlock128(q); p := q;
+      IF q # 0 THEN SYSTEM.PUT(q+64, 64); SYSTEM.PUT(q+68, -1); SYSTEM.PUT(q+72, list2); list2 := q + 64 END
     END
   END GetBlock64;
 
@@ -56,9 +53,8 @@ MODULE Kernel;  (*NW/PR  11.4.86 / 27.12.95 / 4.2.2014 / AP 15.5.20 Extended Obe
     VAR q: LONGINT;
   BEGIN
     IF list3 # 0 THEN p := list3; SYSTEM.GET(list3+8, list3)
-    ELSE GetBlock64(q);
-      IF q # 0 THEN SYSTEM.PUT(q+32, 32); SYSTEM.PUT(q+36, -1); SYSTEM.PUT(q+40, list3); list3 := q + 32 END ;
-      p := q
+    ELSE GetBlock64(q); p := q;
+      IF q # 0 THEN SYSTEM.PUT(q+32, 32); SYSTEM.PUT(q+36, -1); SYSTEM.PUT(q+40, list3); list3 := q + 32 END
     END
   END GetBlock32;
 
@@ -66,18 +62,18 @@ MODULE Kernel;  (*NW/PR  11.4.86 / 27.12.95 / 4.2.2014 / AP 15.5.20 Extended Obe
     (*called by NEW via TR; ptr is a pointer; tag (or tag-1) is a pointer or blktyp; len and elemsize describe arrays*)
     VAR p, size, lim: LONGINT;
   BEGIN
-    IF tag MOD 4 = 0 THEN (*record block*)
+    IF tag MOD 4 = 0 THEN (*record*)
       SYSTEM.GET(tag, size);  (*size already converted for heap allocation with 8 byte prefix*)
       IF size = 32 THEN GetBlock32(p)
       ELSIF size = 64 THEN GetBlock64(p)
       ELSIF size = 128 THEN GetBlock128(p)
-      ELSE GetBlock(p, (size+255) DIV 256 * 256)
+      ELSE GetBlock(p, size)
       END ;
       IF p = 0 THEN ptr := 0
       ELSE ptr := p+8; SYSTEM.PUT(p, tag); lim := p + size; INC(p, 4); INC(allocated, size);
         WHILE p < lim DO SYSTEM.PUT(p, 0); INC(p, 4) END
       END
-    ELSE (*array block*)
+    ELSE (*array*)
       size := len*elemsize;  (*convert size for heap allocation with 24 byte prefix*)
       IF size <= 8 THEN size := 32; GetBlock32(p)
       ELSIF size <= 40 THEN size := 64; GetBlock64(p)
@@ -105,9 +101,12 @@ MODULE Kernel;  (*NW/PR  11.4.86 / 27.12.95 / 4.2.2014 / AP 15.5.20 Extended Obe
               IF offadr = 0 THEN offadr := tag + 16 ELSE INC(offadr, 4) END ;
               SYSTEM.PUT(p-4, offadr); SYSTEM.GET(offadr, offset)
             ELSIF blktyp = 1 THEN (*array of record*)
-              IF offadr = 0 THEN offadr := tag + 15; pos := p + 16; SYSTEM.PUT(p+12, pos) ELSE INC(offadr); SYSTEM.GET(p+12, pos) END ;
-              SYSTEM.GET((offadr DIV 4) * 4, offset);
-              IF offset = -1 THEN SYSTEM.GET(p, len); SYSTEM.GET(p+4, elemsize); INC(pos, elemsize);
+              IF offadr = 0 THEN offadr := tag + 15; pos := p + 16; SYSTEM.PUT(p+12, pos)
+              ELSE INC(offadr, 4); SYSTEM.GET(p+12, pos)
+              END ;
+              SYSTEM.GET(offadr, offset);
+              IF offset = -1 THEN
+                SYSTEM.GET(p, len); SYSTEM.GET(p+4, elemsize); INC(pos, elemsize);
                 IF pos < p + 16 + len*elemsize THEN offadr := tag + 15; SYSTEM.GET(offadr, offset); SYSTEM.PUT(p+12, pos) END
               END ;
               SYSTEM.PUT(p-4, offadr)
@@ -125,7 +124,8 @@ MODULE Kernel;  (*NW/PR  11.4.86 / 27.12.95 / 4.2.2014 / AP 15.5.20 Extended Obe
               IF r >= heapOrg THEN SYSTEM.GET(r-4, offadr);
                 IF offadr = 0 THEN SYSTEM.PUT(pos+offset, q); q := p; p := r END
               END
-            ELSE (*up*) SYSTEM.GET(q-4, offadr); SYSTEM.GET(offadr, offset);
+            ELSE (*up*)
+              SYSTEM.GET(q-4, offadr); SYSTEM.GET(offadr, offset);
               IF p # q THEN SYSTEM.GET(q-8, tag); blktyp := tag MOD 4;
                 IF blktyp = 0 THEN pos := q ELSIF blktyp = 1 THEN SYSTEM.GET(q+12, pos) ELSE pos := q + 16 END ;
                 SYSTEM.GET(pos+offset, r); SYSTEM.PUT(pos+offset, p); p := q; q := r
@@ -144,7 +144,8 @@ MODULE Kernel;  (*NW/PR  11.4.86 / 27.12.95 / 4.2.2014 / AP 15.5.20 Extended Obe
     REPEAT SYSTEM.GET(p+4, mark); q := p;
       WHILE mark = 0 DO SYSTEM.GET(p, tag);
         IF tag MOD 4 = 0 THEN (*record*) SYSTEM.GET(tag, size) ELSE (*array*) SYSTEM.GET(p+16, size) END ;
-        INC(p, size); SYSTEM.GET(p+4, mark)
+        INC(p, size);
+        IF p < heapLim THEN SYSTEM.GET(p+4, mark) ELSE mark := -1 END
       END ;
       size := p - q; DEC(allocated, size);  (*size of free block*)
       IF size > 0 THEN
@@ -163,8 +164,8 @@ MODULE Kernel;  (*NW/PR  11.4.86 / 27.12.95 / 4.2.2014 / AP 15.5.20 Extended Obe
       END ;
       IF mark > 0 THEN SYSTEM.GET(p, tag);
         IF tag MOD 4 = 0 THEN (*record*) SYSTEM.GET(tag, size) ELSE (*array*) SYSTEM.GET(p+16, size) END ;
-        SYSTEM.PUT(p+4, 0); INC(p, size);
-      ELSE (*free*) SYSTEM.GET(p, size); INC(p, size)
+        SYSTEM.PUT(p+4, 0); INC(p, size)
+      ELSIF p < heapLim THEN (*free*) SYSTEM.GET(p, size); INC(p, size)
       END
     UNTIL p >= heapLim
   END Collect;
@@ -182,12 +183,14 @@ MODULE Kernel;  (*NW/PR  11.4.86 / 27.12.95 / 4.2.2014 / AP 15.5.20 Extended Obe
           IF continue THEN
             IF blktyp = 0 THEN (*record*)
               IF typ # NIL THEN INC(resTyp, typ(p, tag, s, continue)) END ;
-              IF continue & ((ptr # NIL) OR (pvr # NIL)) THEN offadr := tag + 16; SYSTEM.GET(offadr, offset);
+              IF continue & ((ptr # NIL) OR (pvr # NIL)) THEN
+                offadr := tag + 16; SYSTEM.GET(offadr, offset);
                 WHILE continue & (offset # -1) DO (*pointers*)
                   IF ptr # NIL THEN SYSTEM.GET(p+8+offset, r); INC(resPtr, ptr(p+8+offset, r, s, continue)) END ;
                   INC(offadr, 4); SYSTEM.GET(offadr, offset)
                 END ;
-                IF continue & (pvr # NIL) THEN INC(offadr, 4); SYSTEM.GET(offadr, offset);
+                IF continue & (pvr # NIL) THEN
+                  INC(offadr, 4); SYSTEM.GET(offadr, offset);
                   WHILE continue & (offset # -1) DO (*procedures*) SYSTEM.GET(p+8+offset, r);
                     INC(resPvr, pvr(p+8+offset, r, s, continue));
                     INC(offadr, 4); SYSTEM.GET(offadr, offset)
@@ -196,7 +199,8 @@ MODULE Kernel;  (*NW/PR  11.4.86 / 27.12.95 / 4.2.2014 / AP 15.5.20 Extended Obe
               END
             ELSIF blktyp = 1 THEN (*array of record*)
               IF typ # NIL THEN INC(resTyp, typ(p, tag-1, s, continue)) END ;
-              IF continue & ((ptr # NIL) OR (pvr # NIL)) THEN offadr := tag + 15; SYSTEM.GET(offadr, offset);
+              IF continue & ((ptr # NIL) OR (pvr # NIL)) THEN
+                offadr := tag + 15; SYSTEM.GET(offadr, offset);
                 SYSTEM.GET(p+8, len); SYSTEM.GET(p+12, elemsize); len := p + 24 + len*elemsize;
                 WHILE continue & (offset # -1) DO (*pointers*)
                   IF ptr # NIL THEN pos := p + 24;
@@ -206,7 +210,8 @@ MODULE Kernel;  (*NW/PR  11.4.86 / 27.12.95 / 4.2.2014 / AP 15.5.20 Extended Obe
                   END ;
                   INC(offadr, 4); SYSTEM.GET(offadr, offset)
                 END ;
-                IF continue & (pvr # NIL) THEN INC(offadr, 4); SYSTEM.GET(offadr, offset);
+                IF continue & (pvr # NIL) THEN
+                  INC(offadr, 4); SYSTEM.GET(offadr, offset);
                   WHILE continue & (offset # -1) DO (*procedures*) pos := p + 24;
                     WHILE continue & (pos < len) DO SYSTEM.GET(pos+offset, r);
                       INC(resPvr, pvr(pos+offset, r, s, continue)); INC(pos, elemsize)
@@ -216,7 +221,8 @@ MODULE Kernel;  (*NW/PR  11.4.86 / 27.12.95 / 4.2.2014 / AP 15.5.20 Extended Obe
                 END
               END
             ELSIF blktyp = 2 THEN (*array of pointer*)
-              IF ptr # NIL THEN SYSTEM.GET(p+8, len); pos := p + 24; len := pos + len*4;
+              IF ptr # NIL THEN
+                SYSTEM.GET(p+8, len); pos := p + 24; len := pos + len*4;
                 WHILE continue & (pos < len) DO SYSTEM.GET(pos, r);
                   INC(resPtr, ptr(pos, r, s, continue)); INC(pos, 4)
                 END
@@ -264,9 +270,17 @@ MODULE Kernel;  (*NW/PR  11.4.86 / 27.12.95 / 4.2.2014 / AP 15.5.20 Extended Obe
   PROCEDURE Init*;
   BEGIN Install(SYSTEM.ADR(Trap), TrapAdr);  (*install temporary trap*)
     SYSTEM.GET(12, MemLim); SYSTEM.GET(24, heapOrg);
-    stackOrg := heapOrg; stackSize := 8000H; heapLim := MemLim;
-    list1 := 0; list2 := 0; list3 := 0; list0 := heapOrg;
-    SYSTEM.PUT(list0, heapLim - heapOrg); SYSTEM.PUT(list0+4, -1); SYSTEM.PUT(list0+8, 0);
+    stackOrg := heapOrg; stackSize := 8000H; heapLim := MemLim DIV 256 * 256;
+    list0 := heapOrg; SYSTEM.PUT(list0, heapLim - heapOrg); SYSTEM.PUT(list0+4, -1); SYSTEM.PUT(list0+8, 0);
+    IF MemLim - heapLim < 128 THEN list1 := 0
+    ELSE list1 := heapLim; INC(heapLim, 128); SYSTEM.PUT(list1, 128); SYSTEM.PUT(list1+4, -1); SYSTEM.PUT(list1+8, 0)
+    END ;
+    IF MemLim - heapLim < 64 THEN list2 := 0
+    ELSE list2 := heapLim; INC(heapLim, 64); SYSTEM.PUT(list2, 64); SYSTEM.PUT(list2+4, -1); SYSTEM.PUT(list2+8, 0)
+    END ;
+    IF MemLim - heapLim < 32 THEN list3 := 0
+    ELSE list3 := heapLim; INC(heapLim, 32); SYSTEM.PUT(list3, 32); SYSTEM.PUT(list3+4, -1); SYSTEM.PUT(list3+8, 0)
+    END ;
     allocated := 0; clock := 0
   END Init;
 
