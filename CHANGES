@@ -1,0 +1,23 @@
+03-Sep-2021
+	change CPU version of RISC5 simulator to 5.5
+
+	enlarge address space of RISC5 simulator to 16 MB:
+	RAM base:   0x000000
+	RAM size:   0xFFE000 (16 MB - 8 KB)
+	PROM base:  0xFFE000
+	PROM size:  0x001000 (max, allocated from base)
+	I/O base:   0xFFF000
+	I/O size:   0x001000 (max, allocated from top)
+
+	move display frame buffer to high memory:
+	dsp base:   0xFE0000 (16 MB - 128 KB, i.e., within RAM)
+	dsp size:   0x018000 (1024 * 768 / 8, 1 bit per pixel)
+
+	change origin and limit constants:
+	stackOrg:   0x800000 (8 MB)
+	heapOrg:    ditto
+	memLim:     0xFE0000 (i.e., the dsp base)
+	heapLim:    ditto
+
+	change software base to Andreas Pirklbauer's Extended-Oberon-1.6
+	(see kit-RISC5/NOTES for changes from his release to our kit)

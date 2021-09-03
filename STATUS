@@ -3,25 +3,25 @@ Current status of development
 -----------------------------
 
 1) RISC5 simulator
-   sim-RISC5			done
+   sim-RISC5			done, confirmed 03-Sep-2021
 
 2) Extended Oberon on RISC5 simulator
-   kit-RISC5/install/sim	done
-   kit-RISC5/rebuild/sim	done
+   kit-RISC5/install/sim	done, confirmed 03-Sep-2021
+   kit-RISC5/rebuild/sim	done, confirmed 03-Sep-2021
 
 3) RISC5 hardware
-   fpga-RISC5			done
+   fpga-RISC5			done, not confirmed
 
 4) Extended Oberon on RISC5 hardware
-   kit-RISC5/install/fpga	done
-   kit-RISC5/rebuild/fpga	done
+   kit-RISC5/install/fpga	done, not confirmed
+   kit-RISC5/rebuild/fpga	done, not confirmed
 
 5) ECO32 simulator
-   sim-ECO32			done
+   sim-ECO32			not done, not confirmed
 
 6) Extended Oberon on ECO32 simulator
-   kit-ECO32/install/sim	done
-   kit-ECO32/rebuild/sim	done
+   kit-ECO32/install/sim	not done, not confirmed
+   kit-ECO32/rebuild/sim	not done, not confirmed
 
 7) ECO32 hardware
    fpga-ECO32			not yet

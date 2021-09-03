@@ -7,7 +7,7 @@ KIT=../../Stable
 INSTALL=../../install/sim
 D2O=$(BUILD)/bin/dos2oberon
 O2U=$(BUILD)/bin/oberon2unix
-M2B=$(BUILD)/bin/mem2bin
+M2B=$(BUILD)/bin/mem2bin-RISC5
 NEW=../../New
 
 all:
