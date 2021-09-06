@@ -7,7 +7,7 @@
 `default_nettype none
 
 
-`define CPU_ID	{ 16'h4847, 8'h54 }	// Mfr. = HG, Version = 5.4
+`define CPU_ID	{ 16'h4847, 8'h55 }	// Mfr. = HG, Version = 5.5
 
 
 module cpu_core(clk, rst,

@@ -7,9 +7,6 @@
 `default_nettype none
 
 
-`define VIDEO_BUF	18'h39FC0	// word address of video buffer
-
-
 module risc5(clk_in,
              rst_in_n,
              sdram_clk,
@@ -133,7 +130,6 @@ module risc5(clk_in,
   wire ram_ack;				// ram acknowledge
   // vid
   wire vid_stb;				// video buffer strobe
-  wire [19:2] vid_addr;			// video buffer address
   // i/o
   wire i_o_stb;				// i/o strobe
   // tmr
@@ -216,14 +212,13 @@ module risc5(clk_in,
     .sdram_dq(sdram_dq[31:0])
   );
 
-  assign vid_addr[19:2] = bus_addr[19:2] - `VIDEO_BUF;
   vid vid_0(
     .pclk(pclk),
     .clk(clk),
     .rst(rst),
     .stb(vid_stb),
     .we(bus_we),
-    .addr(vid_addr[16:2]),
+    .addr(bus_addr[16:2]),
     .data_in(bus_dout[31:0]),
     .hsync(vga_hsync),
     .vsync(vga_vsync),
@@ -318,14 +313,14 @@ module risc5(clk_in,
     (bus_stb == 1'b1 && bus_addr[23:12] == 12'hFFE
                      && bus_addr[11] == 1'b0) ? 1'b1 : 1'b0;
 
-  // RAM: 1 MB @ 0x000000
+  // RAM: (16 MB - 8 KB) @ 0x000000
   assign ram_stb =
-    (bus_stb == 1'b1 && bus_addr[23:20] == 4'h0) ? 1'b1 : 1'b0;
+    (bus_stb == 1'b1 && bus_addr[23:13] != 11'h7FF) ? 1'b1 : 1'b0;
 
-  // VID: 96 KB @ 0x0E7F00
+  // VID: 96 KB @ 0xFE0000
   assign vid_stb =
-    (bus_stb == 1'b1 && bus_addr[23:20] == 4'h0
-                     && bus_addr[19:2] >= `VIDEO_BUF) ? 1'b1 : 1'b0;
+    (bus_stb == 1'b1 && bus_addr[23:17] == 7'h7F
+                     && bus_addr[16:15] != 2'b11) ? 1'b1 : 1'b0;
 
   // I/O: 64 bytes (16 words) @ 0xFFFFC0
   assign i_o_stb =
