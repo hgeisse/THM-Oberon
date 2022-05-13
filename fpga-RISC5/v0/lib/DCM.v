@@ -14,7 +14,9 @@ module DCM(CLKIN, CLKFX);
     input CLKIN;
     output reg CLKFX;
 
-  initial CLKFX = 0;
+  initial begin
+    CLKFX = 0;
+  end
 
   always @(posedge CLKIN) begin
     #7 CLKFX = 0;
