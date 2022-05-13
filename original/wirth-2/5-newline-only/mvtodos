@@ -1,0 +1,19 @@
+#!/bin/bash
+todos Divider.v
+todos FPAdder.v
+todos FPDivider.v
+todos FPMultiplier.v
+todos LeftShifter.v
+todos MouseP.v
+todos Multiplier.v
+todos PROM.v
+todos PS2.v
+todos RISC5.ucf
+todos RISC5.v
+todos RISC5Top.v
+todos RS232R.v
+todos RS232T.v
+todos Registers.v
+todos RightShifter.v
+todos SPI.v
+todos VID.v

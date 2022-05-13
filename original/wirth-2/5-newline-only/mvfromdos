@@ -1,0 +1,19 @@
+#!/bin/bash
+fromdos Divider.v
+fromdos FPAdder.v
+fromdos FPDivider.v
+fromdos FPMultiplier.v
+fromdos LeftShifter.v
+fromdos MouseP.v
+fromdos Multiplier.v
+fromdos PROM.v
+fromdos PS2.v
+fromdos RISC5.ucf
+fromdos RISC5.v
+fromdos RISC5Top.v
+fromdos RS232R.v
+fromdos RS232T.v
+fromdos Registers.v
+fromdos RightShifter.v
+fromdos SPI.v
+fromdos VID.v
