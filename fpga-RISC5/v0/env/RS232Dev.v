@@ -7,6 +7,12 @@
 `default_nettype none
 
 
-module RS232Dev();
+module RS232Dev(RxD, TxD);
+    output reg RxD;
+    input TxD;
+
+  initial begin
+    #0          RxD = 1'b1;
+  end
 
 endmodule

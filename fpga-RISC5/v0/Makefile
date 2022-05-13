@@ -26,8 +26,9 @@ SRCS = risc5test.v \
        env/Memory.v \
        env/BoardDev.v \
        env/RS232Dev.v \
-       env/PS2Dev.v \
-       env/SPIDev.v
+       env/SPIDev.v \
+       env/VIDDev.v \
+       env/PS2Dev.v
 
 all:		show
 

@@ -55,4 +55,6 @@ module SramChip(A, CE_n, UB_n, LB_n, WE_n, OE_n, IO);
     input OE_n;
     inout [15:0] IO;
 
+  assign IO = 16'b0;
+
 endmodule
