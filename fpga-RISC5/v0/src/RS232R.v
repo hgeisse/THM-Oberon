@@ -1,7 +1,8 @@
 `timescale 1ns / 1ps  // NW 4.5.09 / 15.11.10
+`default_nettype none // HG
 
 // RS232 receiver for 19200 or 115200 bps, 8 bit data
-// clock is 25 MHz
+// clock is 25 MHz
 
 module RS232R(
     input clk, rst,
@@ -35,4 +36,16 @@ always @ (posedge clk) begin
   shreg <= midtick ? {Q1, shreg[7:1]} : shreg;
   stat <= (endtick & endbit) | ~(~rst | done) & stat;
 end
+
+// HG: needed for simulation
+initial begin
+  run = 0;
+  stat = 0;
+  Q0 = 0;
+  Q1 = 0;
+  tick = 0;
+  bitcnt = 0;
+  shreg = 0;
+end
+
 endmodule

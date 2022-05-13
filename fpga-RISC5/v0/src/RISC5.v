@@ -1,4 +1,6 @@
 `timescale 1ns / 1ps  // 31.8.2018
+`default_nettype none // HG
+
 //with interrupt and floating-point
 
 module RISC5(
@@ -181,4 +183,23 @@ always @ (posedge clk) begin
   intEnb <= ~rst ? 0 : (BR & ~u & ~v & IR[5]) ? IR[0] : intEnb;
   SPC <= (intAck) ? {nn, zz, cx, vv, pcmux0} : SPC;
   end 
+
+// HG: needed for simulation
+initial begin
+  N = 0;
+  Z = 0;
+  C = 0;
+  OV = 0;
+  H = 0;
+  stallL1 = 0;
+  irq1 = 0;
+  intEnb = 0;
+  intPnd = 0;
+  intMd = 0;
+  SPC = 0;
+  #1
+  PC = 0;
+  IR = 0;
+end
+
 endmodule 

@@ -1,4 +1,5 @@
 `timescale 1ns / 1ps  // NW 9.11.2016
+`default_nettype none // HG
 
 module RightShifter(
 input [31:0] x,
@@ -21,4 +22,5 @@ assign s2 = (sc1 == 3) ? {(md ? s1[11:0] : {12{s1[31]}}), s1[31:12]} :
     (sc1 == 2) ? {(md ? s1[7:0] : {8{s1[31]}}), s1[31:8]} :
     (sc1 == 1) ? {(md ? s1[3:0] : {4{s1[31]}}), s1[31:4]} : s1;
 assign y = sc[4] ? {(md ? s2[15:0] : {16{s2[31]}}), s2[31:16]} : s2;
+
 endmodule

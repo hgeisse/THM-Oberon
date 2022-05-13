@@ -1,4 +1,5 @@
 `timescale 1ns / 1ps   // NW 16.9.2016
+`default_nettype none // HG
 
 module FPDivider(
     input clk, run,
@@ -42,4 +43,12 @@ always @ (posedge(clk)) begin
   Q <= {q0[24:0], ~d[24]};
   S <= run ? S+1 : 0;
 end
+
+// HG: needed for simulation
+initial begin
+  S = 0;
+  R = 0;
+  Q = 0;
+end
+
 endmodule

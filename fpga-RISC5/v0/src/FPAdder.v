@@ -1,4 +1,5 @@
 `timescale 1ns / 1ps  // NW 4.10.2016  pipelined
+`default_nettype none // HG
 // u = 1: FLT; v = 1: FLOOR
 
 module FPAdder(
@@ -131,12 +132,11 @@ assign z = v ? {{7{Sum[26]}}, Sum[25:1]} :  // FLOOR
 
 // HG: needed for simulation
 initial begin
+  State = 0;
   x3 = 0;
   y3 = 0;
   Sum = 0;
   t3 = 0;
-  State = 0;
 end
 
 endmodule
-

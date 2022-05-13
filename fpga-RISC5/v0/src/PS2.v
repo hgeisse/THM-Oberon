@@ -1,4 +1,6 @@
 `timescale 1ns / 1ps  // NW 20.10.2012
+`default_nettype none // HG
+
 // PS2 receiver for keyboard, 8 bit data
 // clock is 25 MHz; 25000 / 1302 = 19.2 KHz
 
@@ -30,4 +32,14 @@ always @ (posedge clk) begin
   inptr <= ~rst ? 0 : endbit ? inptr+1 : inptr;
   if (endbit) fifo[inptr] <= shreg[8:1];
 end	 
+
+// HG: needed for simulation
+initial begin
+  Q0 = 0;
+  Q1 = 0;
+  shreg = 0;
+  inptr = 0;
+  outptr = 0;
+end
+
 endmodule

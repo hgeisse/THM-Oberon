@@ -1,4 +1,6 @@
 `timescale 1ns / 1ps  // NW 15.9.2015  8.8.2016
+`default_nettype none // HG
+
 module FPMultiplier(
   input clk, run,
   input [31:0] x, y,
@@ -31,4 +33,11 @@ always @ (posedge(clk)) begin
     P <= (S == 0) ? {24'b0, 1'b1, x[22:0]} : {w1, P[23:1]};
     S <= run ? S+1 : 0;
 end
+
+// HG: needed for simulation
+initial begin
+  S = 0;
+  P = 0;
+end
+
 endmodule

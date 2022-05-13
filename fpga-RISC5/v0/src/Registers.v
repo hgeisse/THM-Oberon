@@ -1,4 +1,6 @@
 `timescale 1ns / 1ps  // 1.2.2018
+`default_nettype none // HG
+
 // register file, triple-port
 
 module Registers(
@@ -43,4 +45,5 @@ generate    //triple port register file, duplicated LUT array
 	.WE(wr));
 	end
 endgenerate
+
 endmodule

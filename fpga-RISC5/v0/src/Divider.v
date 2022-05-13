@@ -1,4 +1,5 @@
 `timescale 1ns / 1ps  // NW 20.9.2015
+`default_nettype none // HG
 
 module Divider(
   input clk, run, u,

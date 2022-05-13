@@ -1,4 +1,6 @@
 `timescale 1ns / 1ps
+`default_nettype none // HG
+
 // 1024x768 display controller NW/PR 24.1.2014
 
 module VID(

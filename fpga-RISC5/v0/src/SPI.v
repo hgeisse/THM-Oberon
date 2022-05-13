@@ -1,4 +1,5 @@
 `timescale 1ns / 1ps
+`default_nettype none // HG
 
 // Motorola Serial Peripheral Interface (SPI) PDR 23.3.12 / 16.10.13
 // transmitter / receiver of words (fast, clk/3) or bytes (slow, clk/64)
@@ -31,6 +32,14 @@ always @ (posedge clk) begin
   shreg <= ~rst ? -1 : start ? dataTx : endtick ?
     {shreg[30:24], MISO, shreg[22:16], shreg[31], shreg[14:8],
        shreg[23], shreg[6:0], (fast ? shreg[15] : MISO)} : shreg;
+end
+
+// HG: needed for simulation
+initial begin
+  rdy = 0;
+  shreg = 0;
+  tick = 0;
+  bitcnt = 0;
 end
 
 endmodule

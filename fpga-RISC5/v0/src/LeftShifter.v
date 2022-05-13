@@ -1,4 +1,5 @@
 `timescale 1ns / 1ps  // NW 9.11.2016
+`default_nettype none // HG
 
 module LeftShifter(
 input [31:0] x,
@@ -19,4 +20,5 @@ assign t2 = (sc1 == 3) ? {t1[19:0], 12'b0} :
     (sc1 == 2) ? {t1[23:0], 8'b0} :
     (sc1 == 1) ? {t1[27:0], 4'b0} : t1;
 assign y = sc[4] ? {t2[15:0], 16'b0} : t2;
+
 endmodule

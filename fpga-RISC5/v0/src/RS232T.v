@@ -1,4 +1,5 @@
 `timescale 1ns / 1ps  // NW 4.5.09 / 15.8.10 / 15.11.10
+`default_nettype none // HG
 
 // RS232 transmitter for 19200 bps, 8 bit data
 // clock is 25 MHz; 25000 / 1302 = 19.2 KHz
@@ -32,4 +33,13 @@ always @ (posedge clk) begin
   shreg <= (~rst) ? 1 : start ? {data, 1'b0} :
     endtick ? {1'b1, shreg[8:1]} : shreg;
 end
+
+// HG: needed for simulation
+initial begin
+  run = 0;
+  tick = 0;
+  bitcnt = 0;
+  shreg = 0;
+end
+
 endmodule

@@ -1,4 +1,5 @@
 `timescale 1ns / 1ps   // NW 14.9.2015
+`default_nettype none // HG
 
 module Multiplier(
   input clk, run, u,

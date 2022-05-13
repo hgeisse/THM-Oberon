@@ -1,4 +1,6 @@
 `timescale 1ns / 1ps  // 14.6.2018
+`default_nettype none // HG
+
 // with SRAM, and gpio
 // PS/2 mouse and network 7.1.2014 PDR
 
@@ -146,10 +148,15 @@ always @ (posedge CLK50M) clk <= ~clk;
 
 // HG: needed for simulation
 initial begin
-  clk = 0;
   rst = 0;
-  cnt0 = 24700;
+  clk = 0;
+  bitrate = 0;
+  Lreg = 0;
+  cnt0 = 24950;
   cnt1 = 0;
+  spiCtrl = 0;
+  gpout = 0;
+  gpoc = 0;
 end
 
 endmodule

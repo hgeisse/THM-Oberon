@@ -1,4 +1,6 @@
 `timescale 1ns / 1ps  // PS/2 Logitech mouse PDR 14.10.2013 / 8.9.2015
+`default_nettype none // HG
+
 module MouseP(
   input clk, rst,
   inout msclk, msdat,
@@ -40,5 +42,15 @@ shreg[31:1]} : shreg;
     btns <= ~rst ? 0 : endbit ? {shreg[1], shreg[3], shreg[2]} : btns;
   end
 
-endmodule
+// HG: needed for simulation
+initial begin
+  x = 0;
+  y = 0;
+  btns = 0;
+  Q0 = 0;
+  Q1 = 0;
+  run = 0;
+  shreg = 0;
+end
 
+endmodule
