@@ -55,6 +55,33 @@ module SramChip(A, CE_n, UB_n, LB_n, WE_n, OE_n, IO);
     input OE_n;
     inout [15:0] IO;
 
-  assign IO = 16'b0;
+  reg [7:0] hiArray[0:262143];
+  wire [7:0] hiOut;
+  wire hiCtrl;
+
+  reg [7:0] loArray[0:262143];
+  wire [7:0] loOut;
+  wire loCtrl;
+
+  assign hiOut = hiArray[A];
+  assign loOut = loArray[A];
+
+  always @(negedge WE_n) begin
+    if (~CE_n & ~UB_n) begin
+      hiArray[A] <= IO[15:8];
+    end
+  end
+
+  always @(negedge WE_n) begin
+    if (~CE_n & ~LB_n) begin
+      loArray[A] <= IO[7:0];
+    end
+  end
+
+  assign hiCtrl = ~CE_n & WE_n & ~OE_n & ~UB_n;
+  assign loCtrl = ~CE_n & WE_n & ~OE_n & ~LB_n;
+
+  assign IO[15:8] = hiCtrl ? hiOut : 8'bzzzzzzzz;
+  assign IO[ 7:0] = loCtrl ? loOut : 8'bzzzzzzzz;
 
 endmodule
