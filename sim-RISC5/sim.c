@@ -1565,10 +1565,10 @@ static void disasmF3(Word instr, Word locus) {
     target = ((locus >> 2) + 1 + offset) << 2;
     if (((instr >> 28) & 1) == 0) {
       /* v = 0: branch */
-      sprintf(instrBuffer, "B%-6s %08X", cond, target);
+      sprintf(instrBuffer, "B%-6s 0x%08X", cond, target);
     } else {
       /* v = 1: call */
-      sprintf(instrBuffer, "C%-6s %08X", cond, target);
+      sprintf(instrBuffer, "C%-6s 0x%08X", cond, target);
     }
   }
 }
