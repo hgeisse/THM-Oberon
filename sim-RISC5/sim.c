@@ -1561,8 +1561,8 @@ static void disasmF3(Word instr, Word locus) {
     }
   } else {
     /* u = 1: branch target is pc + 1 + offset */
-    offset = SIGN_EXT_24(instr & 0x00FFFFFF);
-    target = ((locus >> 2) + 1 + offset) << 2;
+    offset = instr & 0x003FFFFF;
+    target = (((locus >> 2) + 1 + offset) << 2) & ADDR_MASK;
     if (((instr >> 28) & 1) == 0) {
       /* v = 0: branch */
       sprintf(instrBuffer, "B%-6s 0x%08X", cond, target);
