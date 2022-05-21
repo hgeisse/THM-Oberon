@@ -28,6 +28,24 @@
 
 #define OP_		0
 
+#define OP_MOV		0x00000000
+
+#define OP_ADD		0x00080000
+#define OP_SUB		0x00090000
+#define OP_MUL		0x000A0000
+#define OP_DIV		0x000B0000
+#define OP_FAD		0x000C0000
+#define OP_FSB		0x000D0000
+#define OP_FML		0x000E0000
+#define OP_FDV		0x000F0000
+#define OP_AND		0x00040000
+#define OP_ANN		0x00050000
+#define OP_IOR		0x00060000
+#define OP_XOR		0x00070000
+#define OP_LSL		0x00010000
+#define OP_ASR		0x00020000
+#define OP_ROR		0x00030000
+
 #define OP_B		0xC7000000
 #define OP_BCC		0xCA000000
 #define OP_BCS		0xC2000000
@@ -285,6 +303,90 @@ void format_(unsigned int code) {
 }
 
 
+void format_4(unsigned int code) {
+  int reg1;
+  int reg2;
+  unsigned int imm;
+
+  if (token != TOK_REGISTER) {
+    error("missing register in line %d", lineno);
+  }
+  reg1 = tokenvalNumber;
+  getToken();
+  if (token != TOK_COMMA) {
+    error("comma expected in line %d", lineno);
+  }
+  getToken();
+  if (token == TOK_REGISTER) {
+    reg2 = tokenvalNumber;
+    getToken();
+    emitWord(code | (reg1 << 24) | reg2);
+  } else
+  if (token == TOK_NUMBER) {
+    imm = tokenvalNumber;
+    getToken();
+    if ((imm >> 16) == 0x0000) {
+      emitWord(code | (4 << 28) | (reg1 << 24) | (imm & 0x0000FFFF));
+    } else
+    if ((imm >> 16) == 0xFFFF) {
+      emitWord(code | (5 << 28) | (reg1 << 24) | (imm & 0x0000FFFF));
+    } else {
+      error("illegal immediate value in line %d", lineno);
+    }
+  } else {
+    error("missing register or immediate value in line %d", lineno);
+  }
+}
+
+
+void format_3(unsigned int code) {
+  int reg1;
+  int reg2;
+  int reg3;
+  unsigned int imm;
+
+  if (token != TOK_REGISTER) {
+    error("missing register in line %d", lineno);
+  }
+  reg1 = tokenvalNumber;
+  getToken();
+  if (token != TOK_COMMA) {
+    error("comma expected in line %d", lineno);
+  }
+  getToken();
+  if (token != TOK_REGISTER) {
+    error("missing second register in line %d", lineno);
+  }
+  reg2 = tokenvalNumber;
+  getToken();
+  if (token != TOK_COMMA) {
+    error("comma expected in line %d", lineno);
+  }
+  getToken();
+  if (token == TOK_REGISTER) {
+    reg3 = tokenvalNumber;
+    getToken();
+    emitWord(code | (reg1 << 24) | (reg2 << 20) | reg3);
+  } else
+  if (token == TOK_NUMBER) {
+    imm = tokenvalNumber;
+    getToken();
+    if ((imm >> 16) == 0x0000) {
+      emitWord(code | (4 << 28) | (reg1 << 24) |
+               (reg2 << 20) | (imm & 0x0000FFFF));
+    } else
+    if ((imm >> 16) == 0xFFFF) {
+      emitWord(code | (5 << 28) | (reg1 << 24) |
+               (reg2 << 20) | (imm & 0x0000FFFF));
+    } else {
+      error("illegal immediate value in line %d", lineno);
+    }
+  } else {
+    error("missing register or immediate value in line %d", lineno);
+  }
+}
+
+
 void format_2(unsigned int code) {
   int reg;
   int target;
@@ -386,35 +488,35 @@ typedef struct {
 
 Instr instrTable[] = {
   /* register data move */
-  { "MOV",    format_, OP_	},
+  { "MOV",    format_4, OP_MOV	},
   { "MOVH",   format_, OP_	},
   { "GETF",   format_, OP_	},
   { "GETH",   format_, OP_	},
   /* integer arithmetic */
-  { "ADD",    format_, OP_	},
+  { "ADD",    format_3, OP_ADD	},
   { "ADDC",   format_, OP_	},
-  { "SUB",    format_, OP_	},
+  { "SUB",    format_3, OP_SUB	},
   { "SUBB",   format_, OP_	},
-  { "MUL",    format_, OP_	},
+  { "MUL",    format_3, OP_MUL	},
   { "MULU",   format_, OP_	},
-  { "DIV",    format_, OP_	},
+  { "DIV",    format_3, OP_DIV	},
   { "DIVU",   format_, OP_	},
   /* floating-point arithmetic */
-  { "FAD",    format_, OP_	},
-  { "FSB",    format_, OP_	},
-  { "FML",    format_, OP_	},
-  { "FDV",    format_, OP_	},
+  { "FAD",    format_3, OP_FAD	},
+  { "FSB",    format_3, OP_FSB	},
+  { "FML",    format_3, OP_FML	},
+  { "FDV",    format_3, OP_FDV	},
   { "FLR",    format_, OP_	},
   { "FLT",    format_, OP_	},
   /* logic */
-  { "AND",    format_, OP_	},
-  { "ANN",    format_, OP_	},
-  { "IOR",    format_, OP_	},
-  { "XOR",    format_, OP_	},
+  { "AND",    format_3, OP_AND	},
+  { "ANN",    format_3, OP_ANN	},
+  { "IOR",    format_3, OP_IOR	},
+  { "XOR",    format_3, OP_XOR	},
   /* shift */
-  { "LSL",    format_, OP_	},
-  { "ASR",    format_, OP_	},
-  { "ROR",    format_, OP_	},
+  { "LSL",    format_3, OP_LSL	},
+  { "ASR",    format_3, OP_ASR	},
+  { "ROR",    format_3, OP_ROR	},
   /* branch */
   { "B",      format_2, OP_B	},
   { "BCC",    format_2, OP_BCC	},
