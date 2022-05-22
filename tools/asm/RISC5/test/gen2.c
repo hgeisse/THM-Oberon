@@ -249,7 +249,7 @@ int main(int argc, char *argv[]) {
   }
   locus = 0;
   while (fgets(line, LINE_SIZE, bitpat) != NULL) {
-    instr = strtoul(line, NULL, 0);
+    instr = strtoul(line, NULL, 16);
     instrText = disasm(instr, locus);
     printf("\t%s\t\t// 0x%06X: 0x%08X\n", instrText, locus, instr);
     locus += 4;

@@ -20,9 +20,9 @@ int F0(void) {
       /* skip redundant MOV codings */
       continue;
     }
-    printf("0x%08X\n", (0x0 << 28) |
-                       ((word & 0xFFF0) << 12) |
-                       ((word & 0x000F) <<  0));
+    printf("%08X\n", (0x0 << 28) |
+                     ((word & 0xFFF0) << 12) |
+                     ((word & 0x000F) <<  0));
     n++;
   }
   return n;
@@ -41,9 +41,9 @@ int F1(void) {
       /* skip redundant MOV codings */
       continue;
     }
-    printf("0x%08X\n", (0x4 << 28) |
-                       ((word & 0xFFF0) << 12) |
-                       ((word & 0x000F) <<  0));
+    printf("%08X\n", (0x4 << 28) |
+                     ((word & 0xFFF0) << 12) |
+                     ((word & 0x000F) <<  0));
     n++;
   }
   /* standard register/immediate operations, extension bit = 1 */
@@ -53,9 +53,9 @@ int F1(void) {
       /* skip redundant MOV codings */
       continue;
     }
-    printf("0x%08X\n", (0x5 << 28) |
-                       ((word & 0xFFF0) << 12) |
-                       ((word & 0x000F) <<  0));
+    printf("%08X\n", (0x5 << 28) |
+                     ((word & 0xFFF0) << 12) |
+                     ((word & 0x000F) <<  0));
     n++;
   }
   return n;
@@ -69,30 +69,30 @@ int F2(void) {
   n = 0;
   /* load word */
   for (word = 0; word < (1 << 16); word++) {
-    printf("0x%08X\n", (0x8 << 28) |
-                       ((word & 0xFFF0) << 12) |
-                       ((word & 0x000F) <<  0));
+    printf("%08X\n", (0x8 << 28) |
+                     ((word & 0xFFF0) << 12) |
+                     ((word & 0x000F) <<  0));
     n++;
   }
   /* load byte */
   for (word = 0; word < (1 << 16); word++) {
-    printf("0x%08X\n", (0x9 << 28) |
-                       ((word & 0xFFF0) << 12) |
-                       ((word & 0x000F) <<  0));
+    printf("%08X\n", (0x9 << 28) |
+                     ((word & 0xFFF0) << 12) |
+                     ((word & 0x000F) <<  0));
     n++;
   }
   /* store word */
   for (word = 0; word < (1 << 16); word++) {
-    printf("0x%08X\n", (0xA << 28) |
-                       ((word & 0xFFF0) << 12) |
-                       ((word & 0x000F) <<  0));
+    printf("%08X\n", (0xA << 28) |
+                     ((word & 0xFFF0) << 12) |
+                     ((word & 0x000F) <<  0));
     n++;
   }
   /* store byte */
   for (word = 0; word < (1 << 16); word++) {
-    printf("0x%08X\n", (0xB << 28) |
-                       ((word & 0xFFF0) << 12) |
-                       ((word & 0x000F) <<  0));
+    printf("%08X\n", (0xB << 28) |
+                     ((word & 0xFFF0) << 12) |
+                     ((word & 0x000F) <<  0));
     n++;
   }
   return n;
@@ -106,42 +106,42 @@ int F3(void) {
   n = 0;
   /* branch with register */
   for (word = 0; word < (1 << 8); word++) {
-    printf("0x%08X\n", (0xC << 28) |
-                       ((word & 0xF0) << 20) |
-                       ((word & 0x0F) <<  0));
+    printf("%08X\n", (0xC << 28) |
+                     ((word & 0xF0) << 20) |
+                     ((word & 0x0F) <<  0));
     n++;
   }
   /* call with register */
   for (word = 0; word < (1 << 8); word++) {
-    printf("0x%08X\n", (0xD << 28) |
-                       ((word & 0xF0) << 20) |
-                       ((word & 0x0F) <<  0));
+    printf("%08X\n", (0xD << 28) |
+                     ((word & 0xF0) << 20) |
+                     ((word & 0x0F) <<  0));
     n++;
   }
   /* branch with offset */
   for (word = 0; word < (1 << 12); word++) {
-    printf("0x%08X\n", (0xE << 28) |
-                       ((word & 0xF00) << 16) |
-                       ((word & 0x0F0) << 14) |
-                       ((word & 0x00F) <<  0));
+    printf("%08X\n", (0xE << 28) |
+                     ((word & 0xF00) << 16) |
+                     ((word & 0x0F0) << 14) |
+                     ((word & 0x00F) <<  0));
     n++;
   }
   /* call with offset */
   for (word = 0; word < (1 << 12); word++) {
-    printf("0x%08X\n", (0xF << 28) |
-                       ((word & 0xF00) << 16) |
-                       ((word & 0x0F0) << 14) |
-                       ((word & 0x00F) <<  0));
+    printf("%08X\n", (0xF << 28) |
+                     ((word & 0xF00) << 16) |
+                     ((word & 0x0F0) << 14) |
+                     ((word & 0x00F) <<  0));
     n++;
   }
   /* return from interrupt */
-  printf("0x%08X\n", 0xC7000010);
+  printf("%08X\n", 0xC7000010);
   n++;
   /* clear interrupt enable */
-  printf("0x%08X\n", 0xCF000020);
+  printf("%08X\n", 0xCF000020);
   n++;
   /* set interrupt enable */
-  printf("0x%08X\n", 0xCF000021);
+  printf("%08X\n", 0xCF000021);
   n++;
   return n;
 }
