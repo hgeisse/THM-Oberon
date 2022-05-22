@@ -18,9 +18,10 @@
 #define TOK_EOL		0
 #define TOK_LABEL	1
 #define TOK_IDENT	2
-#define TOK_REGISTER	3
+#define TOK_STRING	3
 #define TOK_NUMBER	4
-#define TOK_COMMA	5
+#define TOK_REGISTER	5
+#define TOK_COMMA	6
 
 
 /**************************************************************/
@@ -320,6 +321,39 @@ int getNextToken(void) {
     }
     return TOK_NUMBER;
   }
+  if (*lineptr == '\'') {
+    lineptr++;
+    if (!isprint((int) *lineptr)) {
+      error("cannot quote character 0x%02X in line %d", *lineptr, lineno);
+    }
+    tokenvalNumber = *lineptr;
+    lineptr++;
+    if (*lineptr != '\'') {
+      error("unbalanced quote in line %d", lineno);
+    }
+    lineptr++;
+    return TOK_NUMBER;
+  }
+  if (*lineptr == '\"') {
+    lineptr++;
+    p = tokenvalString;
+    while (1) {
+      if (*lineptr == '\n' || *lineptr == '\0') {
+        error("unterminated string constant in line %d", lineno);
+      }
+      if (!isprint((int) *lineptr)) {
+        error("string contains illegal character 0x%02X in line %d",
+              *lineptr, lineno);
+      }
+      if (*lineptr == '\"') {
+        break;
+      }
+      *p++ = *lineptr++;
+    }
+    lineptr++;
+    *p = '\0';
+    return TOK_STRING;
+  }
   switch (*lineptr) {
     case ',':
       lineptr++;
@@ -339,16 +373,19 @@ void showToken(void) {
       printf("token = TOK_EOL\n");
       break;
     case TOK_LABEL:
-      printf("token = TOK_LABEL, value = %s\n", tokenvalString);
+      printf("token = TOK_LABEL, value = '%s'\n", tokenvalString);
       break;
     case TOK_IDENT:
-      printf("token = TOK_IDENT, value = %s\n", tokenvalString);
+      printf("token = TOK_IDENT, value = '%s'\n", tokenvalString);
       break;
-    case TOK_REGISTER:
-      printf("token = TOK_REGISTER, value = %d\n", tokenvalNumber);
+    case TOK_STRING:
+      printf("token = TOK_STRING, value = '%s'\n", tokenvalString);
       break;
     case TOK_NUMBER:
       printf("token = TOK_NUMBER, value = 0x%08X\n", tokenvalNumber);
+      break;
+    case TOK_REGISTER:
+      printf("token = TOK_REGISTER, value = %d\n", tokenvalNumber);
       break;
     case TOK_COMMA:
       printf("token = TOK_COMMA\n");
