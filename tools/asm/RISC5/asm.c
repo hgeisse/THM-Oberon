@@ -31,6 +31,13 @@
 
 #define OP_MOV		0x00000000
 
+#define OP_LSL		0x00010000
+#define OP_ASR		0x00020000
+#define OP_ROR		0x00030000
+#define OP_AND		0x00040000
+#define OP_ANN		0x00050000
+#define OP_IOR		0x00060000
+#define OP_XOR		0x00070000
 #define OP_ADD		0x00080000
 #define OP_SUB		0x00090000
 #define OP_MUL		0x000A0000
@@ -39,56 +46,49 @@
 #define OP_FSB		0x000D0000
 #define OP_FML		0x000E0000
 #define OP_FDV		0x000F0000
-#define OP_AND		0x00040000
-#define OP_ANN		0x00050000
-#define OP_IOR		0x00060000
-#define OP_XOR		0x00070000
-#define OP_LSL		0x00010000
-#define OP_ASR		0x00020000
-#define OP_ROR		0x00030000
-
-#define OP_B		0xC7000000
-#define OP_BCC		0xCA000000
-#define OP_BCS		0xC2000000
-#define OP_BEQ		0xC1000000
-#define OP_BGE		0xCD000000
-#define OP_BGT		0xCE000000
-#define OP_BHI		0xCC000000
-#define OP_BLE		0xC6000000
-#define OP_BLS		0xC4000000
-#define OP_BLT		0xC5000000
-#define OP_BMI		0xC0000000
-#define OP_BNE		0xC9000000
-#define OP_BNVR		0xCF000000
-#define OP_BPL		0xC8000000
-#define OP_BVC		0xCB000000
-#define OP_BVS		0xC3000000
-
-#define OP_C		0xD7000000
-#define OP_CCC		0xDA000000
-#define OP_CCS		0xD2000000
-#define OP_CEQ		0xD1000000
-#define OP_CGE		0xDD000000
-#define OP_CGT		0xDE000000
-#define OP_CHI		0xDC000000
-#define OP_CLE		0xD6000000
-#define OP_CLS		0xD4000000
-#define OP_CLT		0xD5000000
-#define OP_CMI		0xD0000000
-#define OP_CNE		0xD9000000
-#define OP_CNVR		0xDF000000
-#define OP_CPL		0xD8000000
-#define OP_CVC		0xDB000000
-#define OP_CVS		0xD3000000
 
 #define OP_LDW		0x80000000
 #define OP_LDB		0x90000000
 #define OP_STW		0xA0000000
 #define OP_STB		0xB0000000
 
+#define OP_BMI		0xC0000000
+#define OP_BEQ		0xC1000000
+#define OP_BCS		0xC2000000
+#define OP_BVS		0xC3000000
+#define OP_BLS		0xC4000000
+#define OP_BLT		0xC5000000
+#define OP_BLE		0xC6000000
+#define OP_B		0xC7000000
+#define OP_BPL		0xC8000000
+#define OP_BNE		0xC9000000
+#define OP_BCC		0xCA000000
+#define OP_BVC		0xCB000000
+#define OP_BHI		0xCC000000
+#define OP_BGE		0xCD000000
+#define OP_BGT		0xCE000000
+#define OP_BNVR		0xCF000000
+
+#define OP_CMI		0xD0000000
+#define OP_CEQ		0xD1000000
+#define OP_CCS		0xD2000000
+#define OP_CVS		0xD3000000
+#define OP_CLS		0xD4000000
+#define OP_CLT		0xD5000000
+#define OP_CLE		0xD6000000
+#define OP_C		0xD7000000
+#define OP_CPL		0xD8000000
+#define OP_CNE		0xD9000000
+#define OP_CCC		0xDA000000
+#define OP_CVC		0xDB000000
+#define OP_CHI		0xDC000000
+#define OP_CGE		0xDD000000
+#define OP_CGT		0xDE000000
+#define OP_CNVR		0xDF000000
+
+#define OP_RTI		0xC7000010
 #define OP_CLI		0xCF000020
 #define OP_STI		0xCF000021
-#define OP_RTI		0xC7000010
 
 
 /**************************************************************/
@@ -661,6 +661,15 @@ Instr instrTable[] = {
   { "MOVH",   format_, OP_	},
   { "GETF",   format_, OP_	},
   { "GETH",   format_, OP_	},
+  /* shift */
+  { "LSL",    format_3, OP_LSL	},
+  { "ASR",    format_3, OP_ASR	},
+  { "ROR",    format_3, OP_ROR	},
+  /* logic */
+  { "AND",    format_3, OP_AND	},
+  { "ANN",    format_3, OP_ANN	},
+  { "IOR",    format_3, OP_IOR	},
+  { "XOR",    format_3, OP_XOR	},
   /* integer arithmetic */
   { "ADD",    format_3, OP_ADD	},
   { "ADDC",   format_, OP_	},
@@ -677,58 +686,49 @@ Instr instrTable[] = {
   { "FDV",    format_3, OP_FDV	},
   { "FLR",    format_, OP_	},
   { "FLT",    format_, OP_	},
-  /* logic */
-  { "AND",    format_3, OP_AND	},
-  { "ANN",    format_3, OP_ANN	},
-  { "IOR",    format_3, OP_IOR	},
-  { "XOR",    format_3, OP_XOR	},
-  /* shift */
-  { "LSL",    format_3, OP_LSL	},
-  { "ASR",    format_3, OP_ASR	},
-  { "ROR",    format_3, OP_ROR	},
-  /* branch */
-  { "B",      format_2, OP_B	},
-  { "BCC",    format_2, OP_BCC	},
-  { "BCS",    format_2, OP_BCS	},
-  { "BEQ",    format_2, OP_BEQ	},
-  { "BGE",    format_2, OP_BGE	},
-  { "BGT",    format_2, OP_BGT	},
-  { "BHI",    format_2, OP_BHI	},
-  { "BLE",    format_2, OP_BLE	},
-  { "BLS",    format_2, OP_BLS	},
-  { "BLT",    format_2, OP_BLT	},
-  { "BMI",    format_2, OP_BMI	},
-  { "BNE",    format_2, OP_BNE	},
-  { "BNVR",   format_2, OP_BNVR	},
-  { "BPL",    format_2, OP_BPL	},
-  { "BVC",    format_2, OP_BVC	},
-  { "BVS",    format_2, OP_BVS	},
-  /* call */
-  { "C",      format_2, OP_C	},
-  { "CCC",    format_2, OP_CCC	},
-  { "CCS",    format_2, OP_CCS	},
-  { "CEQ",    format_2, OP_CEQ	},
-  { "CGE",    format_2, OP_CGE	},
-  { "CGT",    format_2, OP_CGT	},
-  { "CHI",    format_2, OP_CHI	},
-  { "CLE",    format_2, OP_CLE	},
-  { "CLS",    format_2, OP_CLS	},
-  { "CLT",    format_2, OP_CLT	},
-  { "CMI",    format_2, OP_CMI	},
-  { "CNE",    format_2, OP_CNE	},
-  { "CNVR",   format_2, OP_CNVR	},
-  { "CPL",    format_2, OP_CPL	},
-  { "CVC",    format_2, OP_CVC	},
-  { "CVS",    format_2, OP_CVS	},
   /* load/store memory */
   { "LDW",    format_1, OP_LDW	},
   { "LDB",    format_1, OP_LDB	},
   { "STW",    format_1, OP_STW	},
   { "STB",    format_1, OP_STB	},
+  /* branch */
+  { "BMI",    format_2, OP_BMI	},
+  { "BEQ",    format_2, OP_BEQ	},
+  { "BCS",    format_2, OP_BCS	},
+  { "BVS",    format_2, OP_BVS	},
+  { "BLS",    format_2, OP_BLS	},
+  { "BLT",    format_2, OP_BLT	},
+  { "BLE",    format_2, OP_BLE	},
+  { "B",      format_2, OP_B	},
+  { "BPL",    format_2, OP_BPL	},
+  { "BNE",    format_2, OP_BNE	},
+  { "BCC",    format_2, OP_BCC	},
+  { "BVC",    format_2, OP_BVC	},
+  { "BHI",    format_2, OP_BHI	},
+  { "BGE",    format_2, OP_BGE	},
+  { "BGT",    format_2, OP_BGT	},
+  { "BNVR",   format_2, OP_BNVR	},
+  /* call */
+  { "CMI",    format_2, OP_CMI	},
+  { "CEQ",    format_2, OP_CEQ	},
+  { "CCS",    format_2, OP_CCS	},
+  { "CVS",    format_2, OP_CVS	},
+  { "CLS",    format_2, OP_CLS	},
+  { "CLT",    format_2, OP_CLT	},
+  { "CLE",    format_2, OP_CLE	},
+  { "C",      format_2, OP_C	},
+  { "CPL",    format_2, OP_CPL	},
+  { "CNE",    format_2, OP_CNE	},
+  { "CCC",    format_2, OP_CCC	},
+  { "CVC",    format_2, OP_CVC	},
+  { "CHI",    format_2, OP_CHI	},
+  { "CGE",    format_2, OP_CGE	},
+  { "CGT",    format_2, OP_CGT	},
+  { "CNVR",   format_2, OP_CNVR	},
   /* interrupt control */
+  { "RTI",    format_0, OP_RTI	},
   { "CLI",    format_0, OP_CLI	},
   { "STI",    format_0, OP_STI	},
-  { "RTI",    format_0, OP_RTI	},
   /* assembler directives */
   { ".SET",   dotSet,   0	},
   { ".WORD",  dotWord,  0	},
