@@ -112,6 +112,8 @@ int token;
 char tokenvalString[LINE_SIZE];
 int tokenvalNumber;
 
+unsigned int currAddr = 0;
+
 
 /**************************************************************/
 
@@ -128,21 +130,90 @@ void error(char *fmt, ...) {
 }
 
 
+void *allocMem(unsigned int size) {
+  void *p;
+
+  p = malloc(size);
+  if (p == NULL) {
+    error("out of memory");
+  }
+  return p;
+}
+
+
+void freeMem(void *p) {
+  free(p);
+}
+
+
 /**************************************************************/
 
 
-static unsigned int currAddr = 0;
+#define MAX_CODE_INIT		256
+#define MAX_CODE_MULT		4
+
+
+unsigned char *codeArray = NULL;	/* the code proper */
+unsigned int codeSize = 0;		/* the current code size */
+
+static unsigned int codeMaxSize = 0;	/* the code array's current size */
+
+
+void growCodeArray(void) {
+  unsigned int newMaxSize;
+  unsigned char *newCodeArray;
+  unsigned int i;
+
+  if (codeMaxSize == 0) {
+    /* first allocation */
+    newMaxSize = MAX_CODE_INIT;
+  } else {
+    /* subsequent allocation */
+    newMaxSize = codeMaxSize * MAX_CODE_MULT;
+  }
+  newCodeArray = allocMem(newMaxSize);
+  for (i = 0; i < codeSize; i++) {
+    newCodeArray[i] = codeArray[i];
+  }
+  if (codeArray != NULL) {
+    freeMem(codeArray);
+  }
+  codeArray = newCodeArray;
+  codeMaxSize = newMaxSize;
+}
 
 
 void emitWord(unsigned int data) {
-  printf("0x%08X\n", data);
+  if (codeSize + 4 > codeMaxSize) {
+    growCodeArray();
+  }
+  *(unsigned int *)(codeArray + codeSize) = data;
+  codeSize += 4;
   currAddr += 4;
 }
 
 
 void emitByte(unsigned char data) {
-  printf("0x%02X\n", data);
-  currAddr += 1;
+  if (codeSize + 1 > codeMaxSize) {
+    growCodeArray();
+  }
+  *(unsigned char *)(codeArray + codeSize) = data;
+  codeSize++;
+  currAddr++;
+}
+
+
+void writeCode(void) {
+  unsigned int data;
+  unsigned int i;
+
+  while (currAddr & 3) {
+    emitByte(0);
+  }
+  for (i = 0; i < codeSize; i += 4) {
+    data = *(unsigned int *)(codeArray + i);
+    fprintf(outFile, "%08X\n", data);
+  }
 }
 
 
@@ -630,6 +701,7 @@ void assemble(void) {
       error("garbage in line %d", lineno);
     }
   }
+  writeCode();
 }
 
 
