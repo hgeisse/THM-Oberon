@@ -557,23 +557,84 @@ void format_0(unsigned int code) {
 }
 
 
+void dotSet(unsigned int code) {
+  error(".set assembler directive not implemented yet");
+}
+
+
 void dotWord(unsigned int code) {
+  unsigned int val;
+
+  while (1) {
+    if (token == TOK_NUMBER) {
+      val = tokenvalNumber;
+      getToken();
+      emitWord(val);
+    } else {
+      error("number expected in line %d", lineno);
+    }
+    if (token != TOK_COMMA) {
+      break;
+    }
+    getToken();
+  }
 }
 
 
 void dotByte(unsigned int code) {
-}
+  char *p;
+  unsigned int val;
 
-
-void dotSet(unsigned int code) {
+  while (1) {
+    if (token == TOK_STRING) {
+      p = tokenvalString;
+      while (*p != '\0') {
+        emitByte(*p);
+        p++;
+      }
+      getToken();
+    } else
+    if (token == TOK_NUMBER) {
+      val = tokenvalNumber;
+      getToken();
+      emitByte(val);
+    } else {
+      error("string or number expected in line %d", lineno);
+    }
+    if (token != TOK_COMMA) {
+      break;
+    }
+    getToken();
+  }
 }
 
 
 void dotLoc(unsigned int code) {
+  unsigned int val;
+
+  if (token == TOK_NUMBER) {
+    val = tokenvalNumber;
+    getToken();
+    currAddr = val;
+  } else {
+    error("number expected in line %d", lineno);
+  }
 }
 
 
 void dotSpace(unsigned int code) {
+  unsigned int val;
+  unsigned int i;
+
+  if (token == TOK_NUMBER) {
+    val = tokenvalNumber;
+    getToken();
+    for (i = 0; i < val; i++) {
+      emitByte(0);
+    }
+  } else {
+    error("number expected in line %d", lineno);
+  }
 }
 
 
@@ -669,9 +730,9 @@ Instr instrTable[] = {
   { "STI",    format_0, OP_STI	},
   { "RTI",    format_0, OP_RTI	},
   /* assembler directives */
+  { ".SET",   dotSet,   0	},
   { ".WORD",  dotWord,  0	},
   { ".BYTE",  dotByte,  0	},
-  { ".SET",   dotSet,   0	},
   { ".LOC",   dotLoc,   0	},
   { ".SPACE", dotSpace, 0	},
   { ".ALIGN", dotAlign, 0	},
