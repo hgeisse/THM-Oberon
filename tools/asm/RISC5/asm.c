@@ -27,8 +27,6 @@
 /**************************************************************/
 
 
-#define OP_		0
-
 #define OP_MOV		0x00000000
 #define OP_MOVH		0x20000000
 #define OP_GETH		0x20000000
@@ -53,6 +51,8 @@
 #define OP_FSB		0x000D0000
 #define OP_FML		0x000E0000
 #define OP_FDV		0x000F0000
+#define OP_FLR		0x100C0000
+#define OP_FLT		0x200C0000
 
 #define OP_LDW		0x80000000
 #define OP_LDB		0x90000000
@@ -414,10 +414,34 @@ void getToken(void) {
 /**************************************************************/
 
 
-void format_(unsigned int code) {
+/*
+ * operands: register, register
+ */
+void format_6(unsigned int code) {
+  int reg1;
+  int reg2;
+
+  if (token != TOK_REGISTER) {
+    error("missing register in line %d", lineno);
+  }
+  reg1 = tokenvalNumber;
+  getToken();
+  if (token != TOK_COMMA) {
+    error("comma expected in line %d", lineno);
+  }
+  getToken();
+  if (token != TOK_REGISTER) {
+    error("missing second register in line %d", lineno);
+  }
+  reg2 = tokenvalNumber;
+  getToken();
+  emitWord(code | (reg1 << 24) | (reg2 << 20));
 }
 
 
+/*
+ * operand: register
+ */
 void format_5(unsigned int code) {
   int reg;
 
@@ -430,6 +454,9 @@ void format_5(unsigned int code) {
 }
 
 
+/*
+ * operands: register, register or immediate
+ */
 void format_4(unsigned int code) {
   int reg1;
   int reg2;
@@ -466,6 +493,9 @@ void format_4(unsigned int code) {
 }
 
 
+/*
+ * operands: register, register, register or immediate
+ */
 void format_3(unsigned int code) {
   int reg1;
   int reg2;
@@ -514,6 +544,9 @@ void format_3(unsigned int code) {
 }
 
 
+/*
+ * operand: register or target address
+ */
 void format_2(unsigned int code) {
   int reg;
   int target;
@@ -536,6 +569,9 @@ void format_2(unsigned int code) {
 }
 
 
+/*
+ * operands: register, register, offset
+ */
 void format_1(unsigned int code) {
   int reg1;
   int reg2;
@@ -571,9 +607,15 @@ void format_1(unsigned int code) {
 }
 
 
+/*
+ * operands: none
+ */
 void format_0(unsigned int code) {
   emitWord(code);
 }
+
+
+/**************************************************************/
 
 
 void dotSet(unsigned int code) {
@@ -703,8 +745,9 @@ Instr instrTable[] = {
   { "FSB",    format_3, OP_FSB	},
   { "FML",    format_3, OP_FML	},
   { "FDV",    format_3, OP_FDV	},
-  { "FLR",    format_, OP_	},
-  { "FLT",    format_, OP_	},
+  /* floating-point conversions */
+  { "FLR",    format_6, OP_FLR	},
+  { "FLT",    format_6, OP_FLT	},
   /* load/store memory */
   { "LDW",    format_1, OP_LDW	},
   { "LDB",    format_1, OP_LDB	},

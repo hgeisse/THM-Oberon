@@ -63,6 +63,16 @@ int F0(void) {
                      ((word & 0x00F) << 0));
     n++;
   }
+  /* convert to integer */
+  for (word = 0; word < 256; word++) {
+    printf("%08X\n", (0x1 << 28) | (0xC << 16) | (word << 20));
+    n++;
+  }
+  /* convert to floating-point */
+  for (word = 0; word < 256; word++) {
+    printf("%08X\n", (0x2 << 28) | (0xC << 16) | (word << 20));
+    n++;
+  }
   return n;
 }
 
