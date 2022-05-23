@@ -30,6 +30,9 @@
 #define OP_		0
 
 #define OP_MOV		0x00000000
+#define OP_MOVH		0x20000000
+#define OP_GETH		0x20000000
+#define OP_GETF		0x30000000
 
 #define OP_LSL		0x00010000
 #define OP_ASR		0x00020000
@@ -39,9 +42,13 @@
 #define OP_IOR		0x00060000
 #define OP_XOR		0x00070000
 #define OP_ADD		0x00080000
+#define OP_ADDC		0x20080000
 #define OP_SUB		0x00090000
+#define OP_SUBB		0x20090000
 #define OP_MUL		0x000A0000
+#define OP_MULU		0x200A0000
 #define OP_DIV		0x000B0000
+#define OP_DIVU		0x200B0000
 #define OP_FAD		0x000C0000
 #define OP_FSB		0x000D0000
 #define OP_FML		0x000E0000
@@ -411,6 +418,18 @@ void format_(unsigned int code) {
 }
 
 
+void format_5(unsigned int code) {
+  int reg;
+
+  if (token != TOK_REGISTER) {
+    error("missing register in line %d", lineno);
+  }
+  reg = tokenvalNumber;
+  getToken();
+  emitWord(code | (reg << 24));
+}
+
+
 void format_4(unsigned int code) {
   int reg1;
   int reg2;
@@ -658,9 +677,9 @@ typedef struct {
 Instr instrTable[] = {
   /* register data move */
   { "MOV",    format_4, OP_MOV	},
-  { "MOVH",   format_, OP_	},
-  { "GETF",   format_, OP_	},
-  { "GETH",   format_, OP_	},
+  { "MOVH",   format_4, OP_MOVH	},
+  { "GETH",   format_5, OP_GETH	},
+  { "GETF",   format_5, OP_GETF	},
   /* shift */
   { "LSL",    format_3, OP_LSL	},
   { "ASR",    format_3, OP_ASR	},
@@ -672,13 +691,13 @@ Instr instrTable[] = {
   { "XOR",    format_3, OP_XOR	},
   /* integer arithmetic */
   { "ADD",    format_3, OP_ADD	},
-  { "ADDC",   format_, OP_	},
+  { "ADDC",   format_3, OP_ADDC	},
   { "SUB",    format_3, OP_SUB	},
-  { "SUBB",   format_, OP_	},
+  { "SUBB",   format_3, OP_SUBB	},
   { "MUL",    format_3, OP_MUL	},
-  { "MULU",   format_, OP_	},
+  { "MULU",   format_3, OP_MULU	},
   { "DIV",    format_3, OP_DIV	},
-  { "DIVU",   format_, OP_	},
+  { "DIVU",   format_3, OP_DIVU	},
   /* floating-point arithmetic */
   { "FAD",    format_3, OP_FAD	},
   { "FSB",    format_3, OP_FSB	},
