@@ -12,8 +12,11 @@
 
 /**************************************************************/
 
+/* constant definitions */
+
 
 #define LINE_SIZE	200
+
 
 #define TOK_EOL		0
 #define TOK_LABEL	1
@@ -22,9 +25,6 @@
 #define TOK_NUMBER	4
 #define TOK_REGISTER	5
 #define TOK_COMMA	6
-
-
-/**************************************************************/
 
 
 #define OP_MOV		0x00000000
@@ -100,11 +100,24 @@
 
 /**************************************************************/
 
+/* type definitions */
+
 
 typedef enum { false, true } Bool;
 
 
+typedef struct symbol {
+  char *name;			/* name of symbol */
+  Bool isDefined;		/* is the symbol defined? */
+  unsigned int value;		/* the symbol's value, if defined */
+  struct symbol *left;		/* left son in binary search tree */
+  struct symbol *right;		/* right son in binary search tree */
+} Symbol;
+
+
 /**************************************************************/
+
+/* global variables */
 
 
 Bool debugToken = false;
@@ -122,8 +135,12 @@ int tokenvalNumber;
 
 unsigned int currAddr = 0;
 
+Symbol *symbolTable = NULL;
+
 
 /**************************************************************/
+
+/* error and memory handling */
 
 
 void error(char *fmt, ...) {
@@ -155,6 +172,72 @@ void freeMem(void *p) {
 
 
 /**************************************************************/
+
+/* symbol table */
+
+
+Symbol *newSymbol(char *name) {
+  Symbol *p;
+
+  p = allocMem(sizeof(Symbol));
+  p->name = allocMem(strlen(name) + 1);
+  strcpy(p->name, name);
+  p->isDefined = false;
+  p->value = 0;
+  p->left = NULL;
+  p->right = NULL;
+  return p;
+}
+
+
+Symbol *lookupEnter(char *name) {
+  Symbol *p, *q, *r;
+  int cmp;
+
+  p = symbolTable;
+  if (p == NULL) {
+    /* the very first symbol */
+    r = newSymbol(name);
+    symbolTable = r;
+    return r;
+  }
+  /* try to look up symbol in binary search tree */
+  while (1) {
+    q = p;
+    cmp = strcmp(name, q->name);
+    if (cmp == 0) {
+      /* found */
+      return q;
+    }
+    if (cmp < 0) {
+      p = q->left;
+    } else {
+      p = q->right;
+    }
+    if (p == NULL) {
+      /* symbol is not in tree, enter */
+      r = newSymbol(name);
+      if (cmp < 0) {
+        q->left = r;
+      } else {
+        q->right = r;
+      }
+      return r;
+    }
+  }
+  /* never reached */
+  return NULL;
+}
+
+
+/**************************************************************/
+
+/* backpatching */
+
+
+/**************************************************************/
+
+/* code emitter */
 
 
 #define MAX_CODE_INIT		256
@@ -226,6 +309,8 @@ void writeCode(void) {
 
 
 /**************************************************************/
+
+/* scanner */
 
 
 Bool isReg(char *str) {
@@ -413,6 +498,37 @@ void getToken(void) {
 
 /**************************************************************/
 
+/* get value, either as constant or from symbol table */
+
+
+unsigned int getValue(void) {
+  unsigned int value;
+  Symbol *symbol;
+
+  if (token == TOK_NUMBER) {
+    value = tokenvalNumber;
+    getToken();
+  } else
+  if (token == TOK_IDENT) {
+    symbol = lookupEnter(tokenvalString);
+    if (!symbol->isDefined) {
+      error("forward symbol '%s' (not yet implemented)", symbol->name);
+    }
+    value = symbol->value;
+    getToken();
+  } else {
+    error("value missing in line %d", lineno);
+    /* never reached */
+    value = 0;
+  }
+  return value;
+}
+
+
+/**************************************************************/
+
+/* assemblers for the different formats */
+
 
 /*
  * operands: register, register
@@ -475,10 +591,8 @@ void format_4(unsigned int code) {
     reg2 = tokenvalNumber;
     getToken();
     emitWord(code | (reg1 << 24) | reg2);
-  } else
-  if (token == TOK_NUMBER) {
-    imm = tokenvalNumber;
-    getToken();
+  } else {
+    imm = getValue();
     if ((imm >> 16) == 0x0000) {
       emitWord(code | (4 << 28) | (reg1 << 24) | (imm & 0x0000FFFF));
     } else
@@ -487,8 +601,6 @@ void format_4(unsigned int code) {
     } else {
       error("illegal immediate value in line %d", lineno);
     }
-  } else {
-    error("missing register or immediate value in line %d", lineno);
   }
 }
 
@@ -524,10 +636,8 @@ void format_3(unsigned int code) {
     reg3 = tokenvalNumber;
     getToken();
     emitWord(code | (reg1 << 24) | (reg2 << 20) | reg3);
-  } else
-  if (token == TOK_NUMBER) {
-    imm = tokenvalNumber;
-    getToken();
+  } else {
+    imm = getValue();
     if ((imm >> 16) == 0x0000) {
       emitWord(code | (4 << 28) | (reg1 << 24) |
                (reg2 << 20) | (imm & 0x0000FFFF));
@@ -538,8 +648,6 @@ void format_3(unsigned int code) {
     } else {
       error("illegal immediate value in line %d", lineno);
     }
-  } else {
-    error("missing register or immediate value in line %d", lineno);
   }
 }
 
@@ -556,15 +664,11 @@ void format_2(unsigned int code) {
     reg = tokenvalNumber;
     getToken();
     emitWord(code | reg);
-  } else
-  if (token == TOK_NUMBER) {
-    target = tokenvalNumber;
-    getToken();
+  } else {
+    target = getValue();
     offset = (target - currAddr - 4) / 4;
     /* target is never out of reach */
     emitWord(code | (1 << 29) | (offset & 0x003FFFFF));
-  } else {
-    error("missing register or target address in line %d", lineno);
   }
 }
 
@@ -595,11 +699,7 @@ void format_1(unsigned int code) {
     error("comma expected in line %d", lineno);
   }
   getToken();
-  if (token != TOK_NUMBER) {
-    error("missing offset in line %d", lineno);
-  }
-  offset = tokenvalNumber;
-  getToken();
+  offset = getValue();
   if (offset < -(1 << 19) || offset >= (1 << 19)) {
     error("offset out of bounds in line %d", lineno);
   }
@@ -617,9 +717,31 @@ void format_0(unsigned int code) {
 
 /**************************************************************/
 
+/* assemblers for the directives */
+
 
 void dotSet(unsigned int code) {
-  error(".set assembler directive not implemented yet");
+  Symbol *symbol;
+
+  if (token != TOK_IDENT) {
+    error("identifier missing in line %d", lineno);
+  }
+  symbol = lookupEnter(tokenvalString);
+  if (symbol->isDefined) {
+    error("symbol '%s' multiply defined in line %d",
+          symbol->name, lineno);
+  }
+  getToken();
+  if (token != TOK_COMMA) {
+    error("comma expected in line %d", lineno);
+  }
+  getToken();
+  if (token != TOK_NUMBER) {
+    error("missing value in line %d", lineno);
+  }
+  symbol->isDefined = true;
+  symbol->value = tokenvalNumber;
+  getToken();
 }
 
 
@@ -627,13 +749,8 @@ void dotWord(unsigned int code) {
   unsigned int val;
 
   while (1) {
-    if (token == TOK_NUMBER) {
-      val = tokenvalNumber;
-      getToken();
-      emitWord(val);
-    } else {
-      error("number expected in line %d", lineno);
-    }
+    val = getValue();
+    emitWord(val);
     if (token != TOK_COMMA) {
       break;
     }
@@ -654,13 +771,9 @@ void dotByte(unsigned int code) {
         p++;
       }
       getToken();
-    } else
-    if (token == TOK_NUMBER) {
-      val = tokenvalNumber;
-      getToken();
-      emitByte(val);
     } else {
-      error("string or number expected in line %d", lineno);
+      val = getValue();
+      emitByte(val);
     }
     if (token != TOK_COMMA) {
       break;
@@ -673,13 +786,8 @@ void dotByte(unsigned int code) {
 void dotLoc(unsigned int code) {
   unsigned int val;
 
-  if (token == TOK_NUMBER) {
-    val = tokenvalNumber;
-    getToken();
-    currAddr = val;
-  } else {
-    error("number expected in line %d", lineno);
-  }
+  val = getValue();
+  currAddr = val;
 }
 
 
@@ -687,14 +795,9 @@ void dotSpace(unsigned int code) {
   unsigned int val;
   unsigned int i;
 
-  if (token == TOK_NUMBER) {
-    val = tokenvalNumber;
-    getToken();
-    for (i = 0; i < val; i++) {
-      emitByte(0);
-    }
-  } else {
-    error("number expected in line %d", lineno);
+  val = getValue();
+  for (i = 0; i < val; i++) {
+    emitByte(0);
   }
 }
 
@@ -707,6 +810,8 @@ void dotAlign(unsigned int code) {
 
 
 /**************************************************************/
+
+/* instruction table */
 
 
 typedef struct {
@@ -836,8 +941,11 @@ Instr *lookupInstr(char *name) {
 
 /**************************************************************/
 
+/* assembler for a whole file */
+
 
 void assemble(void) {
+  Symbol *label;
   Instr *instr;
 
   lineno = 0;
@@ -846,6 +954,13 @@ void assemble(void) {
     lineptr = line;
     getToken();
     while (token == TOK_LABEL) {
+      label = lookupEnter(tokenvalString);
+      if (label->isDefined) {
+        error("label '%s' multiply defined in line %d",
+              label->name, lineno);
+      }
+      label->isDefined = true;
+      label->value = currAddr;
       getToken();
     }
     if (token == TOK_IDENT) {
@@ -866,6 +981,8 @@ void assemble(void) {
 
 
 /**************************************************************/
+
+/* main program */
 
 
 void usage(char *myself) {
