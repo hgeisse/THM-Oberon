@@ -1,0 +1,178 @@
+
+RISC5 Assembler
+===============
+
+General
+-------
+
+The RISC5 assembler converts a program written in assembler source
+into a sequence of words, which represent the memory image of the
+program. Assembler source is line-oriented. Each line consists
+of an optional label definition (an identifier directly followed
+by a colon), an optional single instruction (instruction name
+followed possibly by operands), and an optional comment. Empty
+lines and lines with more than one label are permitted. Blanks,
+tabs and comments are ignored. Comments start with "//" and extend
+through the end of the current line.
+
+Instructions are written as short names ("mnemonics"). Operands
+of an instruction may be registers (R0, R1, .., R15) and literals
+(called "immediate constants", and abbreviated as "imm" below).
+They are separated by commas. Literals may be written in base 10
+(no prefix), base 16 (prefix 0x) and base 8 (prefix 0). One of
+the signs '+' or '-' may be prepended. Single characters, enclosed
+by apostrophes (e.g., 'x') also serve as literals, with their ASCII
+code as value. Literals may be given a name and after that can be
+referenced by name (see the .SET assembler directive below).
+
+Names for labels and constants may contain letters and digits.
+They must begin with a letter. The dot '.' and the underscore '_'
+count as letters. Uppercase and lowercase letters are distinct.
+
+The value of a label is its address in memory (the "current PC").
+This address is automatically maintained by the assembler, and
+starts at 0 when assembly begins. The current PC can be set by
+the directive .LOC (see below).
+
+Branches and calls need a target address. It is usually given
+as a label (without the trailing colon), which can be defined
+anywhere in the program text (with the trailing colon), or may
+be given numerically, e.g. by a defined constant.
+
+
+Machine Instructions
+--------------------
+
+//
+// register data move instructions
+//
+  MOV	<r1>,<r2 or imm>	// move:      r1 <- (r2 or imm)
+  MOVH	<r1>,<imm>		// move high: r1 <- imm shift left by 16
+  GETH	<r1>			// get H reg: r1 <- H
+  GETF	<r1>			// get F reg: r1 <- [N,Z,C,V,I,CPU_ID]
+
+//
+// shift instructions
+//
+  LSL	<r1>,<r2>,<r3 or imm>	// logic shift left:  r1 <- r2 lsl (r3 or imm)
+  ASR	<r1>,<r2>,<r3 or imm>	// arith shift right: r1 <- r2 asr (r3 or imm)
+  ROR	<r1>,<r2>,<r3 or imm>	// rotate right:      r1 <- r2 ror (r3 or imm)
+
+//
+// logic instructions
+//
+  AND	<r1>,<r2>,<r3 or imm>	// and:     r1 <- r2 & (r3 or imm)
+  ANN	<r1>,<r2>,<r3 or imm>	// and-not: r1 <- r2 & ~(r3 or imm)
+  IOR	<r1>,<r2>,<r3 or imm>	// or:      r1 <- r2 | (r3 or imm)
+  XOR	<r1>,<r2>,<r3 or imm>	// xor:     r1 <- r2 ^ (r3 or imm)
+
+//
+// integer arithmetic instructions
+//
+  ADD	<r1>,<r2>,<r3 or imm>	// add:             r1 <- r2 + (r3 or imm)
+  ADDC	<r1>,<r2>,<r3 or imm>	// add with carry:  r1 <- r2 + (r3 or imm) + C
+  SUB	<r1>,<r2>,<r3 or imm>	// sub:             r1 <- r2 - (r3 or imm)
+  SUBB	<r1>,<r2>,<r3 or imm>	// sub with borrow: r1 <- r2 - (r3 or imm) - C
+  MUL	<r1>,<r2>,<r3 or imm>	// mul:             r1 <- r2 * (r3 or imm)
+  MULU	<r1>,<r2>,<r3 or imm>	// mul unsigned:    r1 <- r2 * (r3 or imm)
+  DIV	<r1>,<r2>,<r3 or imm>	// div:             r1 <- r2 / (r3 or imm)
+  DIVU	<r1>,<r2>,<r3 or imm>	// div unsigned:    r1 <- r2 / (r3 or imm)
+
+//
+// floating-point arithmetic instructions
+//
+  FAD	<r1>,<r2>,<r3>		// add: r1 <- r2 + r3
+  FSB	<r1>,<r2>,<r3>		// sub: r1 <- r2 - r3
+  FML	<r1>,<r2>,<r3>		// mul: r1 <- r2 * r3
+  FDV	<r1>,<r2>,<r3>		// div: r1 <- r2 / r3
+
+//
+// floating-point conversion instructions
+//
+  FLR	<r1>,<r2>		// floor: r1 <- integer(r2)
+  FLT 	<r1>,<r2>		// float: r1 <- float(r2)
+
+//
+// load/store memory instructions
+//
+  LDW	<r1>,<r2>,<offset>	// load word: r1 <- mem[r2+offset]
+  LDB	<r1>,<r2>,<offset>	// load byte: r1 <- mem[r2+offset]
+  STW	<r1>,<r2>,<offset>	// store word: mem[r2+offset] <- r1
+  STB	<r1>,<r2>,<offset>	// store byte: mem[r2+offset] <- r1
+
+//
+// branch instructions
+//
+  BMI	<r1 or label>		// branch if minus (negative)     [N]
+  BEQ	<r1 or label>		// branch if equal (zero)         [Z]
+  BCS	<r1 or label>		// branch if carry set (lower)    [C]
+  BVS	<r1 or label>		// branch if overflow set         [V]
+  BLS	<r1 or label>		// branch if lower or same        [~C|Z]
+  BLT	<r1 or label>		// branch if less than            [N#V]
+  BLE	<r1 or label>		// branch if less or equal        [(N#V)|Z]
+  B	<r1 or label>		// branch unconditionally
+  BPL	<r1 or label>		// branch if plus (positive)      [~N]
+  BNE	<r1 or label>		// branch if not equal (not zero) [~Z]
+  BCC	<r1 or label>		// branch if carry clear          [~C]
+  BVC	<r1 or label>		// branch if overflow clear       [~V]
+  BHI	<r1 or label>		// branch if higher               [C&~Z]
+  BGE	<r1 or label>		// branch if greater or equal     [N=V]
+  BGT	<r1 or label>		// branch if greater than         [(N=V)&~Z]
+  BNVR	<r1 or label>		// branch never (no-op)
+
+//
+// call instructions
+//
+  CMI	<r1 or label>		// call if minus (negative)       [N]
+  CEQ	<r1 or label>		// call if equal (zero)           [Z]
+  CCS	<r1 or label>		// call if carry set (lower)      [C]
+  CVS	<r1 or label>		// call if overflow set           [V]
+  CLS	<r1 or label>		// call if lower or same          [~C|Z]
+  CLT	<r1 or label>		// call if less than              [N#V]
+  CLE	<r1 or label>		// call if less or equal          [(N#V)|Z]
+  C	<r1 or label>		// call unconditionally
+  CPL	<r1 or label>		// call if plus (positive)        [~N]
+  CNE	<r1 or label>		// call if not equal (not zero)   [~Z]
+  CCC	<r1 or label>		// call if carry clear            [~C]
+  CVC	<r1 or label>		// call if overflow clear         [~V]
+  CHI	<r1 or label>		// call if higher                 [C&~Z]
+  CGE	<r1 or label>		// call if greater or equal       [N=V]
+  CGT	<r1 or label>		// call if greater than           [(N=V)&~Z]
+  CNVR	<r1 or label>		// call never (no-op)
+
+//
+// interrupt control instructions
+//
+  RTI				// return from interrupt
+  CLI				// clear interrupt enable
+  STI				// set interrupt enable
+
+
+Assembler Directives
+--------------------
+
+These "pseudo instructions" generate no machine instructions,
+but let the assembler perform certain actions.
+
+ .WORD	<list of values>	// deposit the values given in the
+				// comma-separated list as words in
+				// memory, starting at the current PC
+
+ .BYTE	<list of values>	// deposit the values given in the
+				// comma-separated list as bytes in
+				// memory, starting at the current PC
+				// as a special case, a "value" may be
+				// a string, whose bytes are placed in
+				// memory, with no zero byte appended
+
+ .SET	<name>,<n>		// define <name> to denote the value <n>
+
+ .LOC	<n>			// set the current PC to <n>
+
+ .SPACE	<n>			// deposit <n> zero bytes in memory,
+				// starting at the current PC
+
+ .ALIGN				// deposit 0..3 zero bytes in memory
+				// in order to align the current PC
+				// on a word boundary
+
