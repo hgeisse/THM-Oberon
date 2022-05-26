@@ -98,6 +98,14 @@
 #define OP_STI		0xCF000021
 
 
+#define FIXUP_ILLEGAL	0
+#define FIXUP_IMMEDIATE	1
+#define FIXUP_TARGET	2
+#define FIXUP_OFFSET	3
+#define FIXUP_WORD	4
+#define FIXUP_BYTE	5
+
+
 /**************************************************************/
 
 /* type definitions */
@@ -115,12 +123,22 @@ typedef struct symbol {
 } Symbol;
 
 
+typedef struct fixup {
+  unsigned int codeOffset;	/* at which code offset */
+  Symbol *symbol;		/* where to get the value from */
+  int fixupMethod;		/* what fixup method to use */
+  unsigned int locus;		/* address of instruction to be patched */
+  struct fixup *next;		/* next fixup in list */
+} Fixup;
+
+
 /**************************************************************/
 
 /* global variables */
 
 
 Bool debugToken = false;
+Bool debugFixup = false;
 
 FILE *inFile;
 FILE *outFile;
@@ -136,6 +154,8 @@ int tokenvalNumber;
 unsigned int currAddr = 0;
 
 Symbol *symbolTable = NULL;
+
+Fixup *fixupList = NULL;
 
 
 /**************************************************************/
@@ -168,6 +188,94 @@ void *allocMem(unsigned int size) {
 
 void freeMem(void *p) {
   free(p);
+}
+
+
+/**************************************************************/
+
+/* code emitter */
+
+
+#define MAX_CODE_INIT		256
+#define MAX_CODE_MULT		4
+
+
+unsigned char *codeArray = NULL;	/* the code proper */
+unsigned int codeSize = 0;		/* the current code size */
+
+unsigned int codeMaxSize = 0;		/* the code array's current size */
+
+
+void growCodeArray(void) {
+  unsigned int newMaxSize;
+  unsigned char *newCodeArray;
+  unsigned int i;
+
+  if (codeMaxSize == 0) {
+    /* first allocation */
+    newMaxSize = MAX_CODE_INIT;
+  } else {
+    /* subsequent allocation */
+    newMaxSize = codeMaxSize * MAX_CODE_MULT;
+  }
+  newCodeArray = allocMem(newMaxSize);
+  for (i = 0; i < codeSize; i++) {
+    newCodeArray[i] = codeArray[i];
+  }
+  if (codeArray != NULL) {
+    freeMem(codeArray);
+  }
+  codeArray = newCodeArray;
+  codeMaxSize = newMaxSize;
+}
+
+
+void emitWord(unsigned int data) {
+  if (codeSize + 4 > codeMaxSize) {
+    growCodeArray();
+  }
+  *(unsigned int *)(codeArray + codeSize) = data;
+  codeSize += 4;
+  currAddr += 4;
+}
+
+
+void emitByte(unsigned char data) {
+  if (codeSize + 1 > codeMaxSize) {
+    growCodeArray();
+  }
+  *(unsigned char *)(codeArray + codeSize) = data;
+  codeSize++;
+  currAddr++;
+}
+
+
+unsigned int getWord(unsigned int offset) {
+  return *(unsigned int *)(codeArray + offset);
+}
+
+
+void putWord(unsigned int offset, unsigned int data) {
+  *(unsigned int *)(codeArray + offset) = data;
+}
+
+
+void putByte(unsigned int offset, unsigned char data) {
+  *(unsigned char *)(codeArray + offset) = data;
+}
+
+
+void writeCode(void) {
+  unsigned int data;
+  unsigned int i;
+
+  while (currAddr & 3) {
+    emitByte(0);
+  }
+  for (i = 0; i < codeSize; i += 4) {
+    data = *(unsigned int *)(codeArray + i);
+    fprintf(outFile, "%08X\n", data);
+  }
 }
 
 
@@ -235,75 +343,97 @@ Symbol *lookupEnter(char *name) {
 /* backpatching */
 
 
-/**************************************************************/
+void addFixup(unsigned int codeOffset, Symbol *symbol,
+              int fixupMethod, unsigned int locus) {
+  Fixup *fixup;
 
-/* code emitter */
-
-
-#define MAX_CODE_INIT		256
-#define MAX_CODE_MULT		4
-
-
-unsigned char *codeArray = NULL;	/* the code proper */
-unsigned int codeSize = 0;		/* the current code size */
-
-static unsigned int codeMaxSize = 0;	/* the code array's current size */
-
-
-void growCodeArray(void) {
-  unsigned int newMaxSize;
-  unsigned char *newCodeArray;
-  unsigned int i;
-
-  if (codeMaxSize == 0) {
-    /* first allocation */
-    newMaxSize = MAX_CODE_INIT;
-  } else {
-    /* subsequent allocation */
-    newMaxSize = codeMaxSize * MAX_CODE_MULT;
-  }
-  newCodeArray = allocMem(newMaxSize);
-  for (i = 0; i < codeSize; i++) {
-    newCodeArray[i] = codeArray[i];
-  }
-  if (codeArray != NULL) {
-    freeMem(codeArray);
-  }
-  codeArray = newCodeArray;
-  codeMaxSize = newMaxSize;
+  fixup = allocMem(sizeof(Fixup));
+  fixup->codeOffset = codeOffset;
+  fixup->symbol = symbol;
+  fixup->fixupMethod = fixupMethod;
+  fixup->locus = locus;
+  fixup->next = fixupList;
+  fixupList = fixup;
 }
 
 
-void emitWord(unsigned int data) {
-  if (codeSize + 4 > codeMaxSize) {
-    growCodeArray();
+void fixupSingle(unsigned int codeOffset, Symbol *symbol,
+                 int fixupMethod, unsigned int locus) {
+  unsigned int value;
+  unsigned int mask;
+  unsigned int instr;
+  unsigned int imm;
+  int target;
+  int offset;
+
+  if (debugFixup) {
+    printf("FIXUP: code offset 0x%08X, symbol name '%s',\n"
+           "       fixup method %d, locus 0x%08X\n",
+           codeOffset, symbol->name, fixupMethod, locus);
   }
-  *(unsigned int *)(codeArray + codeSize) = data;
-  codeSize += 4;
-  currAddr += 4;
+  if (!symbol->isDefined) {
+    error("undefined symbol '%s'", symbol->name);
+  }
+  value = symbol->value;
+  switch (fixupMethod) {
+    case FIXUP_IMMEDIATE:
+      imm = value;
+      instr = getWord(codeOffset);
+      if ((imm >> 16) == 0x0000) {
+        instr &= ~(1 << 28);
+      } else
+      if ((imm >> 16) == 0xFFFF) {
+        instr |= (1 << 28);
+      } else {
+        error("illegal immediate value 0x%08X", imm);
+      }
+      mask = 0x0000FFFF;
+      instr &= ~mask;
+      instr |= (imm & mask);
+      putWord(codeOffset, instr);
+      break;
+    case FIXUP_TARGET:
+      target = value;
+      /* target is never out of reach */
+      offset = (target - locus - 4) / 4;
+      mask = 0x003FFFFF;
+      instr = getWord(codeOffset);
+      instr &= ~mask;
+      instr |= (offset & mask);
+      putWord(codeOffset, instr);
+      break;
+    case FIXUP_OFFSET:
+      offset = value;
+      if (offset < -(1 << 19) || offset >= (1 << 19)) {
+        error("offset %d out of bounds, symbol '%s'", offset, symbol->name);
+      }
+      mask = 0x000FFFFF;
+      instr = getWord(codeOffset);
+      instr &= ~mask;
+      instr |= (offset & mask);
+      putWord(codeOffset, instr);
+      break;
+    case FIXUP_WORD:
+      putWord(codeOffset, value);
+      break;
+    case FIXUP_BYTE:
+      putByte(codeOffset, value & 0x000000FF);
+      break;
+    default:
+      error("illegal fixup method %d", fixupMethod);
+      break;
+  }
 }
 
 
-void emitByte(unsigned char data) {
-  if (codeSize + 1 > codeMaxSize) {
-    growCodeArray();
-  }
-  *(unsigned char *)(codeArray + codeSize) = data;
-  codeSize++;
-  currAddr++;
-}
+void fixupAll(void) {
+  Fixup *fixup;
 
-
-void writeCode(void) {
-  unsigned int data;
-  unsigned int i;
-
-  while (currAddr & 3) {
-    emitByte(0);
-  }
-  for (i = 0; i < codeSize; i += 4) {
-    data = *(unsigned int *)(codeArray + i);
-    fprintf(outFile, "%08X\n", data);
+  fixup = fixupList;
+  while (fixup != NULL) {
+    fixupSingle(fixup->codeOffset, fixup->symbol,
+                fixup->fixupMethod, fixup->locus);
+    fixup = fixup->next;
   }
 }
 
@@ -501,7 +631,7 @@ void getToken(void) {
 /* get value, either as constant or from symbol table */
 
 
-unsigned int getValue(void) {
+unsigned int getValue(int fixupMethod) {
   unsigned int value;
   Symbol *symbol;
 
@@ -511,10 +641,16 @@ unsigned int getValue(void) {
   } else
   if (token == TOK_IDENT) {
     symbol = lookupEnter(tokenvalString);
-    if (!symbol->isDefined) {
-      error("forward symbol '%s' (not yet implemented)", symbol->name);
+    if (symbol->isDefined) {
+      value = symbol->value;
+    } else {
+      if (fixupMethod == FIXUP_ILLEGAL) {
+        error("undefined symbol '%s' (cannot be fixed up later) in line %d",
+              symbol->name, lineno);
+      }
+      addFixup(codeSize, symbol, fixupMethod, currAddr);
+      value = 0;
     }
-    value = symbol->value;
     getToken();
   } else {
     error("value missing in line %d", lineno);
@@ -592,7 +728,7 @@ void format_4(unsigned int code) {
     getToken();
     emitWord(code | (reg1 << 24) | reg2);
   } else {
-    imm = getValue();
+    imm = getValue(FIXUP_IMMEDIATE);
     if ((imm >> 16) == 0x0000) {
       emitWord(code | (4 << 28) | (reg1 << 24) | (imm & 0x0000FFFF));
     } else
@@ -637,7 +773,7 @@ void format_3(unsigned int code) {
     getToken();
     emitWord(code | (reg1 << 24) | (reg2 << 20) | reg3);
   } else {
-    imm = getValue();
+    imm = getValue(FIXUP_IMMEDIATE);
     if ((imm >> 16) == 0x0000) {
       emitWord(code | (4 << 28) | (reg1 << 24) |
                (reg2 << 20) | (imm & 0x0000FFFF));
@@ -665,9 +801,9 @@ void format_2(unsigned int code) {
     getToken();
     emitWord(code | reg);
   } else {
-    target = getValue();
-    offset = (target - currAddr - 4) / 4;
+    target = getValue(FIXUP_TARGET);
     /* target is never out of reach */
+    offset = (target - currAddr - 4) / 4;
     emitWord(code | (1 << 29) | (offset & 0x003FFFFF));
   }
 }
@@ -699,7 +835,7 @@ void format_1(unsigned int code) {
     error("comma expected in line %d", lineno);
   }
   getToken();
-  offset = getValue();
+  offset = getValue(FIXUP_OFFSET);
   if (offset < -(1 << 19) || offset >= (1 << 19)) {
     error("offset out of bounds in line %d", lineno);
   }
@@ -720,36 +856,11 @@ void format_0(unsigned int code) {
 /* assemblers for the directives */
 
 
-void dotSet(unsigned int code) {
-  Symbol *symbol;
-
-  if (token != TOK_IDENT) {
-    error("identifier missing in line %d", lineno);
-  }
-  symbol = lookupEnter(tokenvalString);
-  if (symbol->isDefined) {
-    error("symbol '%s' multiply defined in line %d",
-          symbol->name, lineno);
-  }
-  getToken();
-  if (token != TOK_COMMA) {
-    error("comma expected in line %d", lineno);
-  }
-  getToken();
-  if (token != TOK_NUMBER) {
-    error("missing value in line %d", lineno);
-  }
-  symbol->isDefined = true;
-  symbol->value = tokenvalNumber;
-  getToken();
-}
-
-
 void dotWord(unsigned int code) {
   unsigned int val;
 
   while (1) {
-    val = getValue();
+    val = getValue(FIXUP_WORD);
     emitWord(val);
     if (token != TOK_COMMA) {
       break;
@@ -772,7 +883,7 @@ void dotByte(unsigned int code) {
       }
       getToken();
     } else {
-      val = getValue();
+      val = getValue(FIXUP_BYTE);
       emitByte(val);
     }
     if (token != TOK_COMMA) {
@@ -783,10 +894,33 @@ void dotByte(unsigned int code) {
 }
 
 
+void dotSet(unsigned int code) {
+  Symbol *symbol;
+  unsigned int val;
+
+  if (token != TOK_IDENT) {
+    error("identifier missing in line %d", lineno);
+  }
+  symbol = lookupEnter(tokenvalString);
+  if (symbol->isDefined) {
+    error("symbol '%s' multiply defined in line %d",
+          symbol->name, lineno);
+  }
+  getToken();
+  if (token != TOK_COMMA) {
+    error("comma expected in line %d", lineno);
+  }
+  getToken();
+  val = getValue(FIXUP_ILLEGAL);
+  symbol->isDefined = true;
+  symbol->value = val;
+}
+
+
 void dotLoc(unsigned int code) {
   unsigned int val;
 
-  val = getValue();
+  val = getValue(FIXUP_ILLEGAL);
   currAddr = val;
 }
 
@@ -795,7 +929,7 @@ void dotSpace(unsigned int code) {
   unsigned int val;
   unsigned int i;
 
-  val = getValue();
+  val = getValue(FIXUP_ILLEGAL);
   for (i = 0; i < val; i++) {
     emitByte(0);
   }
@@ -897,9 +1031,9 @@ Instr instrTable[] = {
   { "CLI",    format_0, OP_CLI	},
   { "STI",    format_0, OP_STI	},
   /* assembler directives */
-  { ".SET",   dotSet,   0	},
   { ".WORD",  dotWord,  0	},
   { ".BYTE",  dotByte,  0	},
+  { ".SET",   dotSet,   0	},
   { ".LOC",   dotLoc,   0	},
   { ".SPACE", dotSpace, 0	},
   { ".ALIGN", dotAlign, 0	},
@@ -976,6 +1110,7 @@ void assemble(void) {
       error("garbage in line %d", lineno);
     }
   }
+  fixupAll();
   writeCode();
 }
 
