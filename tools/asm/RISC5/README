@@ -107,7 +107,7 @@ Machine Instructions
   BEQ	<r1 or label>		// branch if equal (zero)         [Z]
   BCS	<r1 or label>		// branch if carry set (lower)    [C]
   BVS	<r1 or label>		// branch if overflow set         [V]
-  BLS	<r1 or label>		// branch if lower or same        [~C|Z]
+  BLS	<r1 or label>		// branch if lower or same        [C|Z]
   BLT	<r1 or label>		// branch if less than            [N#V]
   BLE	<r1 or label>		// branch if less or equal        [(N#V)|Z]
   B	<r1 or label>		// branch unconditionally
@@ -115,7 +115,7 @@ Machine Instructions
   BNE	<r1 or label>		// branch if not equal (not zero) [~Z]
   BCC	<r1 or label>		// branch if carry clear          [~C]
   BVC	<r1 or label>		// branch if overflow clear       [~V]
-  BHI	<r1 or label>		// branch if higher               [C&~Z]
+  BHI	<r1 or label>		// branch if higher               [~C&~Z]
   BGE	<r1 or label>		// branch if greater or equal     [N=V]
   BGT	<r1 or label>		// branch if greater than         [(N=V)&~Z]
   BNVR	<r1 or label>		// branch never (no-op)
@@ -127,7 +127,7 @@ Machine Instructions
   CEQ	<r1 or label>		// call if equal (zero)           [Z]
   CCS	<r1 or label>		// call if carry set (lower)      [C]
   CVS	<r1 or label>		// call if overflow set           [V]
-  CLS	<r1 or label>		// call if lower or same          [~C|Z]
+  CLS	<r1 or label>		// call if lower or same          [C|Z]
   CLT	<r1 or label>		// call if less than              [N#V]
   CLE	<r1 or label>		// call if less or equal          [(N#V)|Z]
   C	<r1 or label>		// call unconditionally
@@ -135,7 +135,7 @@ Machine Instructions
   CNE	<r1 or label>		// call if not equal (not zero)   [~Z]
   CCC	<r1 or label>		// call if carry clear            [~C]
   CVC	<r1 or label>		// call if overflow clear         [~V]
-  CHI	<r1 or label>		// call if higher                 [C&~Z]
+  CHI	<r1 or label>		// call if higher                 [~C&~Z]
   CGE	<r1 or label>		// call if greater or equal       [N=V]
   CGT	<r1 or label>		// call if greater than           [(N=V)&~Z]
   CNVR	<r1 or label>		// call never (no-op)
