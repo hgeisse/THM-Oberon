@@ -1,0 +1,8 @@
+instruction cache simulation
+capacity: 4K x 32 bit = 16 KB
+block size: 8 x 32 bit = 32 byte
+associativity: direct-mapped
+number of blocks: 512
+tags: 512 x 10 bit
+flags: valid
+backing store: 4M x 32 bit = 16 MB
