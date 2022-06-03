@@ -6,7 +6,9 @@ SRCS = risc5test.v \
        src/toplevel/risc5.v \
        src/clk_rst/clk_rst.v \
        src/cpu/cpu.v \
-       src/cpu/icache.v
+       src/cpu/icache.v \
+       src/cpu/regs.v \
+       src/cpu/alu.v
 
 all:		show
 
