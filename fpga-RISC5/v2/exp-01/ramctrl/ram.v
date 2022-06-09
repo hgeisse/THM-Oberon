@@ -86,7 +86,7 @@ module ram(clk, rst,
   assign ack = we_buf ? ~xfer_stop : rd_ack;
 
   assign ram_addr_lo[2:0] = addr_buf[2:0] + address_cnt[2:0];
-  assign ram_addr = { addr_buf[21:3], ram_addr_lo[2:0] };
+  assign ram_addr[21:0] = { addr_buf[21:3], ram_addr_lo[2:0] };
 
   always @(posedge clk) begin
     if (~xfer_stop) begin
