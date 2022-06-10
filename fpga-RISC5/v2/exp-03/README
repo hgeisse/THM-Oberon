@@ -1,8 +1,28 @@
-instruction cache simulation
-capacity: 4K x 32 bit = 16 KB
-block size: 8 x 32 bit = 32 byte
-associativity: direct-mapped
-number of blocks: 512
-tags: 512 x 10 bit
-flags: valid
-backing store: 4M x 32 bit = 16 MB
+v0: fake cache
+    every access is a hit with correct data
+    no errors until end of test
+    status: done
+
+v1: basic cache read with preloaded cache memory
+    fails after 8 successful reads with wrong data
+    status: open
+
+v2: basic cache read with preloaded cache memory
+    hit detection, pipeline control, startup
+    stalls after 8 successful reads
+    status: open
+
+v3: basic cache read with preloaded cache memory
+    hit detection, pipeline control, startup
+    main memory read, cache memory write
+    cache memory re-read, pipeline restart
+    runs out of predefined data after 32 successful reads
+    status: open
+
+v4: cache reads without predefined cache contents
+    hit detection, pipeline control, startup
+    main memory read, cache memory write
+    cache memory re-read, pipeline restart
+    initialization of valid bits
+    no errors until end of test
+    status: open

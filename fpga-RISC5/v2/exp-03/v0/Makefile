@@ -2,7 +2,8 @@
 # Makefile for testing RISC5
 #
 
-SRCS = risc5test.v icache/icache.v ramctrl/ramctrl.v ramctrl/ram.v
+SRCS = risc5test.v icache/icachetest.v icache/icache.v \
+       ramctrl/ramctrl.v ramctrl/ram.v
 
 all:		show
 
