@@ -4,8 +4,8 @@ v0: fake cache
     status: done
 
 v1: basic cache read with preloaded cache memory
-    fails after 8 successful reads with wrong data
-    status: open
+    fails after 16 successful reads with wrong data
+    status: done
 
 v2: basic cache read with preloaded cache memory
     hit detection, pipeline control, startup
