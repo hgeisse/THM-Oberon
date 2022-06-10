@@ -9,8 +9,8 @@ v1: basic cache read with preloaded cache memory
 
 v2: basic cache read with preloaded cache memory
     hit detection, pipeline control, startup
-    stalls after 8 successful reads
-    status: open
+    stalls after 16 successful reads
+    status: done
 
 v3: basic cache read with preloaded cache memory
     hit detection, pipeline control, startup
