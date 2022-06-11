@@ -17,7 +17,7 @@ v3: basic cache read with preloaded cache memory
     main memory read, cache memory write
     cache memory re-read, pipeline restart
     runs out of predefined data after 32 successful reads
-    status: open
+    status: done
 
 v4: cache reads without predefined cache contents
     hit detection, pipeline control, startup
