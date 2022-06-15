@@ -18,13 +18,17 @@
 // (in clock cycles, range: 0..15)
 //
 `define DISTANCE	4'd6
+//`define DISTANCE	4'd2
 //`define DISTANCE	4'd1
 //`define DISTANCE	4'd0
 
 //
 // define the total number of requests
 //
-`define NUM_TESTS	20'd1000
+`define NUM_TESTS	20'd2300
+//`define NUM_TESTS	20'd5000
+//`define NUM_TESTS	20'd7000
+//`define NUM_TESTS	20'd12000
 
 //
 // define an address pattern for the optional LRU test
@@ -115,36 +119,41 @@ module icachetest(clk, rst,
       target[23:0] <= 24'hxxxxxx;
     end else begin
       if (ready_in & distance_restart & ~holdoff_counting) begin
-        gen_state[19:0] <= gen_state[19:0] + 20'h1;
         case (gen_state[19:0])
 `ifdef LRU_0
           20'h00005:
             begin
+              gen_state[19:0] <= gen_state[19:0] + 20'h1;
               jump <= 1'b1;
               target[23:0] <= 24'h010000;
             end
           20'h00006:
             begin
+              gen_state[19:0] <= gen_state[19:0] + 20'h1;
               jump <= 1'b1;
               target[23:0] <= 24'h020000;
             end
           20'h00007:
             begin
+              gen_state[19:0] <= gen_state[19:0] + 20'h1;
               jump <= 1'b1;
               target[23:0] <= 24'h010000;
             end
           20'h00008:
             begin
+              gen_state[19:0] <= gen_state[19:0] + 20'h1;
               jump <= 1'b1;
               target[23:0] <= 24'h020000;
             end
           20'h00009:
             begin
+              gen_state[19:0] <= gen_state[19:0] + 20'h1;
               jump <= 1'b1;
               target[23:0] <= 24'h010000;
             end
           20'h0000A:
             begin
+              gen_state[19:0] <= gen_state[19:0] + 20'h1;
               jump <= 1'b1;
               target[23:0] <= 24'h050000;
             end
@@ -152,77 +161,92 @@ module icachetest(clk, rst,
 `ifdef LRU_1
           20'h00005:
             begin
+              gen_state[19:0] <= gen_state[19:0] + 20'h1;
               jump <= 1'b1;
               target[23:0] <= 24'h010000;
             end
           20'h00006:
             begin
+              gen_state[19:0] <= gen_state[19:0] + 20'h1;
               jump <= 1'b1;
               target[23:0] <= 24'h020000;
             end
           20'h00007:
             begin
+              gen_state[19:0] <= gen_state[19:0] + 20'h1;
               jump <= 1'b1;
               target[23:0] <= 24'h010000;
             end
           20'h00008:
             begin
+              gen_state[19:0] <= gen_state[19:0] + 20'h1;
               jump <= 1'b1;
               target[23:0] <= 24'h020000;
             end
           20'h00009:
             begin
+              gen_state[19:0] <= gen_state[19:0] + 20'h1;
               jump <= 1'b1;
               target[23:0] <= 24'h050000;
             end
           20'h0000A:
             begin
+              gen_state[19:0] <= gen_state[19:0] + 20'h1;
               jump <= 1'b1;
               target[23:0] <= 24'h050000;
             end
 `endif
           20'h0003F:
             begin
+              gen_state[19:0] <= gen_state[19:0] + 20'h1;
               jump <= 1'b1;
               target[23:0] <= 24'h000000;
             end
           20'h0007F:
             begin
+              gen_state[19:0] <= gen_state[19:0] + 20'h1;
               jump <= 1'b1;
               target[23:0] <= 24'h000000;
             end
           20'h000BF:
             begin
+              gen_state[19:0] <= gen_state[19:0] + 20'h1;
               jump <= 1'b1;
               target[23:0] <= 24'h000000;
             end
           20'h000FF:
             begin
+              gen_state[19:0] <= gen_state[19:0] + 20'h1;
               jump <= 1'b1;
               target[23:0] <= 24'h800000;
             end
           20'h0013F:
             begin
+              gen_state[19:0] <= gen_state[19:0] + 20'h1;
               jump <= 1'b1;
               target[23:0] <= 24'h800000;
             end
           20'h0017F:
             begin
+              gen_state[19:0] <= gen_state[19:0] + 20'h1;
               jump <= 1'b1;
               target[23:0] <= 24'h800000;
             end
           20'h001BF:
             begin
+              gen_state[19:0] <= gen_state[19:0] + 20'h1;
               jump <= 1'b1;
               target[23:0] <= 24'h800000;
             end
           20'h001FF:
             begin
+              gen_state[19:0] <= 20'h0;
               jump <= 1'b1;
               target[23:0] <= 24'h000000;
             end
           default:
             begin
+              gen_state[19:0] <= gen_state[19:0] + 20'h1;
               jump <= 1'b0;
               target[23:0] <= 24'hxxxxxx;
             end
