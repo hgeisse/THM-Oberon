@@ -25,4 +25,4 @@ v4: cache reads without predefined cache contents
     cache memory re-read, pipeline restart
     initialization of valid bits
     no errors until end of test
-    status: open
+    status: done
