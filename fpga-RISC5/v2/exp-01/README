@@ -1,3 +1,8 @@
-abstract SDRAM simulation
+SDRAM simulation
 adjustable latency
-data transfer with 1 word/cycle
+data transfer in bursts of 8 words
+data transfer speed is 1 word per clock cycle
+
+PROM simulation by block RAM
+data transfer in bursts of 8 words
+data transfer speed is 1 word per clock cycle

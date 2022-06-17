@@ -2,7 +2,7 @@
 # Makefile for testing RISC5
 #
 
-SRCS = risc5test.v ramctrl/ram.v
+SRCS = risc5test.v ram/ram.v prom/prom.v
 
 all:		show
 

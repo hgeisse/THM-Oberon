@@ -11,12 +11,18 @@ module risc5test;
 
   reg clk;			// clock, 100 MHz
   reg rst;			// reset, active high
-  reg stb;
-  reg we;
-  reg [21:0] addr;
-  reg [31:0] data_in;
-  wire [31:0] data_out;
-  wire ack;
+
+  reg ram_stb;
+  reg ram_we;
+  reg [21:0] ram_addr;
+  reg [31:0] ram_data_in;
+  wire [31:0] ram_data_out;
+  wire ram_ack;
+
+  reg prom_stb;
+  reg [8:0] prom_addr;
+  wire [31:0] prom_data_out;
+  wire prom_ack;
 
   //
   // simulation control
@@ -29,19 +35,23 @@ module risc5test;
                 clk = 1;
                 rst = 1;
     #51         rst = 0;
-                stb = 0;
-    #100        stb = 1;
-                we = 0;
-                addr[21:0] = 22'h1000;
-    #70         stb = 0;
-    #80         stb = 1;
-                we = 1;
-                addr[21:0] = 22'h1000;
-    #70         stb = 0;
-    #80         stb = 1;
-                we = 0;
-                addr[21:0] = 22'h1000;
-    #70         stb = 0;
+                ram_stb = 0;
+    #100        ram_stb = 1;
+                ram_we = 0;
+                ram_addr[21:0] = 22'h1000;
+    #70         ram_stb = 0;
+    #80         ram_stb = 1;
+                ram_we = 1;
+                ram_addr[21:0] = 22'h1000;
+    #70         ram_stb = 0;
+    #80         ram_stb = 1;
+                ram_we = 0;
+                ram_addr[21:0] = 22'h1000;
+    #70         ram_stb = 0;
+    #100        prom_stb = 0;
+    #100        prom_stb = 1;
+                prom_addr[8:0] = 9'h1A8;
+    #40         prom_stb = 0;
     #30000      $finish;
   end
 
@@ -60,12 +70,21 @@ module risc5test;
   ram ram_0(
     .clk(clk),
     .rst(rst),
-    .stb(stb),
-    .we(we),
-    .addr(addr[21:0]),
-    .data_in(data_in[31:0]),
-    .data_out(data_out[31:0]),
-    .ack(ack)
+    .stb(ram_stb),
+    .we(ram_we),
+    .addr(ram_addr[21:0]),
+    .data_in(ram_data_in[31:0]),
+    .data_out(ram_data_out[31:0]),
+    .ack(ram_ack)
+  );
+
+  prom prom_0(
+    .clk(clk),
+    .rst(rst),
+    .stb(prom_stb),
+    .addr(prom_addr[8:0]),
+    .data_out(prom_data_out[31:0]),
+    .ack(prom_ack)
   );
 
   //
@@ -74,10 +93,10 @@ module risc5test;
 
   always @(posedge clk) begin
     if (rst) begin
-      data_in[31:0] <= 32'h44444444;
+      ram_data_in[31:0] <= 32'h44444444;
     end else begin
-      if (we & ack) begin
-        data_in[31:0] <= data_in[31:0] + 32'h11111111;
+      if (ram_we & ram_ack) begin
+        ram_data_in[31:0] <= ram_data_in[31:0] + 32'h11111111;
       end
     end
   end
