@@ -91,7 +91,7 @@ module icache(clk, rst,
     end
   end
 
-  assign cache_valid_out = valid_buf & hit;
+  assign cache_valid_out = valid_buf & hit & ~invalidate;
 
   //--------------------------------------------
 
@@ -135,7 +135,7 @@ module icache(clk, rst,
 
   assign hit = block_valid_out & (block_tag_out[9:0] == tag_buf[9:0]);
 
-  assign memory_stb = ~hit & valid_buf & ~memory_ack_buf;
+  assign memory_stb = ~hit & valid_buf & ~memory_ack_buf & ~invalidate;
   assign memory_addr[23:2] = { tag_buf[9:0], index_buf[8:0], 3'b000 };
 
   always @(posedge clk) begin
