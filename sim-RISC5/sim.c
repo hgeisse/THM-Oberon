@@ -902,7 +902,7 @@ void writeByte(Word addr, Byte data) {
 }
 
 
-void memInit(char *promName) {
+void promInit(char *promName) {
   FILE *promFile;
   Word addr;
   int lineno;
@@ -953,6 +953,60 @@ void memInit(char *promName) {
   printf("0x%08X words loaded from PROM file '%s'\n",
          addr, promName);
   fclose(promFile);
+}
+
+
+void ramInit(char *ramName) {
+  FILE *ramFile;
+  Word addr;
+  int lineno;
+  char line[LINE_SIZE];
+  char *p;
+  Word data;
+  char *endp;
+
+  if (ramName == NULL) {
+    /* no RAM file to load */
+    return;
+  }
+  ramFile = fopen(ramName, "r");
+  if (ramFile == NULL) {
+    error("cannot open RAM file '%s'", ramName);
+  }
+  addr = 0;
+  lineno = 0;
+  while (fgets(line, LINE_SIZE, ramFile) != NULL) {
+    lineno++;
+    p = line;
+    while (*p == ' ' || *p == '\t') {
+      p++;
+    }
+    if (*p == '\n') {
+      continue;
+    }
+    if (*(p + 0) == '/' &&
+        *(p + 1) == '/') {
+      continue;
+    }
+    data = strtoul(p, &endp, 16);
+    ram[addr++] = data;
+    p = endp;
+    while (*p == ' ' || *p == '\t') {
+      p++;
+    }
+    if (*p == '\n') {
+      continue;
+    }
+    if (*(p + 0) == '/' &&
+        *(p + 1) == '/') {
+      continue;
+    }
+    error("garbage at end of line %d in RAM file '%s'",
+          lineno, ramName);
+  }
+  printf("0x%08X words loaded from RAM file '%s'\n",
+         addr, ramName);
+  fclose(ramFile);
 }
 
 
@@ -2230,6 +2284,7 @@ static void usage(char *myself) {
   printf("Usage: %s\n", myself);
   printf("    [-i]                set interactive mode\n");
   printf("    [-p <PROM>]         set PROM image file name\n");
+  printf("    [-r <RAM>]          set RAM image file name\n");
   printf("    [-d <disk>]         set disk image file name\n");
   printf("    [-s <3 nibbles>]    set initial buttons(1)/switches(2)\n");
   exit(1);
@@ -2247,6 +2302,7 @@ int main(int argc, char *argv[]) {
   char *argp;
   Bool interactive;
   char *promName;
+  char *ramName;
   char *diskName;
   Word initialSwitches;
   char *endp;
@@ -2255,6 +2311,7 @@ int main(int argc, char *argv[]) {
 
   interactive = false;
   promName = NULL;
+  ramName = NULL;
   diskName = NULL;
   initialSwitches = 0;
   for (i = 1; i < argc; i++) {
@@ -2267,6 +2324,12 @@ int main(int argc, char *argv[]) {
         usage(argv[0]);
       }
       promName = argv[++i];
+    } else
+    if (strcmp(argp, "-r") == 0) {
+      if (i == argc - 1 || ramName != NULL) {
+        usage(argv[0]);
+      }
+      ramName = argv[++i];
     } else
     if (strcmp(argp, "-d") == 0) {
       if (i == argc - 1 || diskName != NULL) {
@@ -2302,7 +2365,8 @@ int main(int argc, char *argv[]) {
   initGPIO();
   initFPU();
   graphInit();
-  memInit(promName);
+  promInit(promName);
+  ramInit(ramName);
   cpuInit(INITIAL_PC);
   if (!interactive) {
     printf("Start executing...\n");
