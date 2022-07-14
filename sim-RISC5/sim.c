@@ -1517,7 +1517,7 @@ static void disasmF1(Word instr) {
       sprintf(instrBuffer, "%-7s R%d,0x%08X", regOps[op], a, im);
     } else {
       /* u = 1: shift immediate value to upper 16 bits */
-      sprintf(instrBuffer, "%-7s R%d,0x%08X", regOps[op], a, im);
+      sprintf(instrBuffer, "%-7s R%d,0x%08X", regOps[op], a, im << 16);
       instrBuffer[3] = 'H';
     }
   } else {
