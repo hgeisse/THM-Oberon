@@ -47,7 +47,7 @@ Machine Instructions
 // register data move instructions
 //
   MOV	<r1>,<r2 or imm>	// move:      r1 <- (r2 or imm)
-  MOVH	<r1>,<imm>		// move high: r1 <- imm shift left by 16
+  MOVH	<r1>,<imm>		// move high: r1 <- (imm >> 16) << 16
   GETH	<r1>			// get H reg: r1 <- H
   GETF	<r1>			// get F reg: r1 <- [N,Z,C,V,I,CPU_ID]
 

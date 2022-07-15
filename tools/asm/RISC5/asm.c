@@ -99,11 +99,12 @@
 
 
 #define FIXUP_ILLEGAL	0
-#define FIXUP_IMMEDIATE	1
-#define FIXUP_TARGET	2
-#define FIXUP_OFFSET	3
-#define FIXUP_WORD	4
-#define FIXUP_BYTE	5
+#define FIXUP_IMM_LO	1
+#define FIXUP_IMM_HI	2
+#define FIXUP_TARGET	3
+#define FIXUP_OFFSET	4
+#define FIXUP_WORD	5
+#define FIXUP_BYTE	6
 
 
 /**************************************************************/
@@ -376,17 +377,20 @@ void fixupSingle(unsigned int codeOffset, Symbol *symbol,
   }
   value = symbol->value;
   switch (fixupMethod) {
-    case FIXUP_IMMEDIATE:
+    case FIXUP_IMM_LO:
       imm = value;
       instr = getWord(codeOffset);
-      if ((imm >> 16) == 0x0000) {
-        instr &= ~(1 << 28);
-      } else
       if ((imm >> 16) == 0xFFFF) {
         instr |= (1 << 28);
-      } else {
-        error("illegal immediate value 0x%08X", imm);
       }
+      mask = 0x0000FFFF;
+      instr &= ~mask;
+      instr |= (imm & mask);
+      putWord(codeOffset, instr);
+      break;
+    case FIXUP_IMM_HI:
+      imm = value >> 16;
+      instr = getWord(codeOffset);
       mask = 0x0000FFFF;
       instr &= ~mask;
       instr |= (imm & mask);
@@ -728,16 +732,34 @@ void format_4(unsigned int code) {
     getToken();
     emitWord(code | (reg1 << 24) | reg2);
   } else {
-    imm = getValue(FIXUP_IMMEDIATE);
-    if ((imm >> 16) == 0x0000) {
-      emitWord(code | (4 << 28) | (reg1 << 24) | (imm & 0x0000FFFF));
-    } else
+    imm = getValue(FIXUP_IMM_LO);
     if ((imm >> 16) == 0xFFFF) {
       emitWord(code | (5 << 28) | (reg1 << 24) | (imm & 0x0000FFFF));
     } else {
-      error("illegal immediate value in line %d", lineno);
+      emitWord(code | (4 << 28) | (reg1 << 24) | (imm & 0x0000FFFF));
     }
   }
+}
+
+
+/*
+ * operands: register, immediate
+ */
+void format_7(unsigned int code) {
+  int reg;
+  unsigned int imm;
+
+  if (token != TOK_REGISTER) {
+    error("missing register in line %d", lineno);
+  }
+  reg = tokenvalNumber;
+  getToken();
+  if (token != TOK_COMMA) {
+    error("comma expected in line %d", lineno);
+  }
+  getToken();
+  imm = getValue(FIXUP_IMM_HI);
+  emitWord(code | (4 << 28) | (reg << 24) | (imm >> 16));
 }
 
 
@@ -773,16 +795,13 @@ void format_3(unsigned int code) {
     getToken();
     emitWord(code | (reg1 << 24) | (reg2 << 20) | reg3);
   } else {
-    imm = getValue(FIXUP_IMMEDIATE);
-    if ((imm >> 16) == 0x0000) {
-      emitWord(code | (4 << 28) | (reg1 << 24) |
-               (reg2 << 20) | (imm & 0x0000FFFF));
-    } else
+    imm = getValue(FIXUP_IMM_LO);
     if ((imm >> 16) == 0xFFFF) {
       emitWord(code | (5 << 28) | (reg1 << 24) |
                (reg2 << 20) | (imm & 0x0000FFFF));
     } else {
-      error("illegal immediate value in line %d", lineno);
+      emitWord(code | (4 << 28) | (reg1 << 24) |
+               (reg2 << 20) | (imm & 0x0000FFFF));
     }
   }
 }
@@ -958,7 +977,7 @@ typedef struct {
 Instr instrTable[] = {
   /* register data move */
   { "MOV",    format_4, OP_MOV	},
-  { "MOVH",   format_4, OP_MOVH	},
+  { "MOVH",   format_7, OP_MOVH	},
   { "GETH",   format_5, OP_GETH	},
   { "GETF",   format_5, OP_GETF	},
   /* shift */
