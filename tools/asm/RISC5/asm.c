@@ -28,7 +28,7 @@
 
 
 #define OP_MOV		0x00000000
-#define OP_MOVH		0x20000000
+#define OP_MOVH		0x60000000
 #define OP_GETH		0x20000000
 #define OP_GETF		0x30000000
 
@@ -759,7 +759,7 @@ void format_7(unsigned int code) {
   }
   getToken();
   imm = getValue(FIXUP_IMM_HI);
-  emitWord(code | (4 << 28) | (reg << 24) | (imm >> 16));
+  emitWord(code | (reg << 24) | (imm >> 16));
 }
 
 
