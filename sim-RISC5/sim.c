@@ -1,5 +1,5 @@
 /*
- * sim.c -- Oberon RISC5 simulator
+ * sim.c -- RISC5 simulator
  */
 
 

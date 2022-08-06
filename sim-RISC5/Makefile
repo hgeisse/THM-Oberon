@@ -1,5 +1,5 @@
 #
-# Makefile for Oberon RISC5 simulator
+# Makefile for RISC5 simulator
 #
 
 BUILD = ../build

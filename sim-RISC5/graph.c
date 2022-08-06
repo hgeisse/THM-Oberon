@@ -214,8 +214,8 @@ static void initMonitor(int argc, char *argv[]) {
   wmHints->flags = StateHint | InputHint;
   wmHints->input = True;
   wmHints->initial_state = NormalState;
-  classHints->res_name = "Oberon";
-  classHints->res_class = "Oberon";
+  classHints->res_name = "RISC5";
+  classHints->res_class = "RISC5";
   if (XStringListToTextProperty(&classHints->res_name, 1, &windowName) == 0) {
     error("property allocation failed");
   }
@@ -348,7 +348,7 @@ static void *refresh(void *ignore) {
 
 static int myArgc = 1;
 static char *myArgv[] = {
-  "oberon",
+  "risc5",
   NULL
 };
 
