@@ -43,7 +43,6 @@
 #define INITIAL_PC	0xFFE000		/* start executing here */
 #define TIMER_VECTOR	0x000008		/* timer IRQ lands here */
 
-#define SIGN_EXT_24(x)	((x) & 0x00800000 ? (x) | 0xFF000000 : (x))
 #define SIGN_EXT_20(x)	((x) & 0x00080000 ? (x) | 0xFFF00000 : (x))
 
 #define LINE_SIZE	200
@@ -1017,13 +1016,13 @@ void ramInit(char *ramName) {
  */
 
 
-static Word pc;			/* program counter, as word index */
+static Word pc;			/* program counter, as byte index */
 static Word reg[16];		/* general purpose registers */
 static Word H;			/* special register for mul/div */
 static Bool N, Z, C, V, I;	/* flags */
 static Bool irqPending;		/* IRQ pending if true */
 static Bool inIntrMode;		/* in interrupt mode if true */
-static Word spc;		/* { 1'N, 1'Z, 1'C, 1'V, 6'0, 22'pc } */
+static Word spc;		/* { 1'N, 1'Z, 1'C, 1'V, 4'0, 24'pc } */
 
 static Bool breakSet;		/* breakpoint set if true */
 static Word breakAddr;		/* if breakSet, this is where */
@@ -1042,8 +1041,9 @@ static void execNextInstruction(void) {
   Bool cond;
   Word aux;
 
-  ir = readWord(pc << 2);
-  pc++;
+  ir = readWord(pc);
+  pc += 4;
+  pc &= ADDR_MASK;
   p = (ir >> 31) & 0x01;
   q = (ir >> 30) & 0x01;
   u = (ir >> 29) & 0x01;
@@ -1200,7 +1200,7 @@ static void execNextInstruction(void) {
       }
     } else {
       /* branch instructions */
-      imm = SIGN_EXT_24(ir & 0x00FFFFFF);
+      imm = ir & 0x003FFFFF;
       c = reg[irc];
       cond = (ira >> 3) & 1;
       switch (ira & 7) {
@@ -1237,16 +1237,16 @@ static void execNextInstruction(void) {
             case 0:
               /* branch */
               if (cond) {
-                pc = c >> 2;
+                pc = c & ADDR_MASK;
               }
               break;
             case 1:
               /* return from interrupt */
-              N = (spc >> 25) & 1;
-              Z = (spc >> 24) & 1;
-              C = (spc >> 23) & 1;
-              V = (spc >> 22) & 1;
-              pc = spc & 0x003FFFFF;
+              N = (spc >> 31) & 1;
+              Z = (spc >> 30) & 1;
+              C = (spc >> 29) & 1;
+              V = (spc >> 28) & 1;
+              pc = spc & ADDR_MASK;
               inIntrMode = false;
               break;
             case 2:
@@ -1256,30 +1256,32 @@ static void execNextInstruction(void) {
             case 3:
               /* undefined */
               error("undefined instruction 0x%08X, PC = 0x%08X",
-                    ir, (pc - 1) << 2);
+                    ir, (pc - 4) & ADDR_MASK);
               break;
           }
         } else {
           /* call */
           if (cond) {
             aux = pc;
-            pc = c >> 2;
-            reg[15] = aux << 2;
+            pc = c & ADDR_MASK;
+            reg[15] = aux;
           }
         }
       } else {
-        /* branch target is pc + 1 + offset */
+        /* branch target is pc + 4 + offset * 4 */
         if (v == 0) {
           /* branch */
           if (cond) {
-            pc += imm;
+            pc += imm << 2;
+            pc &= ADDR_MASK;
           }
         } else {
           /* call */
           if (cond) {
             aux = pc;
-            pc += imm;
-            reg[15] = aux << 2;
+            pc += imm << 2;
+            pc &= ADDR_MASK;
+            reg[15] = aux;
           }
         }
       }
@@ -1295,23 +1297,23 @@ static void handleInterrupts(void) {
   }
   /* interrupt acknowledge */
   irqPending = false;
-  spc = (N << 25) |
-        (Z << 24) |
-        (C << 23) |
-        (V << 22) |
+  spc = (N << 31) |
+        (Z << 30) |
+        (C << 29) |
+        (V << 28) |
         pc;
-  pc = TIMER_VECTOR >> 2;
+  pc = TIMER_VECTOR;
   inIntrMode = true;
 }
 
 
 Word cpuGetPC(void) {
-  return pc << 2;
+  return pc;
 }
 
 
 void cpuSetPC(Word addr) {
-  pc = addr >> 2;
+  pc = addr & ADDR_MASK;
 }
 
 
@@ -1359,12 +1361,12 @@ Bool cpuTestBreak(void) {
 
 
 Word cpuGetBreak(void) {
-  return breakAddr << 2;
+  return breakAddr;
 }
 
 
 void cpuSetBreak(Word addr) {
-  breakAddr = addr >> 2;
+  breakAddr = addr & ADDR_MASK;
   breakSet = true;
 }
 
@@ -1424,7 +1426,7 @@ Word cpuGetSPC(void) {
 void cpuInit(Word initialPC) {
   int i;
 
-  pc = initialPC >> 2;
+  pc = initialPC;
   for (i = 0; i < 16; i++) {
     reg[i] = 0;
   }
@@ -1614,9 +1616,9 @@ static void disasmF3(Word instr, Word locus) {
       sprintf(instrBuffer, "C%-6s R%d", cond, c);
     }
   } else {
-    /* u = 1: branch target is pc + 1 + offset */
+    /* u = 1: branch target is pc + 4 + offset * 4 */
     offset = instr & 0x003FFFFF;
-    target = (((locus >> 2) + 1 + offset) << 2) & ADDR_MASK;
+    target = (locus + 4 + (offset << 2)) & ADDR_MASK;
     if (((instr >> 28) & 1) == 0) {
       /* v = 0: branch */
       sprintf(instrBuffer, "B%-6s 0x%08X", cond, target);
