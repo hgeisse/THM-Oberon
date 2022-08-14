@@ -23,3 +23,14 @@ void error(char *fmt, ...) {
   va_end(ap);
   exit(1);
 }
+
+
+void warning(char *fmt, ...) {
+  va_list ap;
+
+  va_start(ap, fmt);
+  printf("Warning: ");
+  vprintf(fmt, ap);
+  printf("\n");
+  va_end(ap);
+}

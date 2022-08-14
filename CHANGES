@@ -47,8 +47,8 @@
 	   from 0x2y000000 to 0x3y000001.
 	4. The instruction codes 0x2y00000s are reserved for *writing*
 	   a special register (its number is in nibble "s"). The register
-	   "y" becomes the source of this data transfer. Note that writing
-	   into the ID register has no effect at all.
+	   "y" becomes the source of this data transfer. Note that a write
+	   to the ID register does not change the register's contents.
 	5. Currently, the following special register numbers are assigned:
 	     0: ID    CPU version as described above
 	     1: H     the mul/div auxiliary register

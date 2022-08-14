@@ -14,6 +14,7 @@ typedef unsigned char Byte;
 
 
 void error(char *fmt, ...);
+void warning(char *fmt, ...);
 
 
 #endif /* _COMMON_H_ */

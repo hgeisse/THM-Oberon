@@ -1073,7 +1073,7 @@ static void execNextInstruction(void) {
               switch (irc) {
                 case 0:
                   /* ID */
-                  error("PUTS to special register ID not allowed");
+                  warning("PUTS to special register ID ignored");
                   break;
                 case 1:
                   /* H */
