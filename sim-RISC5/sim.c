@@ -23,9 +23,8 @@
 
 #define SERDEV_FILE	"serial.dev"		/* serial dev file */
 
-#define CPU_MANUFACT	0x4847			/* HG */
-#define CPU_VERSION	0x55			/* 5.5 */
-#define CPU_ID		((CPU_MANUFACT << 8) | CPU_VERSION)
+#define CPU_VERSION	0x80			/* 8.0 */
+#define CPU_ID		(CPU_VERSION)
 
 #define INST_PER_MSEC	17000			/* execution speed */
 #define INST_PER_CHAR	10000			/* serial line speed */
@@ -1061,26 +1060,69 @@ static void execNextInstruction(void) {
     switch (op) {
       case 0x00:
         /* MOV */
-        if (q) {
+        if (q == 0) {
+          /* register operand */
+          if (u == 0) {
+            /* general register */
+            res = c;
+          } else {
+            /* special register */
+            if (v == 0) {
+              /* put special register */
+              res = reg[ira];
+              switch (irc) {
+                case 0:
+                  /* ID */
+                  error("PUTS to special register ID not allowed");
+                  break;
+                case 1:
+                  /* H */
+                  H = res;
+                  break;
+                case 2:
+                  /* PSW */
+                  N = (res >> 31) & 1;
+                  Z = (res >> 30) & 1;
+                  C = (res >> 29) & 1;
+                  V = (res >> 28) & 1;
+                  I = (res >> 27) & 1;
+                  break;
+                default:
+                  error("PUTS with illegal special register %d", irc);
+                  break;
+              }
+            } else {
+              /* get special register */
+              switch (irc) {
+                case 0:
+                  /* ID */
+                  res = CPU_ID;
+                  break;
+                case 1:
+                  /* H */
+                  res = H;
+                  break;
+                case 2:
+                  /* PSW */
+                  res = (N << 31) |
+                        (Z << 30) |
+                        (C << 29) |
+                        (V << 28) |
+                        (I << 27);
+                  break;
+                default:
+                  error("GETS with illegal special register %d", irc);
+                  res = 0;
+                  break;
+              }
+            }
+          }
+        } else {
+          /* immediate operand */
           if (u == 0) {
             res = imm;
           } else {
             res = imm << 16;
-          }
-        } else {
-          if (u == 0) {
-            res = c;
-          } else {
-            if (v == 0) {
-              res = H;
-            } else {
-              res = (N << 31) |
-                    (Z << 30) |
-                    (C << 29) |
-                    (V << 28) |
-                    (I << 27) |
-                    CPU_ID;
-            }
           }
         }
         break;
@@ -1469,13 +1511,13 @@ static void disasmF0(Word instr) {
       /* u = 0: move from any general register */
       sprintf(instrBuffer, "%-7s R%d,R%d", regOps[op], a, c);
     } else {
-      /* u = 1: move from special register */
+      /* u = 1: move to/from special register */
       if (((instr >> 28) & 1) == 0) {
-        /* v = 0: get H register */
-        sprintf(instrBuffer, "%-7s R%d", "GETH", a);
+        /* v = 0: put special register */
+        sprintf(instrBuffer, "%-7s R%d,%d", "PUTS", a, c);
       } else {
-        /* v = 1: get flag values and CPU ID */
-        sprintf(instrBuffer, "%-7s R%d", "GETF", a);
+        /* v = 1: get special register */
+        sprintf(instrBuffer, "%-7s R%d,%d", "GETS", a, c);
       }
     }
   } else {

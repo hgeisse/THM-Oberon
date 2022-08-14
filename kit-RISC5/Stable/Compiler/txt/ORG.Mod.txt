@@ -545,10 +545,23 @@ MODULE ORG; (* N.Wirth, 16.4.2016 / 4.4.2017 / 31.5.2019  Oberon compiler; code 
       ELSIF (y.mode = ORB.Const) & (y.a >= 2) & (log2(y.a, e) = 1) THEN load(x);
         IF e <= 16 THEN Put1(And, x.r, x.r, y.a-1) ELSE Put1(Lsl, x.r, x.r, 32-e); Put1(Ror, x.r, x.r, 32-e) END
       ELSIF y.mode = ORB.Const THEN
-        IF y.a > 0 THEN load(x); Put1a(Div, x.r, x.r, y.a); Put0(Mov+U, x.r, 0, 0) ELSE ORS.Mark("bad modulus") END
+        IF y.a > 0 THEN
+          load(x);
+          Put1a(Div, x.r, x.r, y.a);
+          (* old interrupt architecture *)
+          (* Put0(Mov+U, x.r, 0, 0) *)
+          (* new interrupt architecture, effective from CPU version 8.0 *)
+          Put0(Mov+U+V, x.r, 0, 1)
+        ELSE ORS.Mark("bad modulus") END
       ELSE load(y);
         IF check THEN Trap(LE, 6) END ;
-        load(x); Put0(Div, RH-2, x.r, y.r); Put0(Mov+U, RH-2, 0, 0); DEC(RH); x.r := RH-1
+        load(x);
+        Put0(Div, RH-2, x.r, y.r);
+        (* old interrupt architecture *)
+        (* Put0(Mov+U, RH-2, 0, 0); *)
+        (* new interrupt architecture, effective from CPU version 8.0 *)
+        Put0(Mov+U+V, RH-2, 0, 1);
+        DEC(RH); x.r := RH-1
       END
     END
   END DivOp;
@@ -1107,7 +1120,11 @@ MODULE ORG; (* N.Wirth, 16.4.2016 / 4.4.2017 / 31.5.2019  Oberon compiler; code 
 
   PROCEDURE H*(VAR x: Item);
   BEGIN (*x.mode = Const*)
-    Put0(Mov + U + x.a MOD 2 * V, RH, 0, 0); x.mode := Reg; x.r := RH; incR
+    (* old interrupt architecture *)
+    (* Put0(Mov + U + x.a MOD 2 * V, RH, 0, 0); *)
+    (* new interrupt architecture, effective from CPU version 8.0 *)
+    Put0(Mov + U + V, RH, 0, 1 - x.a MOD 2);
+    x.mode := Reg; x.r := RH; incR
   END H;
 
   PROCEDURE Adr*(VAR x: Item);
