@@ -28,3 +28,34 @@
 	enlarge address space of RISC5 hardware to 16 MB
 	move display frame buffer (hardware) to high memory
 	change origin and limit constants (PROM used in hardware)
+
+
+14-Aug-2022
+	change CPU version of RISC5 simulator to 8.0
+	re-interpret MOV' (form 0), v=0/1 instructions as PUTS/GETS
+	these instructions write or read a special register, respectively
+	the special register's number is encoded in the 4 LSBs (field "c")
+	NOTES:
+	1. The instruction code for reading the ID register is left as is
+	   (0x3y000000, with the destination register in nibble y). This
+	   way it is possible to detect the CPU version in any case.
+	2. The contents of the ID register do *not* reflect the values of
+	   the flags any longer, but only the CPU version (0x00000080) in
+	   the 8 LSBs. The remaining 24 MSBs of the ID are currently set
+	   to zero, but may be defined otherwise later.
+	3. The instruction code for reading the H register *is* changed,
+	   from 0x2y000000 to 0x3y000001.
+	4. The instruction codes 0x2y00000s are reserved for *writing*
+	   a special register (its number is in nibble "s"). The register
+	   "y" becomes the source of this data transfer. Note that writing
+	   into the ID register has no effect at all.
+	5. Currently, the following special register numbers are assigned:
+	     0: ID    CPU version as described above
+	     1: H     the mul/div auxiliary register
+	     2: PSW   processor status word, exact bit assignments t.b.d.
+	     3: XSW   exception status word (was formerly the non-accessible
+	              SPC register), exact bit assignments t.b.d.
+	     4: FPC   reserved for floating-point control
+	6. In Oberon, the semantics of SYSTEM.H(x) with x = 0 or x = 1
+	   is completely left unchanged: H(0) reads the H register, H(1)
+	   reads the ID register.
