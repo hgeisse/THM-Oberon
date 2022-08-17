@@ -31,6 +31,7 @@
 
 
 14-Aug-2022
+17-Aug-2022
 	change CPU version of RISC5 simulator to 8.0
 	re-interpret MOV' (form 0), v=0/1 instructions as PUTS/GETS
 	these instructions write or read a special register, respectively
@@ -52,9 +53,9 @@
 	5. Currently, the following special register numbers are assigned:
 	     0: ID    CPU version as described above
 	     1: H     the mul/div auxiliary register
-	     2: PSW   processor status word, exact bit assignments t.b.d.
-	     3: XSW   exception status word (was formerly the non-accessible
+	     2: X     exception register (was formerly the non-accessible
 	              SPC register), exact bit assignments t.b.d.
+	     3: PSW   processor status word, exact bit assignments t.b.d.
 	     4: FPC   reserved for floating-point control
 	6. In Oberon, the semantics of SYSTEM.H(x) with x = 0 or x = 1
 	   is completely left unchanged: H(0) reads the H register, H(1)

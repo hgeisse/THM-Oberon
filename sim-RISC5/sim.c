@@ -29,6 +29,8 @@
 #define INST_PER_MSEC	17000			/* execution speed */
 #define INST_PER_CHAR	10000			/* serial line speed */
 
+#define IRQPRIO_TIMER	15			/* timer IRQ priority */
+
 #define RAM_BASE	0x00000000		/* byte address */
 #define RAM_SIZE	0x00FFE000		/* counted in bytes */
 #define GRAPH_BASE	0x00FE0000		/* frame buffer memory */
@@ -37,25 +39,15 @@
 #define ROM_SIZE	0x00000800		/* counted in bytes */
 #define IO_BASE		0x00FFFFC0		/* byte address */
 #define IO_SIZE		0x00000040		/* counted in bytes */
-#define ADDR_MASK	(IO_BASE + IO_SIZE - 1)
+#define ADDR_MASK	0x00FFFFFF		/* 24-bit addresses */
 
 #define INITIAL_PC	0xFFE000		/* start executing here */
-#define TIMER_VECTOR	0x000008		/* timer IRQ lands here */
+#define EXC_VECTOR	0x000008		/* exceptions land here */
 
 #define SIGN_EXT_20(x)	((x) & 0x00080000 ? (x) | 0xFFF00000 : (x))
 
 #define LINE_SIZE	200
 #define MAX_TOKENS	20
-
-
-/**************************************************************/
-
-/*
- * debugging switches
- */
-
-
-static Bool debugKeycode = false;
 
 
 /**************************************************************/
@@ -68,7 +60,8 @@ static Bool debugKeycode = false;
 static Word milliSeconds;
 
 
-void cpuIRQ(void);
+void cpuSetInterrupt(int priority);
+void cpuResetInterrupt(int priority);
 
 
 void tickTimer(void) {
@@ -77,7 +70,7 @@ void tickTimer(void) {
   if (count++ == INST_PER_MSEC) {
     count = 0;
     milliSeconds++;
-    cpuIRQ();
+    cpuSetInterrupt(IRQPRIO_TIMER);
   }
 }
 
@@ -86,6 +79,7 @@ void tickTimer(void) {
  * read device 0: milliseconds counter value
  */
 Word readTimer(void) {
+  cpuResetInterrupt(IRQPRIO_TIMER);
   return milliSeconds;
 }
 
@@ -577,6 +571,9 @@ void initSPI(char *diskName) {
  */
 
 
+static Bool debugKeycode = false;
+
+
 /*
  * read dev 6: mouse data, keyboard status
  *     { 3'bx, kbd_rdy, 1'bx, btn[2:0], 2'bx, ypos[9:0], 2'bx, xpos[9:0] }
@@ -1015,13 +1012,17 @@ void ramInit(char *ramName) {
  */
 
 
+static Bool debugIRQ = false;	/* set to true if debugging IRQs */
+
 static Word pc;			/* program counter, as byte index */
 static Word reg[16];		/* general purpose registers */
+static Word ID;			/* special register for CPU identification */
 static Word H;			/* special register for mul/div */
+static Word X;			/* { 1'N, 1'Z, 1'C, 1'V, 1'I, 3'0, 24'pc } */
 static Bool N, Z, C, V, I;	/* flags */
-static Bool irqPending;		/* IRQ pending if true */
-static Bool inIntrMode;		/* in interrupt mode if true */
-static Word spc;		/* { 1'N, 1'Z, 1'C, 1'V, 4'0, 24'pc } */
+static unsigned irqAck;		/* interrupt last acknowledged */
+static unsigned irqMask;	/* one bit for each IRQ */
+static unsigned irqPending;	/* one bit for each pending IRQ */
 
 static Bool breakSet;		/* breakpoint set if true */
 static Word breakAddr;		/* if breakSet, this is where */
@@ -1080,12 +1081,18 @@ static void execNextInstruction(void) {
                   H = res;
                   break;
                 case 2:
+                  /* X */
+                  X = res;
+                  break;
+                case 3:
                   /* PSW */
                   N = (res >> 31) & 1;
                   Z = (res >> 30) & 1;
                   C = (res >> 29) & 1;
                   V = (res >> 28) & 1;
                   I = (res >> 27) & 1;
+                  irqAck = (res >> 16) & 0x0000001F;
+                  irqMask = (res >> 0) & 0x0000FFFF;
                   break;
                 default:
                   error("PUTS with illegal special register %d", irc);
@@ -1096,19 +1103,25 @@ static void execNextInstruction(void) {
               switch (irc) {
                 case 0:
                   /* ID */
-                  res = CPU_ID;
+                  res = ID;
                   break;
                 case 1:
                   /* H */
                   res = H;
                   break;
                 case 2:
+                  /* X */
+                  res = X;
+                  break;
+                case 3:
                   /* PSW */
-                  res = (N << 31) |
-                        (Z << 30) |
-                        (C << 29) |
-                        (V << 28) |
-                        (I << 27);
+                  res = ((Word) N << 31) |
+                        ((Word) Z << 30) |
+                        ((Word) C << 29) |
+                        ((Word) V << 28) |
+                        ((Word) I << 27) |
+                        (irqAck   << 16) |
+                        (irqMask  <<  0);
                   break;
                 default:
                   error("GETS with illegal special register %d", irc);
@@ -1284,12 +1297,12 @@ static void execNextInstruction(void) {
               break;
             case 1:
               /* return from interrupt */
-              N = (spc >> 31) & 1;
-              Z = (spc >> 30) & 1;
-              C = (spc >> 29) & 1;
-              V = (spc >> 28) & 1;
-              pc = spc & ADDR_MASK;
-              inIntrMode = false;
+              N = (X >> 31) & 1;
+              Z = (X >> 30) & 1;
+              C = (X >> 29) & 1;
+              V = (X >> 28) & 1;
+              I = (X >> 27) & 1;
+              pc = (X >> 0) & ADDR_MASK;
               break;
             case 2:
               /* interrupt disable/enable */
@@ -1333,19 +1346,52 @@ static void execNextInstruction(void) {
 
 
 static void handleInterrupts(void) {
-  /* check for interrupt and whether it's getting through */
-  if (!irqPending || !I || inIntrMode) {
+  unsigned fullMask;
+  unsigned irqSeen;
+  int priority;
+
+  /* handle exceptions and interrupts */
+  if (irqPending == 0) {
+    /* no exception or interrupt pending */
     return;
   }
-  /* interrupt acknowledge */
-  irqPending = false;
-  spc = (N << 31) |
-        (Z << 30) |
-        (C << 29) |
-        (V << 28) |
-        pc;
-  pc = TIMER_VECTOR;
-  inIntrMode = true;
+  /* at least one exception or interrupt is pending */
+  fullMask = 0xFFFF0000 | irqMask;
+  if (debugIRQ) {
+    printf("**** IRQ  = 0x%08X ****\n", irqPending);
+    printf("**** MASK = 0x%08X ****\n", fullMask);
+  }
+  irqSeen = irqPending & irqMask;
+  if (irqSeen == 0) {
+    /* none that gets through */
+    return;
+  }
+  /* determine the one with the highest priority */
+  for (priority = 31; priority >= 0; priority--) {
+    if ((irqSeen & ((unsigned) 1 << priority)) != 0) {
+      /* highest priority among visible ones found */
+      break;
+    }
+  }
+  /* acknowledge exception, or interrupt if enabled */
+  if (priority >= 16 || I) {
+    if (priority >= 16) {
+      /* clear corresponding bit in irqPending vector */
+      /* only done for exceptions, since interrupts are level-sensitive */
+      irqPending &= ~((unsigned) 1 << priority);
+    }
+    /* disable interrupts */
+    I = false;
+    /* save interrupt status */
+    X = ((Word) N << 31) |
+        ((Word) Z << 30) |
+        ((Word) C << 29) |
+        ((Word) V << 28) |
+        ((Word) I << 27) |
+        (pc << 0);
+    /* start service routine */
+    pc = EXC_VECTOR;
+  }
 }
 
 
@@ -1369,6 +1415,11 @@ void cpuSetReg(int regno, Word value) {
 }
 
 
+Word cpuGetID(void) {
+  return ID;
+}
+
+
 Word cpuGetH(void) {
   return H;
 }
@@ -1379,21 +1430,40 @@ void cpuSetH(Word value) {
 }
 
 
-Byte cpuGetFlags(void) {
-  return (N << 4) |
-         (Z << 3) |
-         (C << 2) |
-         (V << 1) |
-         (I << 0);
+Word cpuGetX(void) {
+  return X;
 }
 
 
-void cpuSetFlags(Byte value) {
-  N = (value >> 4) & 1;
-  Z = (value >> 3) & 1;
-  C = (value >> 2) & 1;
-  V = (value >> 1) & 1;
-  I = (value >> 0) & 1;
+void cpuSetX(Word value) {
+  X = value & 0xF8FFFFFF;
+}
+
+
+Word cpuGetPSW(void) {
+  return ((Word) N << 31) |
+         ((Word) Z << 30) |
+         ((Word) C << 29) |
+         ((Word) V << 28) |
+         ((Word) I << 27) |
+         (irqAck   << 16) |
+         (irqMask  <<  0);
+}
+
+
+void cpuSetPSW(Word value) {
+  N = (value >> 31) & 1;
+  Z = (value >> 30) & 1;
+  C = (value >> 29) & 1;
+  V = (value >> 28) & 1;
+  I = (value >> 27) & 1;
+  irqAck = (value >> 16) & 0x0000001F;
+  irqMask = (value >> 0) & 0x0000FFFF;
+}
+
+
+Word cpuGetIRQ(void) {
+  return irqPending;
 }
 
 
@@ -1445,23 +1515,13 @@ void cpuHalt(void) {
 }
 
 
-void cpuIRQ(void) {
-  irqPending = true;
+void cpuSetInterrupt(int priority) {
+  irqPending |= ((unsigned) 1 << priority);
 }
 
 
-Bool cpuGetIRQ(void) {
-  return irqPending;
-}
-
-
-Bool cpuGetIMD(void) {
-  return inIntrMode;
-}
-
-
-Word cpuGetSPC(void) {
-  return spc;
+void cpuResetInterrupt(int priority) {
+  irqPending &= ~((unsigned) 1 << priority);
 }
 
 
@@ -1472,10 +1532,13 @@ void cpuInit(Word initialPC) {
   for (i = 0; i < 16; i++) {
     reg[i] = 0;
   }
+  ID = CPU_ID;
+  H = 0;
+  X = 0;
   N = Z = C = V = I = false;
-  irqPending = false;
-  inIntrMode = false;
-  spc = 0;
+  irqAck = 0;
+  irqMask = 0;
+  irqPending = 0;
   breakSet = false;
 }
 
@@ -1734,7 +1797,7 @@ static void showPC(void) {
 
   pc = cpuGetPC();
   instr = readWord(pc);
-  printf("PC   %08X     [PC]   %08X   %s\n",
+  printf("PC   %06X     [PC]   %08X   %s\n",
          pc, instr, disasm(instr, pc));
 }
 
@@ -1745,39 +1808,41 @@ static void showBreak(void) {
   brk = cpuGetBreak();
   printf("Brk  ");
   if (cpuTestBreak()) {
-    printf("%08X", brk);
+    printf("%06X", brk);
   } else {
-    printf("--------");
+    printf("------");
   }
   printf("\n");
 }
 
 
-static void showFlags(void) {
-  Byte flags;
+static void showIRQ(void) {
+  Word irq;
+  int i;
 
-  flags = cpuGetFlags();
-  printf("Flg  N Z C V I\n");
-  printf("     %c %c %c %c %c\n",
-         '0' + ((flags >> 4) & 1),
-         '0' + ((flags >> 3) & 1),
-         '0' + ((flags >> 2) & 1),
-         '0' + ((flags >> 1) & 1),
-         '0' + ((flags >> 0) & 1));
+  irq = cpuGetIRQ();
+  printf("IRQ                     ");
+  for (i = 15; i >= 0; i--) {
+    printf("%c", irq & (1 << i) ? '1' : '0');
+  }
+  printf("\n");
 }
 
 
-static void showIntrs(void) {
-  Bool irq;
-  Bool imd;
-  Word spc;
+static void showPSW(void) {
+  Word psw;
+  int i;
 
-  irq = cpuGetIRQ();
-  imd = cpuGetIMD();
-  spc = cpuGetSPC();
-  printf("Int  IRQ   IMD    SPC\n");
-  printf("     %c     %c      %08X\n",
-         irq ? '1' : '0', imd ? '1' : '0', spc);
+  psw = cpuGetPSW();
+  printf("     NZCVI xxxxxx ACK   MASK\n");
+  printf("PSW  ");
+  for (i = 31; i >= 0; i--) {
+    if (i == 26 || i == 20 || i == 15) {
+      printf(" ");
+    }
+    printf("%c", psw & (1 << i) ? '1' : '0');
+  }
+  printf("\n");
 }
 
 
@@ -1791,6 +1856,9 @@ static void help(void) {
   printf("  s       single-step\n");
   printf("  #       show/set PC\n");
   printf("  r       show/set register\n");
+  printf("  rh      show/set H\n");
+  printf("  rx      show/set X\n");
+  printf("  rp      show/set PSW\n");
   printf("  d       dump memory\n");
   printf("  mw      show/set memory word\n");
   printf("  mb      show/set memory byte\n");
@@ -1888,16 +1956,18 @@ static void doUnassemble(char *tokens[], int n) {
     helpUnassemble();
     return;
   }
+  addr &= ADDR_MASK;
   addr &= ~0x00000003;
   for (i = 0; i < count; i++) {
     instr = readWord(addr);
-    printf("%08X:  %08X    %s\n",
+    printf("%06X:  %08X    %s\n",
            addr, instr, disasm(instr, addr));
-    if (addr + 4 < addr) {
+    if (((addr + 4) & ADDR_MASK) < addr) {
       /* wrap-around */
       break;
     }
     addr += 4;
+    addr &= ADDR_MASK;
   }
 }
 
@@ -1919,6 +1989,7 @@ static void doBreak(char *tokens[], int n) {
       printf("illegal address\n");
       return;
     }
+    addr &= ADDR_MASK;
     addr &= ~0x00000003;
     cpuSetBreak(addr);
     showBreak();
@@ -1954,7 +2025,7 @@ static void doContinue(char *tokens[], int n) {
     cpuRun();
   }
   addr = cpuGetPC();
-  printf("Break at %08X\n", addr);
+  printf("Break at %06X\n", addr);
   showPC();
 }
 
@@ -2002,6 +2073,7 @@ static void doPC(char *tokens[], int n) {
       printf("illegal address\n");
       return;
     }
+    addr &= ADDR_MASK;
     addr &= ~0x00000003;
     cpuSetPC(addr);
     showPC();
@@ -2032,9 +2104,10 @@ static void doRegister(char *tokens[], int n) {
       }
       printf("\n");
     }
-    printf("H    %08X\n", cpuGetH());
-    showFlags();
-    showIntrs();
+    printf("ID   %08X     H    %08X     X    %08X\n",
+           cpuGetID(), cpuGetH(), cpuGetX());
+    showPSW();
+    showIRQ();
     showBreak();
     showPC();
   } else if (n == 2) {
@@ -2056,6 +2129,78 @@ static void doRegister(char *tokens[], int n) {
     cpuSetReg(regno, data);
   } else {
     helpRegister();
+  }
+}
+
+
+static void helpH(void) {
+  printf("  rh                show H\n");
+  printf("  rh <data>         set H to <data>\n");
+}
+
+
+static void doH(char *tokens[], int n) {
+  Word data;
+
+  if (n == 1) {
+    data = cpuGetH();
+    printf("H    %08X\n", data);
+  } else if (n == 2) {
+    if (!getHexNumber(tokens[1], &data)) {
+      printf("illegal data\n");
+      return;
+    }
+    cpuSetH(data);
+  } else {
+    helpH();
+  }
+}
+
+
+static void helpX(void) {
+  printf("  rx                show X\n");
+  printf("  rx <data>         set X to <data>\n");
+}
+
+
+static void doX(char *tokens[], int n) {
+  Word data;
+
+  if (n == 1) {
+    data = cpuGetX();
+    printf("X    %08X\n", data);
+  } else if (n == 2) {
+    if (!getHexNumber(tokens[1], &data)) {
+      printf("illegal data\n");
+      return;
+    }
+    cpuSetX(data);
+  } else {
+    helpX();
+  }
+}
+
+
+static void helpPSW(void) {
+  printf("  rp                show PSW\n");
+  printf("  rp <data>         set PSW to <data>\n");
+}
+
+
+static void doPSW(char *tokens[], int n) {
+  Word data;
+
+  if (n == 1) {
+    data = cpuGetPSW();
+    printf("PSW  %08X\n", data);
+  } else if (n == 2) {
+    if (!getHexNumber(tokens[1], &data)) {
+      printf("illegal data\n");
+      return;
+    }
+    cpuSetPSW(data);
+  } else {
+    helpPSW();
   }
 }
 
@@ -2099,16 +2244,17 @@ static void doDump(char *tokens[], int n) {
     helpDump();
     return;
   }
+  addr &= ADDR_MASK;
   lo = addr & ~0x0000000F;
-  hi = addr + count - 1;
+  hi = (addr + count - 1) & ADDR_MASK;
   if (hi < lo) {
     /* wrap-around */
-    hi = 0xFFFFFFFF;
+    hi = ADDR_MASK;
   }
   lines = (hi - lo + 16) >> 4;
   curr = lo;
   for (i = 0; i < lines; i++) {
-    printf("%08X:  ", curr);
+    printf("%06X:  ", curr);
     for (j = 0; j < 16; j++) {
       tmp = curr + j;
       if (tmp < addr || tmp > hi) {
@@ -2154,14 +2300,16 @@ static void doMemoryWord(char *tokens[], int n) {
   if (n == 1) {
     addr = cpuGetPC();
     data = readWord(addr);
-    printf("%08X:  %08X\n", addr, data);
+    printf("%06X:  %08X\n", addr, data);
   } else if (n == 2) {
     if (!getHexNumber(tokens[1], &addr)) {
       printf("illegal address\n");
       return;
     }
+    addr &= ADDR_MASK;
+    addr &= ~0x00000003;
     data = readWord(addr);
-    printf("%08X:  %08X\n", addr, data);
+    printf("%06X:  %08X\n", addr, data);
   } else if (n == 3) {
     if (!getHexNumber(tokens[1], &addr)) {
       printf("illegal address\n");
@@ -2171,6 +2319,8 @@ static void doMemoryWord(char *tokens[], int n) {
       printf("illegal data\n");
       return;
     }
+    addr &= ADDR_MASK;
+    addr &= ~0x00000003;
     data = tmpData;
     writeWord(addr, data);
   } else {
@@ -2194,14 +2344,15 @@ static void doMemoryByte(char *tokens[], int n) {
   if (n == 1) {
     addr = cpuGetPC();
     data = readByte(addr);
-    printf("%08X:  %02X\n", addr, data);
+    printf("%06X:  %02X\n", addr, data);
   } else if (n == 2) {
     if (!getHexNumber(tokens[1], &addr)) {
       printf("illegal address\n");
       return;
     }
+    addr &= ADDR_MASK;
     data = readByte(addr);
-    printf("%08X:  %02X\n", addr, data);
+    printf("%06X:  %02X\n", addr, data);
   } else if (n == 3) {
     if (!getHexNumber(tokens[1], &addr)) {
       printf("illegal address\n");
@@ -2211,6 +2362,7 @@ static void doMemoryByte(char *tokens[], int n) {
       printf("illegal data\n");
       return;
     }
+    addr &= ADDR_MASK;
     data = (Byte) tmpData;
     writeByte(addr, data);
   } else {
@@ -2276,6 +2428,9 @@ Command commands[] = {
   { "s",    helpStep,       doStep       },
   { "#",    helpPC,         doPC         },
   { "r",    helpRegister,   doRegister   },
+  { "rh",   helpH,          doH          },
+  { "rx",   helpX,          doX          },
+  { "rp",   helpPSW,        doPSW        },
   { "d",    helpDump,       doDump       },
   { "mw",   helpMemoryWord, doMemoryWord },
   { "mb",   helpMemoryByte, doMemoryByte },
