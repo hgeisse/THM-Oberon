@@ -1380,8 +1380,6 @@ static void handleInterrupts(void) {
       /* only done for exceptions, since interrupts are level-sensitive */
       irqPending &= ~((unsigned) 1 << priority);
     }
-    /* disable interrupts */
-    I = false;
     /* save interrupt status */
     X = ((Word) N << 31) |
         ((Word) Z << 30) |
@@ -1389,6 +1387,8 @@ static void handleInterrupts(void) {
         ((Word) V << 28) |
         ((Word) I << 27) |
         (pc << 0);
+    /* disable interrupts */
+    I = false;
     /* start service routine */
     pc = EXC_VECTOR;
   }
