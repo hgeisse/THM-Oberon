@@ -41,7 +41,6 @@
 #define IO_SIZE		0x00000040		/* counted in bytes */
 #define ADDR_MASK	0x00FFFFFF		/* 24-bit addresses */
 
-#define INITIAL_PC	0xFFE000		/* start executing here */
 #define EXC_VECTOR	0x000008		/* exceptions land here */
 
 #define SIGN_EXT_20(x)	((x) & 0x00080000 ? (x) | 0xFFF00000 : (x))
@@ -2551,9 +2550,9 @@ int main(int argc, char *argv[]) {
   }
   signal(SIGINT, sigIntHandler);
   printf("RISC5 Simulator started\n");
-  if (promName == NULL && !interactive) {
-    printf("No PROM file was specified, ");
-    printf("so interactive mode is assumed.\n");
+  if (promName == NULL && ramName == NULL && !interactive) {
+    printf("Neither a PROM image file name nor a RAM image file\n");
+    printf("name was specified, so interactive mode is assumed.\n");
     interactive = true;
   }
   initTimer();
@@ -2566,7 +2565,7 @@ int main(int argc, char *argv[]) {
   graphInit();
   promInit(promName);
   ramInit(ramName);
-  cpuInit(INITIAL_PC);
+  cpuInit(promName != NULL ? ROM_BASE : RAM_BASE);
   if (!interactive) {
     printf("Start executing...\n");
     strcpy(command, "c\n");
