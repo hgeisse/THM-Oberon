@@ -1039,6 +1039,7 @@ static void execNextInstruction(void) {
   Word mask;
   Bool cond;
   Word aux;
+  Bool writeback;
 
   ir = readWord(pc);
   pc += 4;
@@ -1057,6 +1058,7 @@ static void execNextInstruction(void) {
     b = reg[irb];
     c = reg[irc];
     d = q ? imm : c;
+    writeback = true;
     switch (op) {
       case 0x00:
         /* MOV */
@@ -1069,6 +1071,8 @@ static void execNextInstruction(void) {
             /* special register */
             if (v == 0) {
               /* put special register */
+              /* NOTE: no writeback in this case, must preserve flags! */
+              writeback = false;
               res = reg[ira];
               switch (irc) {
                 case 0:
@@ -1221,9 +1225,11 @@ static void execNextInstruction(void) {
         res = fpDiv(b, c);
         break;
     }
-    reg[ira] = res;
-    N = (res >> 31) & 1;
-    Z = res == 0;
+    if (writeback) {
+      reg[ira] = res;
+      N = (res >> 31) & 1;
+      Z = res == 0;
+    }
   } else {
     if (q == 0) {
       /* memory instructions */
