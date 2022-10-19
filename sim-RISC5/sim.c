@@ -41,7 +41,7 @@
 #define IO_SIZE		0x00000040		/* counted in bytes */
 #define ADDR_MASK	0x00FFFFFF		/* 24-bit addresses */
 
-#define EXC_VECTOR	0x000008		/* exceptions land here */
+#define EXC_VECTOR	0x000004		/* exceptions land here */
 
 #define SIGN_EXT_20(x)	((x) & 0x00080000 ? (x) | 0xFFF00000 : (x))
 
