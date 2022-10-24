@@ -610,25 +610,31 @@ module ctrl(clk, rst,
               begin
                 if (~ir_u) begin
                   // branch target is in register, or ctrl instruction
-                  case (ir_ctrl[3:0])
-                    4'h0:  // branch
-                      begin
-                        next_state = 5'd11;
-                      end
-                    4'h1:  // return from interrupt
-                      begin
-                        // !!!!! not yet
-                        next_state = 5'd2;
-                      end
-                    4'h2:  // interrupt disable/enable
-                      begin
-                        next_state = 5'd15;
-                      end
-                    default:  // ignore illegal instructions
-                      begin
-                        next_state = 5'd1;
-                      end
-                  endcase
+                  if (~ir_v) begin
+                    // branch or ctrl
+                    case (ir_ctrl[3:0])
+                      4'h0:  // branch
+                        begin
+                          next_state = 5'd11;
+                        end
+                      4'h1:  // return from interrupt
+                        begin
+                          // !!!!! not yet
+                          next_state = 5'd2;
+                        end
+                      4'h2:  // interrupt disable/enable
+                        begin
+                          next_state = 5'd15;
+                        end
+                      default:  // ignore illegal instructions
+                        begin
+                          next_state = 5'd1;
+                        end
+                    endcase
+                  end else begin
+                    // call
+                    next_state = 5'd11;
+                  end
                 end else begin
                   // branch target is sum of pc and immediate distance
                   next_state = 5'd12;
