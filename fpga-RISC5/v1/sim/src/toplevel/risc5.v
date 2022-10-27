@@ -26,6 +26,7 @@ module risc5(clk_in,
   wire [31:0] bus_din;			// bus data input, for reads
   wire [31:0] bus_dout;			// bus data output, for writes
   wire bus_ack;				// bus acknowledge
+  wire [15:0] bus_irq;			// bus interrupt requests
   // prom
   wire prom_stb;			// prom strobe
   wire [31:0] prom_dout;		// prom data output
@@ -42,6 +43,7 @@ module risc5(clk_in,
   wire tmr_stb;				// timer strobe
   wire [31:0] tmr_dout;			// timer data output
   wire tmr_ack;				// timer acknowledge
+  wire tmr_irq;				// timer interrupt request
   // bio
   wire bio_stb;				// board i/o strobe
   wire [31:0] bio_dout;			// board i/o data output
@@ -73,7 +75,8 @@ module risc5(clk_in,
     .bus_addr(bus_addr[23:2]),
     .bus_din(bus_din[31:0]),
     .bus_dout(bus_dout[31:0]),
-    .bus_ack(bus_ack)
+    .bus_ack(bus_ack),
+    .bus_irq(bus_irq[15:0])
   );
 
   prom prom_0(
@@ -112,7 +115,8 @@ module risc5(clk_in,
     .rst(rst),
     .stb(tmr_stb),
     .data_out(tmr_dout[31:0]),
-    .ack(tmr_ack)
+    .ack(tmr_ack),
+    .irq(tmr_irq)
   );
 
   bio bio_0(
@@ -184,5 +188,26 @@ module risc5(clk_in,
     bio_stb  ? bio_ack  :
     ser_stb  ? ser_ack  :
     1'b0;
+
+  //--------------------------------------
+  // bus interrupt request assignments
+  //--------------------------------------
+
+  assign bus_irq[15] = tmr_irq;
+  assign bus_irq[14] = 1'b0;
+  assign bus_irq[13] = 1'b0;
+  assign bus_irq[12] = 1'b0;
+  assign bus_irq[11] = 1'b0;
+  assign bus_irq[10] = 1'b0;
+  assign bus_irq[ 9] = 1'b0;
+  assign bus_irq[ 8] = 1'b0;
+  assign bus_irq[ 7] = 1'b0;
+  assign bus_irq[ 6] = 1'b0;
+  assign bus_irq[ 5] = 1'b0;
+  assign bus_irq[ 4] = 1'b0;
+  assign bus_irq[ 3] = 1'b0;
+  assign bus_irq[ 2] = 1'b0;
+  assign bus_irq[ 1] = 1'b0;
+  assign bus_irq[ 0] = 1'b0;
 
 endmodule

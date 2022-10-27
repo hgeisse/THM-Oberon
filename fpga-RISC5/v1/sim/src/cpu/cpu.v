@@ -9,7 +9,8 @@
 
 module cpu(clk, rst,
            bus_stb, bus_we, bus_addr,
-           bus_din, bus_dout, bus_ack);
+           bus_din, bus_dout, bus_ack,
+           bus_irq);
     input clk;				// system clock
     input rst;				// system reset
     output bus_stb;			// bus strobe
@@ -18,6 +19,7 @@ module cpu(clk, rst,
     input [31:0] bus_din;		// bus data input, for reads
     output [31:0] bus_dout;		// bus data output, for writes
     input bus_ack;			// bus acknowledge
+    input [15:0] bus_irq;		// bus interrupt requests
 
   wire cpu_stb;
   wire cpu_we;
@@ -26,6 +28,7 @@ module cpu(clk, rst,
   wire [31:0] cpu_din;
   wire [31:0] cpu_dout;
   wire cpu_ack;
+  wire [15:0] cpu_irq;
 
   cpu_bus cpu_bus_0(
     .clk(clk),
@@ -36,13 +39,15 @@ module cpu(clk, rst,
     .bus_din(bus_din[31:0]),
     .bus_dout(bus_dout[31:0]),
     .bus_ack(bus_ack),
+    .bus_irq(bus_irq[15:0]),
     .cpu_stb(cpu_stb),
     .cpu_we(cpu_we),
     .cpu_ben(cpu_ben),
     .cpu_addr(cpu_addr[23:0]),
     .cpu_din(cpu_din[31:0]),
     .cpu_dout(cpu_dout[31:0]),
-    .cpu_ack(cpu_ack)
+    .cpu_ack(cpu_ack),
+    .cpu_irq(cpu_irq[15:0])
   );
 
   cpu_core cpu_core_0(
@@ -54,7 +59,8 @@ module cpu(clk, rst,
     .bus_addr(cpu_addr[23:0]),
     .bus_din(cpu_din[31:0]),
     .bus_dout(cpu_dout[31:0]),
-    .bus_ack(cpu_ack)
+    .bus_ack(cpu_ack),
+    .bus_irq(cpu_irq[15:0])
   );
 
 endmodule

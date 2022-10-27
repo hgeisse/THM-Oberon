@@ -24,6 +24,7 @@ module risc5test;
                 rst_in_n = 0;
     #145        rst_in_n = 1;
     #300000     $finish;
+//    #1002000    $finish;
   end
 
   //
