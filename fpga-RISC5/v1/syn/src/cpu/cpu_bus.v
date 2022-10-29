@@ -9,9 +9,9 @@
 
 module cpu_bus(clk, rst,
                bus_stb, bus_we, bus_addr,
-               bus_din, bus_dout, bus_ack,
+               bus_din, bus_dout, bus_ack, bus_irq,
                cpu_stb, cpu_we, cpu_ben, cpu_addr,
-               cpu_din, cpu_dout, cpu_ack);
+               cpu_din, cpu_dout, cpu_ack, cpu_irq);
     // bus interface
     input clk;
     input rst;
@@ -21,6 +21,7 @@ module cpu_bus(clk, rst,
     input [31:0] bus_din;
     output reg [31:0] bus_dout;
     input bus_ack;
+    input [15:0] bus_irq;
     // CPU interface
     input cpu_stb;
     input cpu_we;
@@ -29,6 +30,7 @@ module cpu_bus(clk, rst,
     output reg [31:0] cpu_din;
     input [31:0] cpu_dout;
     output reg cpu_ack;
+    output [15:0] cpu_irq;
 
   reg state;
   reg next_state;
@@ -174,5 +176,8 @@ module cpu_bus(clk, rst,
       wbuf[31:0] <= wbuf_in[31:0];
     end
   end
+
+  // interrupt requests
+  assign cpu_irq[15:0] = bus_irq[15:0];
 
 endmodule
