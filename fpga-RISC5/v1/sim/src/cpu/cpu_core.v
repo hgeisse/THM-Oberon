@@ -97,8 +97,8 @@ module cpu_core(clk, rst,
   reg cond;			// condition is true
   wire branch;			// take the branch
   // interrupt unit
-  wire [15:0] pending;		// the vector of pending unmasked irqs
-  reg [3:0] priority;		// number of highest pending interrupt
+  wire [15:0] irq_pend;		// the vector of pending unmasked irqs
+  reg [3:0] irq_prio;		// number of highest pending interrupt
   wire interrupt;		// accept the highest pending interrupt
 
   //------------------------------------------------------------
@@ -227,7 +227,7 @@ module cpu_core(clk, rst,
       end
       if (irq_ack) begin
         I <= 1'b0;
-        ACK <= { 1'b0, priority[3:0] };
+        ACK <= { 1'b0, irq_prio[3:0] };
       end
       if (irq_ret) begin
         N <= X[31];
@@ -296,71 +296,71 @@ module cpu_core(clk, rst,
   assign branch = ir_a[3] ^ cond;
 
   // interrupt logic
-  assign pending = bus_irq[15:0] & MASK[15:0];
+  assign irq_pend = bus_irq[15:0] & MASK[15:0];
   always @(*) begin
-    if ((| pending[15:8]) != 0) begin
-      if ((| pending[15:12]) != 0) begin
-        if ((| pending[15:14]) != 0) begin
-          if (pending[15] != 0) begin
-            priority = 4'd15;
+    if ((| irq_pend[15:8]) != 0) begin
+      if ((| irq_pend[15:12]) != 0) begin
+        if ((| irq_pend[15:14]) != 0) begin
+          if (irq_pend[15] != 0) begin
+            irq_prio = 4'd15;
           end else begin
-            priority = 4'd14;
+            irq_prio = 4'd14;
           end
         end else begin
-          if (pending[13] != 0) begin
-            priority = 4'd13;
+          if (irq_pend[13] != 0) begin
+            irq_prio = 4'd13;
           end else begin
-            priority = 4'd12;
+            irq_prio = 4'd12;
           end
         end
       end else begin
-        if ((| pending[11:10]) != 0) begin
-          if (pending[11] != 0) begin
-            priority = 4'd11;
+        if ((| irq_pend[11:10]) != 0) begin
+          if (irq_pend[11] != 0) begin
+            irq_prio = 4'd11;
           end else begin
-            priority = 4'd10;
+            irq_prio = 4'd10;
           end
         end else begin
-          if (pending[9] != 0) begin
-            priority = 4'd9;
+          if (irq_pend[9] != 0) begin
+            irq_prio = 4'd9;
           end else begin
-            priority = 4'd8;
+            irq_prio = 4'd8;
           end
         end
       end
     end else begin
-      if ((| pending[7:4]) != 0) begin
-        if ((| pending[7:6]) != 0) begin
-          if (pending[7] != 0) begin
-            priority = 4'd7;
+      if ((| irq_pend[7:4]) != 0) begin
+        if ((| irq_pend[7:6]) != 0) begin
+          if (irq_pend[7] != 0) begin
+            irq_prio = 4'd7;
           end else begin
-            priority = 4'd6;
+            irq_prio = 4'd6;
           end
         end else begin
-          if (pending[5] != 0) begin
-            priority = 4'd5;
+          if (irq_pend[5] != 0) begin
+            irq_prio = 4'd5;
           end else begin
-            priority = 4'd4;
+            irq_prio = 4'd4;
           end
         end
       end else begin
-        if ((| pending[3:2]) != 0) begin
-          if (pending[3] != 0) begin
-            priority = 4'd3;
+        if ((| irq_pend[3:2]) != 0) begin
+          if (irq_pend[3] != 0) begin
+            irq_prio = 4'd3;
           end else begin
-            priority = 4'd2;
+            irq_prio = 4'd2;
           end
         end else begin
-          if (pending[1] != 0) begin
-            priority = 4'd1;
+          if (irq_pend[1] != 0) begin
+            irq_prio = 4'd1;
           end else begin
-            priority = 4'd0;
+            irq_prio = 4'd0;
           end
         end
       end
     end
   end
-  assign interrupt = (| pending) & I;
+  assign interrupt = (| irq_pend) & I;
 
   // ctrl
   ctrl ctrl_0(
