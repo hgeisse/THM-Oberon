@@ -252,7 +252,7 @@ module cpu_core(clk, rst,
     (ir_c == 4'h0) ? ID :
     (ir_c == 4'h1) ? H :
     (ir_c == 4'h2) ? X :
-    (ir_c == 4'h3) ? { N, Z, C, V, I, 27'h0 } :
+    (ir_c == 4'h3) ? { N, Z, C, V, I, 6'h00, ACK[4:0], MASK[15:0] } :
     32'hxxxxxxxx;
   assign alu_op2 =
     (alu_src2 == 3'b000) ? 32'h00000004 :	// next instr
