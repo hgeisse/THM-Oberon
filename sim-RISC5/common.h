@@ -10,6 +10,7 @@
 typedef enum { false = 0, true = 1 } Bool;
 
 typedef unsigned int Word;
+typedef unsigned short Half;
 typedef unsigned char Byte;
 
 
