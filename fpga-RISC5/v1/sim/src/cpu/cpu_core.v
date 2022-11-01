@@ -7,7 +7,7 @@
 `default_nettype none
 
 
-`define CPU_ID	{ 24'h000000, 8'h80 }	// Version = 8.0
+`define CPU_ID	{ 24'h000000, 8'h81 }	// Version = 8.1
 
 
 module cpu_core(clk, rst,
@@ -17,7 +17,7 @@ module cpu_core(clk, rst,
     input rst;				// system reset
     output bus_stb;			// bus strobe
     output bus_we;			// bus write enable
-    output bus_ben;			// 0: word, 1: byte
+    output [1:0] bus_ben;		// 00: word, 01: half, 10: byte
     output [23:0] bus_addr;		// bus address
     input [31:0] bus_din;		// bus data input, for reads
     output [31:0] bus_dout;		// bus data output, for writes
@@ -30,6 +30,7 @@ module cpu_core(clk, rst,
   wire pc_we;			// pc write enable
   reg [23:0] pc;		// program counter
   // bus
+  wire [1:0] aux_ben;		// auxiliary byte enable from ctrl
   wire bus_addr_src;		// bus address source selector
   // instruction register & decoder
   wire ir_we;			// instruction register write enable
@@ -117,6 +118,7 @@ module cpu_core(clk, rst,
   end
 
   // bus
+  assign bus_ben = { aux_ben[1], aux_ben[0] & ir[0] };
   assign bus_addr =
     (bus_addr_src == 1'b0) ? pc :		// instr fetch
     (bus_addr_src == 1'b1) ? alu_out[23:0] :	// data load/store
@@ -380,7 +382,7 @@ module cpu_core(clk, rst,
     .bus_addr_src(bus_addr_src),
     .bus_stb(bus_stb),
     .bus_we(bus_we),
-    .bus_ben(bus_ben),
+    .bus_ben(aux_ben[1:0]),
     .ir_we(ir_we),
     .reg_a2_src(reg_a2_src),
     .reg_di2_src(reg_di2_src),
@@ -597,7 +599,7 @@ module ctrl(clk, rst,
     output reg bus_addr_src;
     output reg bus_stb;
     output reg bus_we;
-    output reg bus_ben;
+    output reg [1:0] bus_ben;
     output reg ir_we;
     output reg [1:0] reg_a2_src;
     output reg reg_di2_src;
@@ -642,7 +644,7 @@ module ctrl(clk, rst,
           bus_addr_src = 1'bx;
           bus_stb = 1'b0;
           bus_we = 1'bx;
-          bus_ben = 1'bx;
+          bus_ben = 2'bxx;
           ir_we = 1'b0;
           reg_a2_src = 2'bxx;
           reg_di2_src = 1'bx;
@@ -671,7 +673,7 @@ module ctrl(clk, rst,
           bus_addr_src = 1'b0;
           bus_stb = 1'b1;
           bus_we = 1'b0;
-          bus_ben = 1'b0;
+          bus_ben = 2'b00;
           if (~bus_ack) begin
             ir_we = 1'b0;
           end else begin
@@ -752,7 +754,7 @@ module ctrl(clk, rst,
           bus_addr_src = 1'bx;
           bus_stb = 1'b0;
           bus_we = 1'bx;
-          bus_ben = 1'bx;
+          bus_ben = 2'bxx;
           ir_we = 1'b0;
           reg_a2_src = 2'b00;
           reg_di2_src = 1'bx;
@@ -781,7 +783,7 @@ module ctrl(clk, rst,
           bus_addr_src = 1'bx;
           bus_stb = 1'b0;
           bus_we = 1'bx;
-          bus_ben = 1'bx;
+          bus_ben = 2'bxx;
           ir_we = 1'b0;
           reg_a2_src = 2'b00;
           reg_di2_src = 1'bx;
@@ -816,7 +818,7 @@ module ctrl(clk, rst,
           bus_addr_src = 1'bx;
           bus_stb = 1'b0;
           bus_we = 1'bx;
-          bus_ben = 1'bx;
+          bus_ben = 2'bxx;
           ir_we = 1'b0;
           reg_a2_src = 2'b01;
           reg_di2_src = 1'b0;
@@ -845,7 +847,7 @@ module ctrl(clk, rst,
           bus_addr_src = 1'bx;
           bus_stb = 1'b0;
           bus_we = 1'bx;
-          bus_ben = 1'bx;
+          bus_ben = 2'bxx;
           ir_we = 1'b0;
           reg_a2_src = 2'b00;
           reg_di2_src = 1'bx;
@@ -880,7 +882,7 @@ module ctrl(clk, rst,
           bus_addr_src = 1'bx;
           bus_stb = 1'b0;
           bus_we = 1'bx;
-          bus_ben = 1'bx;
+          bus_ben = 2'bxx;
           ir_we = 1'b0;
           reg_a2_src = 2'b01;
           reg_di2_src = 1'b0;
@@ -911,7 +913,7 @@ module ctrl(clk, rst,
           bus_addr_src = 1'bx;
           bus_stb = 1'b0;
           bus_we = 1'bx;
-          bus_ben = 1'bx;
+          bus_ben = 2'bxx;
           ir_we = 1'b0;
           reg_a2_src = 2'b01;
           reg_di2_src = 1'bx;
@@ -940,7 +942,7 @@ module ctrl(clk, rst,
           bus_addr_src = 1'b1;
           bus_stb = 1'b1;
           bus_we = 1'b0;
-          bus_ben = ir_v;
+          bus_ben = (ir_v ? 2'b10 : 2'b01);
           ir_we = 1'b0;
           reg_a2_src = 2'bxx;
           reg_di2_src = 1'bx;
@@ -969,7 +971,7 @@ module ctrl(clk, rst,
           bus_addr_src = 1'bx;
           bus_stb = 1'b0;
           bus_we = 1'bx;
-          bus_ben = 1'bx;
+          bus_ben = 2'bxx;
           ir_we = 1'b0;
           reg_a2_src = 2'b01;
           reg_di2_src = 1'b1;
@@ -1002,7 +1004,7 @@ module ctrl(clk, rst,
           bus_addr_src = 1'b1;
           bus_stb = 1'b1;
           bus_we = 1'b1;
-          bus_ben = ir_v;
+          bus_ben = (ir_v ? 2'b10 : 2'b01);
           ir_we = 1'b0;
           reg_a2_src = 2'b01;
           reg_di2_src = 1'bx;
@@ -1031,7 +1033,7 @@ module ctrl(clk, rst,
           bus_addr_src = 1'bx;
           bus_stb = 1'b0;
           bus_we = 1'bx;
-          bus_ben = 1'bx;
+          bus_ben = 2'bxx;
           ir_we = 1'b0;
           reg_a2_src = 2'b10;
           reg_di2_src = 1'b0;
@@ -1060,7 +1062,7 @@ module ctrl(clk, rst,
           bus_addr_src = 1'bx;
           bus_stb = 1'b0;
           bus_we = 1'bx;
-          bus_ben = 1'bx;
+          bus_ben = 2'bxx;
           ir_we = 1'b0;
           reg_a2_src = 2'b10;
           reg_di2_src = 1'b0;
@@ -1085,7 +1087,7 @@ module ctrl(clk, rst,
           bus_addr_src = 1'bx;
           bus_stb = 1'b0;
           bus_we = 1'bx;
-          bus_ben = 1'bx;
+          bus_ben = 2'bxx;
           ir_we = 1'b0;
           reg_a2_src = 2'b01;
           reg_di2_src = 1'bx;
@@ -1110,7 +1112,7 @@ module ctrl(clk, rst,
           bus_addr_src = 1'bx;
           bus_stb = 1'b0;
           bus_we = 1'bx;
-          bus_ben = 1'bx;
+          bus_ben = 2'bxx;
           ir_we = 1'b0;
           reg_a2_src = 2'bxx;
           reg_di2_src = 1'bx;
@@ -1135,7 +1137,7 @@ module ctrl(clk, rst,
           bus_addr_src = 1'bx;
           bus_stb = 1'b0;
           bus_we = 1'bx;
-          bus_ben = 1'bx;
+          bus_ben = 2'bxx;
           ir_we = 1'b0;
           reg_a2_src = 2'bxx;
           reg_di2_src = 1'bx;
@@ -1160,7 +1162,7 @@ module ctrl(clk, rst,
           bus_addr_src = 1'bx;
           bus_stb = 1'b0;
           bus_we = 1'bx;
-          bus_ben = 1'bx;
+          bus_ben = 2'bxx;
           ir_we = 1'b0;
           reg_a2_src = 2'bxx;
           reg_di2_src = 1'bx;
@@ -1185,7 +1187,7 @@ module ctrl(clk, rst,
           bus_addr_src = 1'bx;
           bus_stb = 1'b0;
           bus_we = 1'bx;
-          bus_ben = 1'bx;
+          bus_ben = 2'bxx;
           ir_we = 1'b0;
           reg_a2_src = 2'bxx;
           reg_di2_src = 1'bx;
@@ -1210,7 +1212,7 @@ module ctrl(clk, rst,
           bus_addr_src = 1'bx;
           bus_stb = 1'b0;
           bus_we = 1'bx;
-          bus_ben = 1'bx;
+          bus_ben = 2'bxx;
           ir_we = 1'b0;
           reg_a2_src = 2'bxx;
           reg_di2_src = 1'bx;

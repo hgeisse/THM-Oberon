@@ -25,7 +25,7 @@ module cpu_bus(clk, rst,
     // CPU interface
     input cpu_stb;
     input cpu_we;
-    input cpu_ben;
+    input [1:0] cpu_ben;
     input [23:0] cpu_addr;
     output reg [31:0] cpu_din;
     input [31:0] cpu_dout;
@@ -66,7 +66,7 @@ module cpu_bus(clk, rst,
           // bus activated by cpu
           if (~cpu_we) begin
             // cpu read cycle
-            if (cpu_ben) begin
+            if (cpu_ben[1]) begin
               // cpu read byte
               bus_stb = 1'b1;
               bus_we = 1'b0;
@@ -90,20 +90,37 @@ module cpu_bus(clk, rst,
               wbuf_we = 1'b0;
               wbuf_in[31:0] = 32'hxxxxxxxx;
             end else begin
-              // cpu read word
-              bus_stb = 1'b1;
-              bus_we = 1'b0;
-              bus_addr[23:2] = cpu_addr[23:2];
-              bus_dout[31:0] = 32'hxxxxxxxx;
-              cpu_din[31:0] = bus_din[31:0];
-              cpu_ack = bus_ack;
-              next_state = 1'b0;
-              wbuf_we = 1'b0;
-              wbuf_in[31:0] = 32'hxxxxxxxx;
+              if (cpu_ben[0]) begin
+                // cpu read half-word
+                bus_stb = 1'b1;
+                bus_we = 1'b0;
+                bus_addr[23:2] = cpu_addr[23:2];
+                bus_dout[31:0] = 32'hxxxxxxxx;
+                if (~cpu_addr[1]) begin
+                  cpu_din[31:0] = { 16'h0, bus_din[15: 0] };
+                end else begin
+                  cpu_din[31:0] = { 16'h0, bus_din[31:16] };
+                end
+                cpu_ack = bus_ack;
+                next_state = 1'b0;
+                wbuf_we = 1'b0;
+                wbuf_in[31:0] = 32'hxxxxxxxx;
+              end else begin
+                // cpu read word
+                bus_stb = 1'b1;
+                bus_we = 1'b0;
+                bus_addr[23:2] = cpu_addr[23:2];
+                bus_dout[31:0] = 32'hxxxxxxxx;
+                cpu_din[31:0] = bus_din[31:0];
+                cpu_ack = bus_ack;
+                next_state = 1'b0;
+                wbuf_we = 1'b0;
+                wbuf_in[31:0] = 32'hxxxxxxxx;
+              end
             end
           end else begin
             // cpu write cycle
-            if (cpu_ben) begin
+            if (cpu_ben[1]) begin
               // cpu write byte
               // part 1: read word into word buffer
               bus_stb = 1'b1;
@@ -136,22 +153,44 @@ module cpu_bus(clk, rst,
                 end
               end
             end else begin
-              // cpu write word
-              bus_stb = 1'b1;
-              bus_we = 1'b1;
-              bus_addr[23:2] = cpu_addr[23:2];
-              bus_dout[31:0] = cpu_dout[31:0];
-              cpu_din[31:0] = 32'hxxxxxxxx;
-              cpu_ack = bus_ack;
-              next_state = 1'b0;
-              wbuf_we = 1'b0;
-              wbuf_in[31:0] = 32'hxxxxxxxx;
+              if (cpu_ben[0]) begin
+                // cpu write half-word
+                // part 1: read word into word buffer
+                bus_stb = 1'b1;
+                bus_we = 1'b0;
+                bus_addr[23:2] = cpu_addr[23:2];
+                bus_dout[31:0] = 32'hxxxxxxxx;
+                cpu_din[31:0] = 32'hxxxxxxxx;
+                cpu_ack = 1'b0;
+                if (~bus_ack) begin
+                  next_state = 1'b0;
+                end else begin
+                  next_state = 1'b1;
+                end
+                wbuf_we = 1'b1;
+                if (~cpu_addr[1]) begin
+                  wbuf_in[31:0] = { bus_din[31:16], cpu_dout[15:0] };
+                end else begin
+                  wbuf_in[31:0] = { cpu_dout[15:0], bus_din[15:0] };
+                end
+              end else begin
+                // cpu write word
+                bus_stb = 1'b1;
+                bus_we = 1'b1;
+                bus_addr[23:2] = cpu_addr[23:2];
+                bus_dout[31:0] = cpu_dout[31:0];
+                cpu_din[31:0] = 32'hxxxxxxxx;
+                cpu_ack = bus_ack;
+                next_state = 1'b0;
+                wbuf_we = 1'b0;
+                wbuf_in[31:0] = 32'hxxxxxxxx;
+              end
             end
           end
         end
       1'b1:
         begin
-          // cpu write halfword or byte
+          // cpu write half-word or byte
           // part 2: write word from word buffer
           bus_stb = 1'b1;
           bus_we = 1'b1;
