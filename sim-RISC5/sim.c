@@ -660,33 +660,6 @@ void initGPIO(void) {
 /**************************************************************/
 
 /*
- * I/O device 10: FPU
- */
-
-
-/*
- * read dev 10: get FP exception flags
- */
-Word readFPU(void) {
-  return fpGetFlags();
-}
-
-
-/*
- * write dev 10: clear FP exception flags
- */
-void writeFPU(Word data) {
-  fpClrFlags();
-}
-
-
-void initFPU(void) {
-}
-
-
-/**************************************************************/
-
-/*
  * I/O : address of device n = IO_BASE + 4 * n
  *       this can be expressed in decimal as -4 * (16 - n)
  */
@@ -725,9 +698,6 @@ Word readIO(int dev) {
       break;
     case 9:
       data = readGPIO_1();
-      break;
-    case 10:
-      data = readFPU();
       break;
     default:
       error("reading from unknown I/O device %d", dev);
@@ -769,9 +739,6 @@ void writeIO(int dev, Word data) {
       break;
     case 9:
       writeGPIO_1(data);
-      break;
-    case 10:
-      writeFPU(data);
       break;
     default:
       error("writing to unknown I/O device %d, data = 0x%08X", dev, data);
@@ -2680,7 +2647,6 @@ int main(int argc, char *argv[]) {
   initSPI(diskName);
   initMouseKeybd();
   initGPIO();
-  initFPU();
   graphInit();
   promInit(promName);
   ramInit(ramName);
