@@ -29,7 +29,9 @@
 #define INST_PER_MSEC	17000			/* execution speed */
 #define INST_PER_CHAR	10000			/* serial line speed */
 
-#define IRQPRIO_TIMER	15			/* timer IRQ priority */
+#define IRQ_TIMER	15			/* timer IRQ */
+#define IRQ_RS232_RX	9			/* RS232 receive IRQ */
+#define IRQ_RS232_TX	8			/* RS232 transmit IRQ */
 
 #define RAM_BASE	0x00000000		/* byte address */
 #define RAM_SIZE	0x00FFE000		/* counted in bytes */
@@ -74,7 +76,7 @@ void tickTimer(void) {
   if (count++ == INST_PER_MSEC) {
     count = 0;
     milliSeconds++;
-    cpuSetInterrupt(IRQPRIO_TIMER);
+    cpuSetInterrupt(IRQ_TIMER);
   }
 }
 
@@ -85,7 +87,7 @@ void tickTimer(void) {
  *     return milliseconds counter value
  */
 Word readTimer(void) {
-  cpuResetInterrupt(IRQPRIO_TIMER);
+  cpuResetInterrupt(IRQ_TIMER);
   return milliSeconds;
 }
 
@@ -187,6 +189,7 @@ void tickSerial(void) {
     if (c != EOF) {
       serialRxData = c & 0xFF;
       serialStatus |= SERIAL_RX_RDY;
+      cpuSetInterrupt(IRQ_RS232_RX);
     }
   }
   if ((serialStatus & SERIAL_TX_RDY) == 0) {
@@ -194,6 +197,7 @@ void tickSerial(void) {
       txCount = 0;
       fputc(serialTxData & 0xFF, serialOut);
       serialStatus |= SERIAL_TX_RDY;
+      cpuSetInterrupt(IRQ_RS232_TX);
     }
   }
 }
@@ -204,8 +208,9 @@ void tickSerial(void) {
  *     receiver data
  *     { 24'bx, rx_data[7:0] }
  */
-Word readRS232_0(void) {
+Word readRS232data(void) {
   serialStatus &= ~SERIAL_RX_RDY;
+  cpuResetInterrupt(IRQ_RS232_RX);
   return serialRxData;
 }
 
@@ -215,9 +220,10 @@ Word readRS232_0(void) {
  *     transmitter data
  *     { 24'bx, tx_data[7:0] }
  */
-void writeRS232_0(Word data) {
+void writeRS232data(Word data) {
   serialTxData = data & 0xFF;
   serialStatus &= ~SERIAL_TX_RDY;
+  cpuResetInterrupt(IRQ_RS232_TX);
 }
 
 
@@ -226,7 +232,7 @@ void writeRS232_0(Word data) {
  *     status
  *     { 30'bx, tx_rdy, rx_rdy }
  */
-Word readRS232_1(void) {
+Word readRS232ctrl(void) {
   return serialStatus;
 }
 
@@ -234,10 +240,17 @@ Word readRS232_1(void) {
 /*
  * write device 3:
  *     control
- *     { 31'bx, bitrate }
- *     bitrate: 0 = 19200 bps, 1 = 115200 bps
+ *     { 29'bx, bitrate[2:0] }
+ *     bitrate: 000 =   2400 bps
+ *              001 =   4800 bps
+ *              010 =   9600 bps (default)
+ *              011 =  19200 bps
+ *              100 =  31250 bps
+ *              101 =  38400 bps
+ *              110 =  57600 bps
+ *              111 = 115200 bps
  */
-void writeRS232_1(Word data) {
+void writeRS232ctrl(Word data) {
   /* ignore bitrate in simulation */
 }
 
@@ -272,6 +285,7 @@ void initRS232(void) {
   setvbuf(serialOut, NULL, _IONBF, 0);
   while (fgetc(serialIn) != EOF) ;
   serialStatus = SERIAL_TX_RDY;
+  cpuSetInterrupt(IRQ_RS232_TX);
 }
 
 
@@ -702,10 +716,10 @@ Word readIO(int dev) {
       data = readSwitches();
       break;
     case 2:
-      data = readRS232_0();
+      data = readRS232data();
       break;
     case 3:
-      data = readRS232_1();
+      data = readRS232ctrl();
       break;
     case 4:
       data = readSPIdata();
@@ -743,10 +757,10 @@ void writeIO(int dev, Word data) {
       writeLEDs(data);
       break;
     case 2:
-      writeRS232_0(data);
+      writeRS232data(data);
       break;
     case 3:
-      writeRS232_1(data);
+      writeRS232ctrl(data);
       break;
     case 4:
       writeSPIdata(data);
@@ -1057,7 +1071,7 @@ static Word X;			/* { 1'N, 1'Z, 1'C, 1'V, 1'I, 3'0, 24'pc } */
 static Bool N, Z, C, V, I;	/* flags */
 static unsigned irqAck;		/* interrupt last acknowledged */
 static unsigned irqMask;	/* one bit for each IRQ */
-static unsigned irqPending;	/* one bit for each pending IRQ */
+static unsigned irqPending = 0;	/* one bit for each pending IRQ */
 
 static Bool breakSet;		/* breakpoint set if true */
 static Word breakAddr;		/* if breakSet, this is where */
@@ -1588,7 +1602,6 @@ void cpuInit(Word initialPC) {
   N = Z = C = V = I = false;
   irqAck = 0;
   irqMask = 0;
-  irqPending = 0;
   breakSet = false;
 }
 
