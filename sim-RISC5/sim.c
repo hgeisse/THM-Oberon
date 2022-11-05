@@ -51,16 +51,21 @@
 
 /**************************************************************/
 
-/*
- * I/O device 0: timer
- */
-
-
-static Word milliSeconds;
+/* interrupt interface to CPU */
 
 
 void cpuSetInterrupt(int priority);
 void cpuResetInterrupt(int priority);
+
+
+/**************************************************************/
+
+/*
+ * I/O device 0: millisecond timer/counter
+ */
+
+
+static Word milliSeconds;
 
 
 void tickTimer(void) {
@@ -75,7 +80,9 @@ void tickTimer(void) {
 
 
 /*
- * read device 0: milliseconds counter value
+ * read device 0:
+ *     reset device interrupt
+ *     return milliseconds counter value
  */
 Word readTimer(void) {
   cpuResetInterrupt(IRQPRIO_TIMER);
@@ -84,7 +91,8 @@ Word readTimer(void) {
 
 
 /*
- * write dev 0: ignore
+ * write device 0:
+ *     ignore
  */
 void writeTimer(Word data) {
 }
@@ -111,10 +119,11 @@ void setSwitches(Word data) {
 
 
 /*
- * read dev 1: buttons and switches
- *    { 20'bx, button[3:0], switch[7:0] }
- *    button: press = 1
- *    switch: up = on = 1
+ * read device 1:
+ *     buttons and switches
+ *     { 20'bx, button[3:0], switch[7:0] }
+ *     button: press = 1
+ *     switch: up = on = 1
  */
 Word readSwitches(void) {
   return currentSwitches;
@@ -122,9 +131,10 @@ Word readSwitches(void) {
 
 
 /*
- * write dev 1: LEDs
- *    { 24'bx, led[7:0] }
- *    led: 1 = on
+ * write device 1:
+ *     LEDs
+ *     { 24'bx, led[7:0] }
+ *     led: 1 = on
  */
 void writeLEDs(Word data) {
   static Word currentLEDs = -1;
@@ -190,7 +200,8 @@ void tickSerial(void) {
 
 
 /*
- * read dev 2: receiver data
+ * read device 2:
+ *     receiver data
  *     { 24'bx, rx_data[7:0] }
  */
 Word readRS232_0(void) {
@@ -200,7 +211,8 @@ Word readRS232_0(void) {
 
 
 /*
- * write dev 2: transmitter data
+ * write device 2:
+ *     transmitter data
  *     { 24'bx, tx_data[7:0] }
  */
 void writeRS232_0(Word data) {
@@ -210,7 +222,8 @@ void writeRS232_0(Word data) {
 
 
 /*
- * read dev 3: status
+ * read device 3:
+ *     status
  *     { 30'bx, tx_rdy, rx_rdy }
  */
 Word readRS232_1(void) {
@@ -219,7 +232,8 @@ Word readRS232_1(void) {
 
 
 /*
- * write dev 3: control
+ * write device 3:
+ *     control
  *     { 31'bx, bitrate }
  *     bitrate: 0 = 19200 bps, 1 = 115200 bps
  */
@@ -495,7 +509,8 @@ static Word spiSelect;
 
 
 /*
- * read dev 4: read data
+ * read device 4:
+ *     read data
  */
 Word readSPIdata(void) {
   Word data;
@@ -513,7 +528,8 @@ Word readSPIdata(void) {
 
 
 /*
- * write dev 4: write data
+ * write device 4:
+ *     write data
  */
 void writeSPIdata(Word data) {
   if (debugSPI) {
@@ -527,7 +543,8 @@ void writeSPIdata(Word data) {
 
 
 /*
- * read dev 5: status
+ * read device 5:
+ *     status
  *     { 31'bx, spi_rdy }
  */
 Word readSPIctrl(void) {
@@ -542,7 +559,8 @@ Word readSPIctrl(void) {
 
 
 /*
- * write dev 5: ctrl
+ * write device 5:
+ *     ctrl
  *     { 28'bx, net_en, fast, wifi_sel, sdc_sel }
  */
 void writeSPIctrl(Word data) {
@@ -574,7 +592,8 @@ static Bool debugKeycode = false;
 
 
 /*
- * read dev 6: mouse data, keyboard status
+ * read device 6:
+ *     mouse data, keyboard status
  *     { 3'bx, kbd_rdy, 1'bx, btn[2:0], 2'bx, ypos[9:0], 2'bx, xpos[9:0] }
  */
 Word readMouse(void) {
@@ -583,14 +602,16 @@ Word readMouse(void) {
 
 
 /*
- * write dev 6: ignore
+ * write device 6:
+ *     ignore
  */
 void writeMouse(Word data) {
 }
 
 
 /*
- * read dev 7: keyboard data
+ * read device 7:
+ *     keyboard data
  *     { 24'bx, kbd_data[7:0] }
  */
 Word readKeybd(void) {
@@ -605,7 +626,8 @@ Word readKeybd(void) {
 
 
 /*
- * write dev 7: ignore
+ * write device 7:
+ *     ignore
  */
 void writeKeybd(Word data) {
 }
@@ -624,7 +646,8 @@ void initMouseKeybd(void) {
 
 
 /*
- * read dev 8: ignore, return 0
+ * read device 8:
+ *     ignore, return 0
  */
 Word readGPIO_0(void) {
   return 0;
@@ -632,14 +655,16 @@ Word readGPIO_0(void) {
 
 
 /*
- * write dev 8: ignore
+ * write device 8:
+ *     ignore
  */
 void writeGPIO_0(Word data) {
 }
 
 
 /*
- * read dev 9: ignore, return 0
+ * read device 9:
+ *     ignore, return 0
  */
 Word readGPIO_1(void) {
   return 0;
@@ -647,7 +672,8 @@ Word readGPIO_1(void) {
 
 
 /*
- * write dev 9: ignore
+ * write device 9:
+ *     ignore
  */
 void writeGPIO_1(Word data) {
 }
