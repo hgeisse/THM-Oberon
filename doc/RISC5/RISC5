@@ -1,0 +1,268 @@
+
+RISC5 Architecture
+==================
+
+0. Overview
+-----------
+
+This document is based on Niklaus Wirth's descriptions of his RISC processor
+[1,2,3,4]. We try to stay compatible with the processor described therein,
+but take the liberty to specify some aspects of the system in greater detail.
+Moreover, we add a very few features that are missing in the original design
+(16-bit memory access, multiple interrupt sources, nested interrupts).
+
+From the viewpoint of the programmer and the compiler designer the computer
+consists of registers, an arithmetic unit, a control unit, and the main
+memory. The set of registers comprises 16 general purpose registers R0 - R15,
+as well as 4 special registers (ID, H, X, PSW), with 32 bits each. The ID
+register holds details about the implementation and is read-only. The H
+register is used as the high word for results when multiplying, and as the
+remainder when dividing. The processor status word PSW records the properties
+of the results of arithmetic operations (the "flag bits"), which can be used
+to alter the program flow. It also holds interrupt control information. The
+X register is used to record the program counter and the flag bits when an
+interrupt is acknowledged. The control unit consists of the program counter
+PC, holding the address of the instruction to be fetched next, and facilities
+to accomodate interrupts. The main memory is byte-addressed and consists of
+32-bit words in little-endian byte order. All word accesses (instruction
+fetch, data load/store) must be word-aligned (i.e., on addresses which are
+divisible by 4), all half-word accesses must be on even addresses.
+
+There are four types of instructions and thus four instruction formats.
+Register instructions operate either on registers only (format F0), or on
+a register and a constant embedded in the current instruction (format F1).
+They feed data through the arithmetic/logic unit. Memory instructions
+(format F2) load and store data from and to memory, either as a single
+byte, as two bytes together (half-word), or as 4 bytes together (word).
+Device I/O is memory-mapped, i.e., the addresses of all I/O devices are
+mapped into the general address space of the computer and thus are accessible
+using memory instructions (although only word transfers are supported
+with I/O devices). Branch instructions (format F3) affect the program
+counter. They optionally record the linear next instruction address in
+order to realize subroutine calls and returns.
+
+The type of an instruction is encoded in its topmost nibble (bits 31..28,
+"pquv"). The "pq" bits determine the format (F0..F3), the "uv" bits are
+used as modifiers.
+
+
+1. Register Instructions
+------------------------
+
+Register instructions assign the result of an operation to the
+destination register R.a. The first operand is the register R.b.
+The second operand n is either register R.c (format F0) or is the
+constant imm taken from the current instruction (format F1). The
+modifier bits uv are both zero; exceptions are described below.
+
+        4      4      4      4             12            4
+     +------+------+------+------+------+------+------+------+
+F0:  | 00uv |  a   |  b   |  op  |         --         |  c   |
+     +------+------+------+------+------+------+------+------+
+
+        4      4      4      4             16
+     +------+------+------+------+------+------+------+------+
+F1:  | 01uv |  a   |  b   |  op  |         imm               |
+     +------+------+------+------+------+------+------+------+
+
+op     instr        effect             explanation
+-----------------------------------------------------------------------
+0000   MOV a,n      R.a := n           data transfer
+0001   LSL a,b,n    R.a := R.b <- n    logical shift left by n bits
+0010   ASR a,b,n    R.a := R.b -> n    arithmetic shift right by n bits
+0011   ROR a,b,n    R.a := R.b rot n   rotate right by n bits
+0100   AND a,b,n    R.a := R.b & n     bitwise AND
+0101   ANN a,b,n    R.a := R.b & ~n    bitwise AND NOT
+0110   IOR a,b,n    R.a := R.b or n    bitwise inclusive OR
+0111   XOR a,b,n    R.a := R.b xor n   bitwise exclusive OR
+1000   ADD a,b,n    R.a := R.b + n     integer addition
+1001   SUB a,b,n    R.a := R.b - n     integer subtraction
+1010   MUL a,b,n    R.a := R.b * n     integer multiplication (1)
+1011   DIV a,b,n    R.a := R.b / n     integer division (2)
+1100   FAD a,b,n    R.a := R.b + R.c   floating-point addition
+1101   FSB a,b,n    R.a := R.b - R.c   floating-point subtraction
+1110   FML a,b,n    R.a := R.b * R.c   floating-point multiplication
+1111   FDV a,b,n    R.a := R.b / R.c   floating-point division (3)
+
+Remarks:
+(1) The upper 32 bits of the product are deposited in register H.
+(2) The remainder is deposited in register H. Integer division is
+    defined as "Euclidean division" with the following properties:
+    Let q = b / c and r = b mod c. Then b = q * c + r, 0 <= r < abs(c).
+    Quotient q as well as remainder r are undefined if c = 0. They
+    are also undefined if b = most negative number and c = -1.
+(3) The result is undefined if R.c = 0.
+
+Immediate values are extended to 32 bits with 16 v-bits to the left.
+Apart from R.a these instructions also affect the flag registers N
+(negative) and Z (zero). The ADD and SUB instructions also affect
+the flags C (carry with ADD, borrow with SUB) and V (overflow).
+
+
+2. Memory Instructions
+----------------------
+
+        4      4      4                    20
+     +------+------+------+------+------+------+------+------+
+F2:  | 10uv |  a   |  b   |                off               |
+     +------+------+------+------+------+------+------+------+
+
+uv   instr         effect                  explanation
+-----------------------------------------------------------------------
+00   LDW a,b,off   R.a := mem[R.b + off]   word from mem, LSB(off) = 0
+00   LDH a,b,off   R.a := mem[R.b + off]   half from mem, LSB(off) = 1
+01   LDB a,b,off   R.a := mem[R.b + off]   byte from mem
+10   STW a,b,off   mem[R.b + off] := R.a   word from R.a, LSB(off) = 0
+10   STH a,b,off   mem[R.b + off] := R.a   half from R.a, LSB(off) = 1
+11   STB a,b,off   mem[R.b + off] := R.a   byte from R.a
+
+The offset "off" is interpreted as a signed 20-bit number in two's
+complement representation. The LSB of the offset in an LDW or STW
+instruction distinguishes a word from a half-word memory access.
+This bit is taken to be zero before the actual address is computed.
+
+Half-words (and bytes) are zero-extended when read from memory and
+written to a register. They are read from the 16 (or 8, for bytes)
+LSBs of the register when written to memory.
+
+
+3. Branch Instructions
+----------------------
+
+All branch instructions are formally dependent on a condition
+(but there is an "always true" condition). The branch instructions
+optionally store the current PC value ("link address" for calls).
+The branch target either is taken from a register or is computed
+from the current PC and an offset contained in the instruction.
+
+        4      4             16                   4      4
+     +------+------+------+------+------+------+------+------+
+F3:  | 110v | code |         --                | 0000 |  c   |
+     +------+------+------+------+------+------+------+------+
+
+Here u = 0, so the destination address is taken from register R.c.
+
+        4      4     2       22
+     +------+------+------+------+------+------+------+------+
+F3:  | 111v | code | 00      off                             |
+     +------+------+------+------+------+------+------+------+
+
+Here u = 1, so the destination address is PC + 4 + off * 4.
+The offset is interpreted as a signed 22-bit number in two's
+complement representation.
+
+In both cases,
+if v = 0:  Bcc dest      link address PC + 4 is not deposited
+if v = 1:  Ccc dest      link address PC + 4 is deposited in R15
+
+     code    cc   condition              flags
+     ----------------------------------------------
+     0000    MI   negative (minus)       N
+     0001    EQ   equal (zero)           Z
+     0010    CS   carry set (lower)      C
+     0011    VS   overflow set           V
+     0100    LS   lower or same          C|Z
+     0101    LT   less than              N^V
+     0110    LE   less or equal          (N^V)|Z
+     0111         always                 true
+     1000    PL   positive (plus)        ~N
+     1001    NE   not equal (not zero)   ~Z
+     1010    CC   carry clear            ~C
+     1011    VC   overflow clear         ~V
+     1100    HI   higher                 ~(C|Z)
+     1101    GE   greater or equal       ~(N^V)
+     1110    GT   greater than           ~((N^V)|Z)
+     1111    NVR  never                  false
+
+
+4. Interrupts
+-------------
+
+t.b.s.
+
+
+5. Devices
+----------
+
+5.0 Millisecond Timer/Counter
+The timer/counter counts milliseconds since hardware power-on, and
+occupies a single word at address 0xFFFFC0. Reading from this address
+returns the counter value, writing to the address is ignored. The device
+triggers interrupt 15 every time the counter changes. Reading the counter
+removes the interrupt.
+
+5.1 Switches and LEDs
+Switches and LEDs constitute the most basic user I/O peripherals. They
+occupy a single word at address 0xFFFFC4. Reading from this address
+returns the state of the 8 switches and 4 buttons, formatted as
+{ 20'bx, button[3:0], switch[7:0] }, which is Verilog's notation for
+a vector of 20 unknown bits, 4 bits for the buttons (pressed = 1),
+and 8 bits for the switches (up = on = 1). Writing to the same address
+sets the rightmost 8 red LEDs. The format is { 24'bx, led[7:0] }, which
+means that the 24 MSBs are ignored, while the 8 LSBs are written to the
+LEDs (1 = on). Currently this device doesn't trigger any interrupt.
+
+5.2 RS-232 (Serial Line)
+The serial line RS232 is a very old communication standard, but it's still
+in use, especially with embedded systems. The communication transfers bytes,
+using an asynchronous bit-serial line protocol, i.e., the 8 bits of a byte
+are transferred serially (LSB first), framed by start and stop bits, which
+synchronize an otherwise free-running oscillator for the bit cells. The
+communication speed (several standardized baud rates are available) must
+be agreed upon outside the communication channel. Because one symbol on the
+line equals one bit transmitted/received, the baud rate equals the bit rate.
+This interface occupies two consecutive words at addresses 0xFFFFC8 (rx/tx
+data) and 0xFFFFCC (status/control). Both addresses can be read and written.
+0xFFFFC8, rd: receiver data in the 8 LSBs, valid only if rx_rdy = 1
+0xFFFFC8, wr: transmitter data in the 8 LSBs, allowed only if tx_rdy = 1
+0xFFFFCC, rd: status, in the form { 30'bx, tx_rdy, rx_rdy }
+              rx_rdy = 1 iff receiver has a character received
+              this bit is reset when the character is read from 0xFFFFC8
+              tx_rdy = 1 iff transmitter is ready to accept a character
+              this bit is reset when a character is written to 0xFFFFC8
+0xFFFFCC, wr: bit rate in the 3 LSBs, with encoding
+              000 =   2400 bps
+              001 =   4800 bps
+              010 =   9600 bps (default)
+              011 =  19200 bps
+              100 =  31250 bps
+              101 =  38400 bps
+              110 =  57600 bps
+              111 = 115200 bps
+The device is able to trigger interrupts 9 (receive) and 8 (transmit).
+The interrupt lines follow exactly the bits rx_rdy and tx_rdy, and thus
+the interrupt requests are reset under the conditions described above
+(reading a received character, writing a character to be transmitted).
+
+5.3 SPI (SD Card)
+
+5.4 PS/2 Keyboard and Mouse
+
+5.5 Video Controller
+
+
+References (in chronological order)
+-----------------------------------
+
+[1] Wirth, Niklaus
+    Gutknecht, Juerg
+    Project Oberon
+    Revised Edition 2013
+    Chapter 16, Implementation of the RISC processor
+    File: wirth/PO.Computer.pdf
+
+[2] Wirth, Niklaus
+    The Design of a RISC Architecture and its Implementation with an FPGA
+    Rev. 01.09.2015
+    File: wirth/RISC.pdf
+
+[3] Wirth, Niklaus
+    An Update of the RISC5 Implementation
+    15.06.2018
+    File: wirth/RISC5.Update.pdf
+
+[4] Wirth, Niklaus
+    The RISC Architecture
+    Rev. 09.08.2018
+    File: wirth/RISC-Arch.pdf
+

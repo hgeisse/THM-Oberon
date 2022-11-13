@@ -1,0 +1,77 @@
+
+Memory Map of the RISC5 System
+------------------------------
+
+The PC in the original RISC5 design is 22 bits wide, and
+it addresses 32-bit (4-byte) words. I find it much more
+convenient to write down byte addresses, especially because
+these are needed anyway, as the memory provides byte access
+to data. The following map presents byte addresses (with
+a width of 24 bits, i.e., 6 nibbles).
+
+
+
+FFFFFF  +--------------------------+
+        | 16 devices (1 word each) |     64 Bytes
+FFFFC0  +--------------------------+
+        |    -- not present --     |      6 KB - 64 Bytes
+FFE800  +--------------------------+
+        |          PROM            |      2 KB
+FFE000  +--------------------------+
+        |          RAM             |     24 KB
+FF8000  +--------------------------+
+        |                          |
+        |          RAM             |     96 KB
+        |   (video frame buffer)   |
+        |                          |
+FE0000  +--------------------------+
+        |                          |
+        |                          |
+        |                          |
+        |                          |
+        |                          |
+        |                          |
+        |          RAM             |     16 MB - 128 KB
+        |                          |
+        |                          |
+        |                          |
+        |                          |
+        |                          |
+        |                          |
+000000  +--------------------------+
+
+
+
+Notes
+-----
+
+1. The video frame buffer is both readable and writable.
+
+2. On reset, the processor's start address is FFE000.
+
+3. "not present" means that nothing responds at these addresses.
+
+
+
+Device Address Map
+------------------
+
+ device    address    function
+
+   0       FFFFC0     millisecond timer
+   1       FFFFC4     switches, LEDs
+   2       FFFFC8     serial line data
+   3       FFFFCC     serial line status/ctrl
+   4       FFFFD0     SPI data
+   5       FFFFD4     SPI status/ctrl
+   6       FFFFD8     mouse data, keyboard status
+   7       FFFFDC     keyboard data
+   8       FFFFE0     general purpose I/O data
+   9       FFFFE4     general purpose I/O direction
+  10       FFFFE8
+  11       FFFFEC
+  12       FFFFF0
+  13       FFFFF4
+  14       FFFFF8
+  15       FFFFFC
+
