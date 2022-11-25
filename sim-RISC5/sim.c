@@ -2340,6 +2340,7 @@ static void help(void) {
   printf("  mb      show/set memory byte\n");
   printf("  ss      show/set switches\n");
   printf("  led     show LEDs\n");
+  printf("  lcd     show LCD\n");
   printf("  q       quit simulator\n");
   printf("type 'help <cmd>' to get help for <cmd>\n");
 }
@@ -2940,6 +2941,20 @@ static void doLED(char *tokens[], int n) {
 }
 
 
+static void helpLCD(void) {
+  printf("  lcd               show LCD\n");
+}
+
+
+static void doLCD(char *tokens[], int n) {
+  if (n == 1) {
+    showLCD();
+  } else {
+    helpLCD();
+  }
+}
+
+
 static void helpQuit(void) {
   printf("  q                 quit simulator\n");
 }
@@ -2972,6 +2987,7 @@ Command commands[] = {
   { "mb",   helpMemoryByte, doMemoryByte },
   { "ss",   helpSwitches,   doSwitches   },
   { "led",  helpLED,        doLED        },
+  { "lcd",  helpLCD,        doLCD        },
   { "q",    helpQuit,       doQuit       },
 };
 
