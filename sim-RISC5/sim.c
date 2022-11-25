@@ -801,6 +801,56 @@ void writeIO(int dev, Word data) {
 /**************************************************************/
 
 /*
+ * Extended I/O devices 0, 1: high precision timer
+ */
+
+
+/*
+ * read extended device 0:
+ *     ignore, return 0
+ */
+Word readHPTdata(void) {
+  printf("data read from HPT\n");
+  return 0xDEADC0DE;
+}
+
+
+/*
+ * write extended device 0:
+ *     ignore
+ */
+void writeHPTdata(Word data) {
+  printf("data 0x%08X written to HPT\n", data);
+}
+
+
+/*
+ * read extended device 1:
+ *     ignore, return 0
+ */
+Word readHPTctrl(void) {
+  printf("status read from HPT\n");
+  return 0xF00DBABE;
+}
+
+
+/*
+ * write extended device 1:
+ *     ignore
+ */
+void writeHPTctrl(Word data) {
+  printf("control 0x%08X written to HPT\n", data);
+}
+
+
+void initHPT(void) {
+  printf("HPT initialized\n");
+}
+
+
+/**************************************************************/
+
+/*
  * Extended I/O devices 2, 3: LCD
  */
 
@@ -1130,14 +1180,12 @@ Word readXIO(int dev) {
   Word data;
 
   switch (dev) {
-#if 0
     case 0:
       data = readHPTdata();
       break;
     case 1:
       data = readHPTctrl();
       break;
-#endif
     case 2:
       data = readLCDdata();
       break;
@@ -1155,14 +1203,12 @@ Word readXIO(int dev) {
 
 void writeXIO(int dev, Word data) {
   switch (dev) {
-#if 0
     case 0:
       writeHPTdata(data);
       break;
     case 1:
       writeHPTctrl(data);
       break;
-#endif
     case 2:
       writeLCDdata(data);
       break;
@@ -3115,6 +3161,7 @@ int main(int argc, char *argv[]) {
   initSPI(diskName);
   initMouseKeybd();
   initGPIO();
+  initHPT();
   initLCD();
   graphInit();
   promInit(promName);
