@@ -39,6 +39,8 @@
 #define GRAPH_SIZE	0x00018000		/* located within RAM */
 #define ROM_BASE	0x00FFE000		/* byte address */
 #define ROM_SIZE	0x00000800		/* counted in bytes */
+#define XIO_BASE	0x00FFFF80		/* byte address */
+#define XIO_SIZE	0x00000040		/* counted in bytes */
 #define IO_BASE		0x00FFFFC0		/* byte address */
 #define IO_SIZE		0x00000040		/* counted in bytes */
 #define ADDR_MASK	0x00FFFFFF		/* 24-bit addresses */
@@ -788,7 +790,67 @@ void writeIO(int dev, Word data) {
       writeGPIO_1(data);
       break;
     default:
-      error("writing to unknown I/O device %d, data = 0x%08X", dev, data);
+      error("writing to unknown I/O device %d, data = 0x%08X",
+            dev, data);
+      break;
+  }
+}
+
+
+/**************************************************************/
+
+/*
+ * Extended I/O : address of device n = XIO_BASE + 4 * n
+ *                this can be expressed in decimal as -4 * (32 - n)
+ */
+
+
+Word readXIO(int dev) {
+  Word data;
+
+  switch (dev) {
+#if 0
+    case 0:
+      data = readHPTdata();
+      break;
+    case 1:
+      data = readHPTctrl();
+      break;
+    case 2:
+      data = readLCDdata();
+      break;
+    case 3:
+      data = readLCDctrl();
+      break;
+#endif
+    default:
+      error("reading from unknown extended I/O device %d", dev);
+      data = 0;
+      break;
+  }
+  return data;
+}
+
+
+void writeXIO(int dev, Word data) {
+  switch (dev) {
+#if 0
+    case 0:
+      writeHPTdata(data);
+      break;
+    case 1:
+      writeHPTctrl(data);
+      break;
+    case 2:
+      writeLCDdata(data);
+      break;
+    case 3:
+      writeLCDctrl(data);
+      break;
+#endif
+    default:
+      error("writing to unknown extended I/O device %d, data = 0x%08X",
+            dev, data);
       break;
   }
 }
@@ -824,6 +886,9 @@ Word readWord(Word addr) {
   if (addr >= ROM_BASE && addr < ROM_BASE + ROM_SIZE) {
     return rom[(addr - ROM_BASE) >> 2];
   }
+  if (addr >= XIO_BASE && addr < XIO_BASE + XIO_SIZE) {
+    return readXIO((addr - XIO_BASE) >> 2);
+  }
   if (addr >= IO_BASE && addr < IO_BASE + IO_SIZE) {
     return readIO((addr - IO_BASE) >> 2);
   }
@@ -851,6 +916,10 @@ void writeWord(Word addr, Word data) {
   if (addr >= ROM_BASE && addr < ROM_BASE + ROM_SIZE) {
     error("PROM write word @ 0x%08X, PC = 0x%08X",
           addr, cpuGetPC() - 4);
+  }
+  if (addr >= XIO_BASE && addr < XIO_BASE + XIO_SIZE) {
+    writeXIO((addr - XIO_BASE) >> 2, data);
+    return;
   }
   if (addr >= IO_BASE && addr < IO_BASE + IO_SIZE) {
     writeIO((addr - IO_BASE) >> 2, data);
