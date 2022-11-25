@@ -132,6 +132,20 @@ Word readSwitches(void) {
 }
 
 
+static Word currentLEDs = -1;
+
+
+void showLEDs(void) {
+  int i;
+
+  printf("LED status:");
+  for (i = 7; i >= 0; i--) {
+    printf("  %s", currentLEDs & (1 << i) ? "ON " : "OFF");
+  }
+  printf("\n");
+}
+
+
 /*
  * write device 1:
  *     LEDs
@@ -139,17 +153,10 @@ Word readSwitches(void) {
  *     led: 1 = on
  */
 void writeLEDs(Word data) {
-  static Word currentLEDs = -1;
-  int i;
-
   data &= 0x000000FF;
   if (currentLEDs != data) {
     currentLEDs = data;
-    printf("LED change:");
-    for (i = 7; i >= 0; i--) {
-      printf("  %s", currentLEDs & (1 << i) ? "ON " : "OFF");
-    }
-    printf("\n");
+    showLEDs();
   }
 }
 
@@ -1942,6 +1949,7 @@ static void help(void) {
   printf("  mh      show/set memory half\n");
   printf("  mb      show/set memory byte\n");
   printf("  ss      show/set switches\n");
+  printf("  led     show LEDs\n");
   printf("  q       quit simulator\n");
   printf("type 'help <cmd>' to get help for <cmd>\n");
 }
@@ -2528,6 +2536,20 @@ static void doSwitches(char *tokens[], int n) {
 }
 
 
+static void helpLED(void) {
+  printf("  led               show LEDs\n");
+}
+
+
+static void doLED(char *tokens[], int n) {
+  if (n == 1) {
+    showLEDs();
+  } else {
+    helpLED();
+  }
+}
+
+
 static void helpQuit(void) {
   printf("  q                 quit simulator\n");
 }
@@ -2559,6 +2581,7 @@ Command commands[] = {
   { "mh",   helpMemoryHalf, doMemoryHalf },
   { "mb",   helpMemoryByte, doMemoryByte },
   { "ss",   helpSwitches,   doSwitches   },
+  { "led",  helpLED,        doLED        },
   { "q",    helpQuit,       doQuit       },
 };
 
