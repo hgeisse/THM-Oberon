@@ -1510,8 +1510,9 @@ static Word pc;			/* program counter, as byte index */
 static Word reg[16];		/* general purpose registers */
 static Word ID;			/* special register for CPU identification */
 static Word H;			/* special register for mul/div */
-static Word X;			/* { 1'N, 1'Z, 1'C, 1'V, 1'I, 3'0, 24'pc } */
-static Bool N, Z, C, V, I;	/* flags */
+static Word X;			/* interrupt program counter */
+static Bool N, Z, C, V;		/* arithmetic flags */
+static Bool I, P;		/* interrupt flags */
 static unsigned irqAck;		/* interrupt last acknowledged */
 static unsigned irqMask;	/* one bit for each IRQ */
 static unsigned irqPending = 0;	/* one bit for each pending IRQ */
@@ -1587,6 +1588,7 @@ static void execNextInstruction(void) {
                   C = (res >> 29) & 1;
                   V = (res >> 28) & 1;
                   I = (res >> 27) & 1;
+                  P = (res >> 26) & 1;
                   irqAck = (res >> 16) & 0x0000001F;
                   irqMask = (res >> 0) & 0x0000FFFF;
                   break;
@@ -1616,6 +1618,7 @@ static void execNextInstruction(void) {
                         ((Word) C << 29) |
                         ((Word) V << 28) |
                         ((Word) I << 27) |
+                        ((Word) P << 26) |
                         (irqAck   << 16) |
                         (irqMask  <<  0);
                   break;
@@ -1802,12 +1805,10 @@ static void execNextInstruction(void) {
               break;
             case 1:
               /* return from interrupt */
-              N = (X >> 31) & 1;
-              Z = (X >> 30) & 1;
-              C = (X >> 29) & 1;
-              V = (X >> 28) & 1;
-              I = (X >> 27) & 1;
-              pc = (X >> 0) & ADDR_MASK;
+              /* restore PC from X register */
+              pc = X & ADDR_MASK;
+              /* restore I flag from P flag */
+              I = P;
               break;
             case 2:
               /* interrupt disable/enable */
@@ -1885,14 +1886,10 @@ static void handleInterrupts(void) {
       /* only done for exceptions, since interrupts are level-sensitive */
       irqPending &= ~((unsigned) 1 << priority);
     }
-    /* save interrupt status */
-    X = ((Word) N << 31) |
-        ((Word) Z << 30) |
-        ((Word) C << 29) |
-        ((Word) V << 28) |
-        ((Word) I << 27) |
-        (pc << 0);
-    /* disable interrupts */
+    /* save interrupt PC in X register */
+    X = pc;
+    /* save I flag in P flag and disable interrupts */
+    P = I;
     I = false;
     /* reflect priority in PSW */
     irqAck = priority;
@@ -1943,7 +1940,7 @@ Word cpuGetX(void) {
 
 
 void cpuSetX(Word value) {
-  X = value & 0xF8FFFFFF;
+  X = value;
 }
 
 
@@ -1953,6 +1950,7 @@ Word cpuGetPSW(void) {
          ((Word) C << 29) |
          ((Word) V << 28) |
          ((Word) I << 27) |
+         ((Word) P << 26) |
          (irqAck   << 16) |
          (irqMask  <<  0);
 }
@@ -1964,6 +1962,7 @@ void cpuSetPSW(Word value) {
   C = (value >> 29) & 1;
   V = (value >> 28) & 1;
   I = (value >> 27) & 1;
+  P = (value >> 26) & 1;
   irqAck = (value >> 16) & 0x0000001F;
   irqMask = (value >> 0) & 0x0000FFFF;
 }
@@ -2042,7 +2041,7 @@ void cpuInit(Word initialPC) {
   ID = CPU_ID;
   H = 0;
   X = 0;
-  N = Z = C = V = I = false;
+  N = Z = C = V = I = P = false;
   irqAck = 0;
   irqMask = 0;
   breakSet = false;
@@ -2318,7 +2317,7 @@ static void showPC(void) {
 
   pc = cpuGetPC();
   instr = readWord(pc);
-  printf("PC   %06X     [PC]   %08X   %s\n",
+  printf("PC   %06X       [PC]   %08X   %s\n",
          pc, instr, disasm(instr, pc));
 }
 
@@ -2342,7 +2341,7 @@ static void showIRQ(void) {
   int i;
 
   irq = cpuGetIRQ();
-  printf("IRQ                     ");
+  printf("IRQ                      ");
   for (i = 15; i >= 0; i--) {
     printf("%c", irq & (1 << i) ? '1' : '0');
   }
@@ -2355,10 +2354,10 @@ static void showPSW(void) {
   int i;
 
   psw = cpuGetPSW();
-  printf("     NZCVI xxxxxx ACK   MASK\n");
+  printf("     NZCV IP xxxxx ACK   MASK\n");
   printf("PSW  ");
   for (i = 31; i >= 0; i--) {
-    if (i == 26 || i == 20 || i == 15) {
+    if (i == 27 || i == 25 || i == 20 || i == 15) {
       printf(" ");
     }
     printf("%c", psw & (1 << i) ? '1' : '0');
