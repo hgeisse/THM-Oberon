@@ -35,9 +35,10 @@
 #define INST_PER_CHAR	((int)(INST_PER_MSEC * MSEC_PER_CHAR + 0.5))
 
 #define IRQ_HPT		15			/* high prec timer IRQ */
-#define IRQ_TIMER	14			/* timer IRQ */
-#define IRQ_RS232_RX	9			/* RS232 receive IRQ */
-#define IRQ_RS232_TX	8			/* RS232 transmit IRQ */
+#define IRQ_TIMER	11			/* millisec timer IRQ */
+#define IRQ_RS232_RCV	7			/* RS232 receive IRQ */
+#define IRQ_RS232_XMT	6			/* RS232 transmit IRQ */
+#define IRQ_BUTTONS	3			/* buttons IRQ */
 
 #define RAM_BASE	0x00000000		/* byte address */
 #define RAM_SIZE	0x00FFE000		/* counted in bytes */
@@ -182,8 +183,8 @@ void initSWLED(Word initialSwitches) {
  */
 
 
-#define SERIAL_RX_RDY		0x01
-#define SERIAL_TX_RDY		0x02
+#define SERIAL_RCV_RDY		0x01
+#define SERIAL_XMT_RDY		0x02
 
 
 static FILE *serialIn;
@@ -203,16 +204,16 @@ void tickSerial(void) {
     c = fgetc(serialIn);
     if (c != EOF) {
       serialRxData = c & 0xFF;
-      serialStatus |= SERIAL_RX_RDY;
-      cpuSetInterrupt(IRQ_RS232_RX);
+      serialStatus |= SERIAL_RCV_RDY;
+      cpuSetInterrupt(IRQ_RS232_RCV);
     }
   }
-  if ((serialStatus & SERIAL_TX_RDY) == 0) {
+  if ((serialStatus & SERIAL_XMT_RDY) == 0) {
     if (txCount++ == INST_PER_CHAR) {
       txCount = 0;
       fputc(serialTxData & 0xFF, serialOut);
-      serialStatus |= SERIAL_TX_RDY;
-      cpuSetInterrupt(IRQ_RS232_TX);
+      serialStatus |= SERIAL_XMT_RDY;
+      cpuSetInterrupt(IRQ_RS232_XMT);
     }
   }
 }
@@ -224,8 +225,8 @@ void tickSerial(void) {
  *     { 24'bx, rx_data[7:0] }
  */
 Word readRS232data(void) {
-  serialStatus &= ~SERIAL_RX_RDY;
-  cpuResetInterrupt(IRQ_RS232_RX);
+  serialStatus &= ~SERIAL_RCV_RDY;
+  cpuResetInterrupt(IRQ_RS232_RCV);
   return serialRxData;
 }
 
@@ -237,8 +238,8 @@ Word readRS232data(void) {
  */
 void writeRS232data(Word data) {
   serialTxData = data & 0xFF;
-  serialStatus &= ~SERIAL_TX_RDY;
-  cpuResetInterrupt(IRQ_RS232_TX);
+  serialStatus &= ~SERIAL_XMT_RDY;
+  cpuResetInterrupt(IRQ_RS232_XMT);
 }
 
 
@@ -299,8 +300,8 @@ void initRS232(void) {
   serialOut = fdopen(master, "w");
   setvbuf(serialOut, NULL, _IONBF, 0);
   while (fgetc(serialIn) != EOF) ;
-  serialStatus = SERIAL_TX_RDY;
-  cpuSetInterrupt(IRQ_RS232_TX);
+  serialStatus = SERIAL_XMT_RDY;
+  cpuSetInterrupt(IRQ_RS232_XMT);
 }
 
 
