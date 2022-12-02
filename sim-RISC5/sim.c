@@ -27,10 +27,15 @@
 #define CPU_VERSION	0x81			/* 8.1 */
 #define CPU_ID		(CPU_VERSION)
 
-#define INST_PER_MSEC	17000			/* execution speed */
-#define INST_PER_CHAR	10000			/* serial line speed */
+#define CC_PER_USEC	50.0			/* clock frequency in MHz */
+#define CC_PER_INST	4.0			/* clock cycles per inst */
+#define INST_PER_MSEC	((int)((1000.0 * CC_PER_USEC) / CC_PER_INST + 0.5))
+#define BAUD_RATE	38400			/* serial line speed */
+#define MSEC_PER_CHAR	(10 * (1000.0 / BAUD_RATE))
+#define INST_PER_CHAR	((int)(INST_PER_MSEC * MSEC_PER_CHAR + 0.5))
 
-#define IRQ_TIMER	15			/* timer IRQ */
+#define IRQ_HPT		15			/* high prec timer IRQ */
+#define IRQ_TIMER	14			/* timer IRQ */
 #define IRQ_RS232_RX	9			/* RS232 receive IRQ */
 #define IRQ_RS232_TX	8			/* RS232 transmit IRQ */
 
@@ -805,46 +810,97 @@ void writeIO(int dev, Word data) {
  */
 
 
+#define HPT_EXPIRED		0x01
+
+#define HPT_SCALING		100
+
+
+static Word HPTcounter;
+static Word HPTdivisor;
+static Word HPTstatus;
+
+
+static void tickHPTcounter(int clockCycles) {
+  if (HPTcounter <= clockCycles) {
+    HPTcounter += HPTdivisor - clockCycles;
+    HPTstatus |= HPT_EXPIRED;
+    cpuSetInterrupt(IRQ_HPT);
+  } else {
+    HPTcounter -= clockCycles;
+  }
+}
+
+
+void tickHPT(void) {
+  static int accumulator = 0;
+  int clockCycles;
+
+  /*
+   * approximate possibly non-integer CC_PER_INST by the
+   * integer ratio (CC_PER_INST * HPT_SCALING) / HPT_SCALING
+   */
+  accumulator += (int) (CC_PER_INST * HPT_SCALING + 0.5);
+  clockCycles = 0;
+  while (accumulator >= HPT_SCALING) {
+    accumulator -= HPT_SCALING;
+    clockCycles++;
+  }
+  if (clockCycles > 0) {
+    tickHPTcounter(clockCycles);
+  }
+}
+
+
 /*
  * read extended device 0:
- *     ignore, return 0
+ *     HPT counter
+ *     { data[31:0] }
  */
 Word readHPTdata(void) {
-  printf("data read from HPT\n");
-  return 0xDEADC0DE;
+  return HPTcounter;
 }
 
 
 /*
  * write extended device 0:
- *     ignore
+ *     HPT divisor
+ *     { data[31:0] }
  */
 void writeHPTdata(Word data) {
-  printf("data 0x%08X written to HPT\n", data);
+  HPTdivisor = data;
+  /* must also reset the counter */
+  HPTcounter = data;
 }
 
 
 /*
  * read extended device 1:
- *     ignore, return 0
+ *     HPT status
+ *     { 31'bx, expired }
  */
 Word readHPTctrl(void) {
-  printf("status read from HPT\n");
-  return 0xF00DBABE;
+  Word data;
+
+  data = HPTstatus;
+  HPTstatus &= ~HPT_EXPIRED;
+  cpuResetInterrupt(IRQ_HPT);
+  return data;
 }
 
 
 /*
  * write extended device 1:
+ *     HPT ctrl
  *     ignore
  */
 void writeHPTctrl(Word data) {
-  printf("control 0x%08X written to HPT\n", data);
 }
 
 
 void initHPT(void) {
-  printf("HPT initialized\n");
+  HPTdivisor = 0xFFFFFFFF;
+  HPTcounter = 0xFFFFFFFF;
+  HPTstatus = 0;
 }
 
 
@@ -1997,6 +2053,7 @@ void cpuResetBreak(void) {
 void cpuStep(void) {
   tickTimer();
   tickSerial();
+  tickHPT();
   execNextInstruction();
   handleInterrupts();
 }
@@ -2007,6 +2064,7 @@ void cpuRun(void) {
   while (run) {
     tickTimer();
     tickSerial();
+    tickHPT();
     execNextInstruction();
     handleInterrupts();
     if (breakSet && pc == breakAddr) {
