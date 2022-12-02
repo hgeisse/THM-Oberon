@@ -14,9 +14,11 @@ a width of 24 bits, i.e., 6 nibbles).
 FFFFFF  +--------------------------+
         | 16 devices (1 word each) |     64 Bytes
 FFFFC0  +--------------------------+
-        |    -- not present --     |      6 KB - 64 Bytes
-FFE800  +--------------------------+
-        |          PROM            |      2 KB
+        | 16 devices (1 word each) |     64 Bytes
+FFFF80  +--------------------------+
+        |    -- not present --     |      4 KB - 128 Bytes
+FFF000  +--------------------------+
+        |          PROM            |      4 KB
 FFE000  +--------------------------+
         |          RAM             |     24 KB
 FF8000  +--------------------------+
@@ -74,4 +76,28 @@ Device Address Map
   13       FFFFF4
   14       FFFFF8
   15       FFFFFC
+
+
+
+Extended Device Address Map
+---------------------------
+
+ xdevice   address    function
+
+   0       FFFF80     high precision timer data
+   1       FFFF84     high precision timer status/ctrl
+   2       FFFF88     LCD data
+   3       FFFF8C     LCD status/ctrl
+   4       FFFF90
+   5       FFFF94
+   6       FFFF98
+   7       FFFF9C
+   8       FFFFA0
+   9       FFFFA4
+  10       FFFFA8
+  11       FFFFAC
+  12       FFFFB0
+  13       FFFFB4
+  14       FFFFB8
+  15       FFFFBC
 

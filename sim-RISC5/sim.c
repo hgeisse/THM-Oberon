@@ -39,7 +39,7 @@
 #define GRAPH_BASE	0x00FE0000		/* frame buffer memory */
 #define GRAPH_SIZE	0x00018000		/* located within RAM */
 #define ROM_BASE	0x00FFE000		/* byte address */
-#define ROM_SIZE	0x00000800		/* counted in bytes */
+#define ROM_SIZE	0x00001000		/* counted in bytes */
 #define XIO_BASE	0x00FFFF80		/* byte address */
 #define XIO_SIZE	0x00000040		/* counted in bytes */
 #define IO_BASE		0x00FFFFC0		/* byte address */
