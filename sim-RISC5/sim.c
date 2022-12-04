@@ -541,6 +541,7 @@ static Word spiSelect;
 /*
  * read device 4:
  *     read data
+ *     { data[31:0] }
  */
 Word readSPIdata(void) {
   Word data;
@@ -560,6 +561,7 @@ Word readSPIdata(void) {
 /*
  * write device 4:
  *     write data
+ *     { data[31:0] }
  */
 void writeSPIdata(Word data) {
   if (debugSPI) {
@@ -1185,6 +1187,7 @@ Word readLCDctrl(void) {
 /*
  * write extended device 3:
  *     write control lines to LCD
+ *     { 28'bx, on, en, rw, rs }
  */
 void writeLCDctrl(Word data) {
   Word ctrlChange;
