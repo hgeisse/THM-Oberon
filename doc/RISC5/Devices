@@ -1,0 +1,173 @@
+
+High Performance Timer (HPTMR)
+==============================
+
+IRQ:  15
+base: 0xFFFF80
+
+addr    read             write
+------------------------------------
++0      counter (A)      divisor (B)
++4      status  (C)      control (D)
+
+(A)
+format: { counter[31:0] }
+rate = 50 MHz (resolution = 20 nsec)
+counts from the value of the divisor down to zero
+restarts automatically
+
+(B)
+format: { divisor[31:0] }
+reset counter to this value also
+
+(C)
+format: { 31'bx, expired }
+reset device interrupt
+
+(D)
+format: { 31'bx, ien }
+
+
+Liquid Crystal Display (LCD)
+============================
+
+IRQ:  --
+base: 0xFFFF88
+
+addr    read                   write
+------------------------------------------------
++0      data/status (A)        data/instr (B)
++4      control lines (C)      control lines (D)
+
+(A)
+format: { 24'bx, data[7:0] }
+
+(B)
+format: { 24'bx, data[7:0] }
+
+(C)
+format: { 28'bx, on, en, rw, rs }
+
+(D)
+format: { 28'bx, on, en, rw, rs }
+any actions are triggered only here
+
+
+Buttons and Switches (BTNSWT)
+=============================
+
+IRQ:  3
+base: 0xFFFF90
+
+addr    read              write
+-------------------------------------
++0      status (A)        control (B)
+
+(A)
+format: { press[3:0], release[3:0], 12'bx, button[3:0], switch[7:0] }
+reset all press/release bits and interrupts
+
+(B)
+format: { press_ien[3:0], release_ien[3:0], 24'bx }
+
+Note: I/O device "SWTLED" remains functional also
+
+
+Millisecond Timer (MSTMR)
+=========================
+
+IRQ:  11
+base: 0xFFFFC0
+
+addr    read              write
+-------------------------------------
++0      counter (A)       control (B)
+
+(A)
+format: { milliseconds[31:0] }
+reset device interrupt
+
+(B)
+format: { 31'bx, ien }
+
+
+Switches and LEDs (SWTLED)
+==========================
+
+IRQ:  --
+base: 0xFFFFC4
+
+addr    read              write
+----------------------------------
++0      status (A)        LEDs (B)
+
+(A)
+format: { 20'bx, button[3:0], switch[7:0] }
+
+(B)
+format: { 24'bx, led[7:0] }
+
+Note: I/O device "BTNSWT" offers a better interface to buttons
+
+
+Serial Line (RS232)
+===================
+
+IRQ:  XMT = 6
+      RCV = 7
+base: 0xFFFFC8
+
+addr    read                write
+----------------------------------------
++0      rcv data (A)        xmt data (B)
++4      status (C)          control (D)
+
+(A)
+format: { 24'bx, rcv_data[7:0] }
+reset rcv interrupt
+
+(B)
+format: { 24'bx, xmt_data[7:0] }
+reset xmt interrupt
+
+(C)
+format: { 30'bx, xmt_rdy, rcv_rdy }
+
+(D)
+format: { set_baud, baud[2:0], 26'bx, xmt_ien, rcv_ien }
+if set_baud = 0 : ignore the 3 bits defining the baud rate
+if set_baud = 1 : set baud rate according to the following table
+   baud     baud rate
+      0     2400
+      1     4800
+      2     9600    (default)
+      3     19200
+      4     31250   (for MIDI)
+      5     38400
+      6     57600
+      7     115200
+
+
+Serial Peripheral Interface (SPI)
+=================================
+
+IRQ:  --
+base: 0xFFFFD0
+
+addr    read            write
+-----------------------------------
++0      data (A)        data (B)
++4      status (C)      control (D)
+
+(A)
+format: { data[31:0] }
+
+(B)
+format: { data[31:0] }
+
+(C)
+format: { 31'bx, spi_rdy }
+
+(D)
+format: { 28'bx, net_en, fast, wifi_sel, sdc_sel }
+
