@@ -1,5 +1,0 @@
-abstract SDRAM controller simulation
-adjustable latency
-data transfer with 1 word/cycle
-two ports: instructions (R/O), data (R/W)
-data port has precedence over instruction port
