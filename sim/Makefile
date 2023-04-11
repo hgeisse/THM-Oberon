@@ -11,7 +11,7 @@ LDLIBS = -lgetline -lX11 -lpthread -lm
 
 SRCS = sim.c common.c muldiv.c fpu.c graph.c
 OBJS = $(patsubst %.c,%.o,$(SRCS))
-BIN = sim-RISC5
+BIN = sim
 
 all:		$(BIN)
 

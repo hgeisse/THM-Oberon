@@ -4,7 +4,7 @@
 
 BUILD = ../../../build
 
-EXE = asm-RISC5
+EXE = asm
 
 all:		$(EXE)
 

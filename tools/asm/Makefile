@@ -4,7 +4,7 @@
 
 BUILD = ../../build
 
-DIRS = RISC5 RISC5-test
+DIRS = asm test
 
 all:
 		for i in $(DIRS) ; do \

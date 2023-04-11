@@ -1,23 +1,29 @@
 #
-# Makefile for object file viewer
+# Makefile for Extended Oberon object file viewer
 #
 
 BUILD = ../../build
 
-DIRS = RISC5 ECO32
+CC = gcc
+CFLAGS = -g -Wall
+LDFLAGS = -g -Wall
+LDLIBS = -lm
 
-all:
-		for i in $(DIRS) ; do \
-		  $(MAKE) -C $$i all ; \
-		done
+SRCS = showobj.c
+OBJS = $(patsubst %.c,%.o,$(SRCS))
+BIN = showobj
 
-install:
-		for i in $(DIRS) ; do \
-		  $(MAKE) -C $$i install ; \
-		done
+all:		$(BIN)
+
+install:	$(BIN)
+		mkdir -p $(BUILD)/bin
+		cp $(BIN) $(BUILD)/bin
+
+$(BIN):		$(OBJS)
+		$(CC) $(LDFLAGS) -o $(BIN) $(OBJS) $(LDLIBS)
+
+%.o:		%.c
+		$(CC) $(CFLAGS) -o $@ -c $<
 
 clean:
-		for i in $(DIRS) ; do \
-		  $(MAKE) -C $$i clean ; \
-		done
-		rm -f *~
+		rm -f *~ $(OBJS) $(BIN)

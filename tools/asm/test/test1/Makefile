@@ -9,7 +9,7 @@ all:		patterns all.asm
 install:	all
 
 check:		all
-		$(BUILD)/bin/asm-RISC5 all.asm all.mem
+		$(BUILD)/bin/asm all.asm all.mem
 		diff all.mem patterns
 
 patterns:	gen1
