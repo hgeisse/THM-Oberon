@@ -60,3 +60,9 @@
 	6. In Oberon, the semantics of SYSTEM.H(x) with x = 0 or x = 1
 	   is completely left unchanged: H(0) reads the H register, H(1)
 	   reads the ID register.
+
+
+11-Apr-2023
+	tag version 1.0 (the last version that contains both Oberon
+	implementations, RISC5 *and* ECO32)
+	delete all ECO32 parts from the master branch
