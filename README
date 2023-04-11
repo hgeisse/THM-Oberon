@@ -1,22 +1,29 @@
 
 Welcome to THM-Oberon!
 
-This project tries to port Niklaus Wirth's Oberon system to
+In this project we ported Niklaus Wirth's Oberon system to
 Terasic's DE2-115 FPGA development board. We decided to start
 not from Wirth's original "Project Oberon", but from Andreas
 Pirklbauer's "Extended Oberon", for a variety of reasons.
 
-We want to achieve our goal in two different ways:
+We achieved our goal in two different ways:
 
-1. We try to construct a version of RISC5 (Wirth's processor
-for his Oberon project) for the DE2-115.
+1. We constructed a version of RISC5 (Wirth's microprocessor
+system for his Oberon project) for the DE2-115.
 
-2. On a different path, we try to retarget the Oberon compiler
+2. On a different path, we retargeted the Oberon compiler
 to our ECO32, which is a well established independent 32-bit
 microcomputer system running on the DE2-115 (among other FPGA
-boards).
+boards). This line of development will not be continued.
+A fully functional version can however be downloaded from
+here (under the tag v1.0).
 
-If you have any questions don't hesitate to contact me by
+3. Further development will address
+   - more/other/enhanced I/O devices
+   - the latest version of Extended Oberon
+   - a more powerful implementation of RISC5
+
+If you have any questions, don't hesitate to contact me by
 email to
 
         hellwig.geisse@mni.thm.de
