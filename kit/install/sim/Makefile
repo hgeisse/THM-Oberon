@@ -27,22 +27,22 @@ all:
 		@echo "    in a separate window of the Linux system."
 
 install:	Oberon.dsk BootLoad.mem
-		$(BUILD)/bin/sim-RISC5 -d Oberon.dsk -p BootLoad.mem \
+		$(BUILD)/bin/sim -d Oberon.dsk -p BootLoad.mem \
 		  -s 003
 
 install-debug:	Oberon.dsk BootLoad.mem
-		$(BUILD)/bin/sim-RISC5 -i -d Oberon.dsk -p BootLoad.mem \
+		$(BUILD)/bin/sim -i -d Oberon.dsk -p BootLoad.mem \
 		  -s 003
 
 install-link:	$(MODGRPS)
 		$(BUILD)/bin/serlink Oberon0.bin
 
 run:		Oberon.dsk BootLoad.mem
-		$(BUILD)/bin/sim-RISC5 -d Oberon.dsk -p BootLoad.mem \
+		$(BUILD)/bin/sim -d Oberon.dsk -p BootLoad.mem \
 		  -s 001
 
 run-debug:	Oberon.dsk BootLoad.mem
-		$(BUILD)/bin/sim-RISC5 -i -d Oberon.dsk -p BootLoad.mem \
+		$(BUILD)/bin/sim -i -d Oberon.dsk -p BootLoad.mem \
 		  -s 001
 
 run-link:

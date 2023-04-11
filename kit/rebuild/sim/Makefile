@@ -7,7 +7,7 @@ KIT=../../Stable
 INSTALL=../../install/sim
 D2O=$(BUILD)/bin/dos2oberon
 O2U=$(BUILD)/bin/oberon2unix
-M2B=$(BUILD)/bin/mem2bin-RISC5
+M2B=$(BUILD)/bin/mem2bin
 NEW=../../New
 
 all:
@@ -24,7 +24,7 @@ all:
 		@echo "    with the stable one. Any differences are reported."
 
 rebuild:	Oberon.dsk BootLoad.mem
-		$(BUILD)/bin/sim-RISC5 -d Oberon.dsk -p BootLoad.mem -s 001
+		$(BUILD)/bin/sim -d Oberon.dsk -p BootLoad.mem -s 001
 
 rebuild-link:
 		$(MAKE) prologue
