@@ -7,28 +7,26 @@ Preparations
 ------------
 
 0) Requirements
-   Linux (tested on Ubuntu 16), X11 Window System
+   Linux (tested on Ubuntu 16 and 18), X11 Window System
    Monitor capable of displaying 1024x768 pixels in a window
    For FPGA experiments: Altera/Terasic DE2-115 board
 
 1) In any case, run "make" in the top-level directory.
-   This will build both simulators and a bunch of tools.
+   This will build the simulator and a bunch of tools.
    All executables are collected in build/bin. Here is
    the list with a short description of each of them:
-     sim-ECO32		ECO32 simulator
-     sim-RISC5		RISC5 simulator
+     sim		RISC5 simulator
      cmpx		compare two files (hex output)
-     mem2bin-ECO32	convert binary format for ECO32
-     mem2bin-RISC5	convert binary format for RISC5
+     mem2bin		convert memory to binary format
      mkdisk		make "disk" for Oberon (a file in the host system)
      serlink		serial communication with a running Oberon system
-     showobj-ECO32	show contents of ECO32 object file
-     showobj-RISC5	show contents of RISC5 object file
+     showobj		show contents of RISC5 object file
      showsym		show contents of symbol file
      dos2oberon		convert line endings of DOS file to Oberon file
      oberon2dos		convert line endings of Oberon file to DOS file
      unix2oberon	convert line endings of UNIX file to Oberon file
      oberon2unix	convert line endings of Oberon file to UNIX file
+     asm		an experimental RISC5 assembler
    Errors in this stage are often due to not running Linux,
    or missing X11 development libraries.
 
@@ -37,64 +35,27 @@ Working with RISC5
 ------------------
 
 2) Installing Oberon on a simulated RISC5 system
-   Prerequisites: none
-   Change your working directory to kit-RISC5/install/sim,
-   then type "make", and follow the instructions. You will
-   get a bootable Oberon disk (named "Oberon.dsk"). Make
-   a backup copy of it. Then you may clean up with "make clean".
-   Don't forget to rename (or copy again) the backup to a working
-   Oberon disk with name "Oberon.dsk".
+   Prerequisites: 1) above
+   Change your working directory to kit/install/sim, then type
+   "make", and follow the instructions. You will get a bootable
+   Oberon disk (named "Oberon.dsk"). Make a backup copy of it.
+   Then you may clean up with "make clean". Don't forget to rename
+   (or copy again) the backup to a working Oberon disk with name
+   "Oberon.dsk" in the directory kit/install/sim.
 
 3) Re-building the Oberon distribution kit on a simulated RISC5 system
    Prerequisites: 2) above
-   Change your working directory to kit-RISC5/rebuild/sim,
-   then type "make", and follow the instructions. You will
-   get a file tree "kit-RISC5/New", which contains the sources
-   (copied) as well as the re-generated binaries. "New" should
-   compare equal to the "Stable" tree. This can be checked by
-   doing a "make check". You can clean up the rebuild directory
-   with "make clean". This does not delete the "New" directory.
+   Change your working directory to kit/rebuild/sim, then type
+   "make", and follow the instructions. You will get a file tree
+   "kit/New", which contains the sources (copied) as well as the
+   re-generated binaries. "New" should compare equal to the "Stable"
+   tree. This can be checked by doing a "make check". You can clean
+   up the rebuild directory with "make clean". This does not delete
+   the "New" directory.
 
 4) Installing Oberon on an FPGA-based RISC5 system
-   not yet
+   Prerequisites: 1) above
 
 5) Re-building the Oberon distribution kit on an FPGA-based RISC5 system
-   not yet
-
-
-Cross-compiling the ECO32 system from the RISC5 system
-------------------------------------------------------
-
-See "kit-cross/README" for how to do this. It is not normally
-needed to reproduce these steps, but I kept them just in case.
-The resulting "New" tree was copied verbatim to "kit-ECO32/Stable".
-
-
-Working with ECO32
-------------------
-
-6) Installing Oberon on a simulated ECO32 system
-   Prerequisites: none
-   Change your working directory to kit-ECO32/install/sim,
-   then type "make", and follow the instructions. You will
-   get a bootable Oberon disk (named "Oberon.dsk"). Make
-   a backup copy of it. Then you may clean up with "make clean".
-   Don't forget to rename (or copy again) the backup to a working
-   Oberon disk with name "Oberon.dsk".
-
-7) Re-building the Oberon distribution kit on a simulated ECO32 system
-   Prerequisites: 6) above
-   Change your working directory to kit-ECO32/rebuild/sim,
-   then type "make", and follow the instructions. You will
-   get a file tree "kit-ECO32/New", which contains the sources
-   (copied) as well as the re-generated binaries. "New" should
-   compare equal to the "Stable" tree. This can be checked by
-   doing a "make check". You can clean up the rebuild directory
-   with "make clean". This does not delete the "New" directory.
-
-8) Installing Oberon on an FPGA-based ECO32 system
-   not yet
-
-9) Re-building the Oberon distribution kit on an FPGA-based ECO32 system
-   not yet
+   Prerequisites: 4) above
 
