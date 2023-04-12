@@ -1,64 +1,51 @@
 
 Here is a rough outline of what's contained in this repository.
 
-1) The top-level directories fill a matrix, where there is one column
-for each of the two microprocessors, on which the Oberon system runs:
+1) The top-level directories:
 
-                RISC5             ECO32
-
-Simulator       sim-RISC5         sim-ECO32
-
-Oberon          kit-RISC5         kit-ECO32
-
-Hardware        fpga-RISC5        not contained here, but
-                                  in a separate repository
-
-There are a few directories which are not part of the matrix:
-
-arith       experiments to understand integer and FP operations
-doc         documentation, but very incomplete
-kit-cross   an intermediate step while porting Oberon to ECO32
+arith       experiments to understand integer and floating-point arithmetic
+doc         documentation (incomplete)
+fpga        different RISC5 hardware implementations
+kit         the Oberon system, in source and object format
 original    Wirth's and Pirklbauer's original software, untouched
 serlink     the serial line communication program, used to control an Oberon
             system in the making, which runs Oberon0, either in a simulator,
             or on real hardware (the "purists" use an Oberon program for that,
             running on another Oberon system - I wanted this program running
             on my development machine, and re-wrote it in C, to get a start)
-tests       a few tests, developed while porting Oberon from RISC5 to ECO32
+sim         the RISC5 simulator
+tests       a few selected tests
 tools       various tools for converting formats, building a disk image,
-            and exploring the format of object and symbol files (this was
-            crucial for porting Oberon to ECO32, as we had to re-write the
-            module loader, which does the run-time linking for modules in
-            a processor-specific way)
+            and exploring the format of object and symbol files
 
-2) Both "kit" directories contain instructions on how to get Oberon running,
-either on the respective simulator, or on real hardware.
+2) The "kit" directory contains instructions on how to get Oberon running,
+either on the simulator, or on real hardware.
 
-3) The fpga-RISC5 directory contains two main subdirectories (next to some
-checks and tests I made in order to explore important properties of RISC5,
-that are nowhere defined, but knowing them is essential when implementing it):
+3) The "fpga" directory contains two main subdirectories (next to some checks
+and tests I made in order to explore important properties of RISC5, that are
+nowhere defined, but knowing them is essential when implementing it):
 
 v0    a description of Wirth's original design, written considerably later
       than v1, in order to clarify some aspects of the original by simulation
 
 v1    my implementation of the RISC5 ISA, mostly independent of Wirth's design
       (not quite: I had to copy the FPU with all its quirks), with an SDRAM
-      controller and an on-chip video memory for a 1024x768 B/W display
+      controller and an on-chip video memory for a 1024x768 monochrome display
 
 Within v1, there is a subdirectory for hardware simulation ("sim") and another
 one for synthesis ("syn"), in which my RISC5 implementation can be synthesized
 for the Terasic DE2-115 board. "src" holds the Verilog source (one directory
 for every subsystem, see below), "build" holds the result. The subsystems are:
 
-bio          "board I/O": LEDs, 7-segment hex displays, buttons, switches
-clk_rst      clock and reset generation
-cpu          the CPU, further divided in core, bus interface, arithmetic
-kbd          PS/2 keyboard and mouse interface
-prom         512x32 bit PROM, realized by block RAM
-ram          128 MByte SDRAM interface (only 16 MByte used)
-sdc          SD-card interface
-ser          serial line interface (aka UART)
-tmr          millisecond timer
-toplevel     well, the top level and the corresponding constraints file
-vid          video controller for the 1024x768 B/W display
+bio         "board I/O": LEDs, 7-segment hex displays, buttons, switches
+clk_rst     clock and reset generation
+cpu         the CPU, further divided in core, bus interface, arithmetic
+kbd         PS/2 keyboard and mouse interface
+prom        512x32 bit PROM, realized by block RAM
+ram         128 MByte SDRAM interface (only 16 MByte used)
+sdc         SD-card interface
+ser         serial line interface (aka UART)
+tmr         millisecond timer
+toplevel    the top level description and the constraints file
+vid         video controller for the 1024x768 monochrome display
 
