@@ -55,7 +55,22 @@ Working with RISC5
 
 4) Installing Oberon on an FPGA-based RISC5 system
    Prerequisites: 1) above
+   Change your working directory to kit/install/fpga, then type "make",
+   and follow the instructions. Use "fpga/v1/syn/build/risc5.svf" as the
+   configuration file for the FPGA. You will get a bootable SD card which
+   contains the Oberon system as loadable modules. If you need the sources,
+   you have to transfer them to the SD card as described by typing "make",
+   using "PCLink2.Run" on the Oberon side and "make run-link" on the PC.
 
 5) Re-building the Oberon distribution kit on an FPGA-based RISC5 system
    Prerequisites: 4) above
+   Change your working directory to kit/rebuild/fpga, then type
+   "make", and follow the instructions. You will get a file tree
+   "kit/New", which contains the sources (copied) as well as the
+   re-generated binaries. "New" should compare equal to the "Stable"
+   tree. This can be checked by doing a "make check". Note that there
+   is currently a small discrepancy in the Math.rsc file, due to the
+   fact that the FPU hardware does not conform to IEEE 754, in contrast
+   to the simulator, which does. You can clean up the rebuild directory
+   with "make clean". This does not delete the "New" directory.
 
