@@ -62,8 +62,8 @@ Device Address Map
 
    0       FFFFC0     millisecond timer
    1       FFFFC4     switches, LEDs
-   2       FFFFC8     serial line data
-   3       FFFFCC     serial line status/ctrl
+   2       FFFFC8     serial line 0 data
+   3       FFFFCC     serial line 0 status/ctrl
    4       FFFFD0     SPI data
    5       FFFFD4     SPI status/ctrl
    6       FFFFD8     mouse data, keyboard status
@@ -75,7 +75,7 @@ Device Address Map
   12       FFFFF0
   13       FFFFF4
   14       FFFFF8
-  15       FFFFFC
+  15       FFFFFC     shutdown device (simulator only)
 
 
 
@@ -84,16 +84,16 @@ Extended Device Address Map
 
  xdevice   address    function
 
-   0       FFFF80     high precision timer data
-   1       FFFF84     high precision timer status/ctrl
+   0       FFFF80     high precision timer 0 data
+   1       FFFF84     high precision timer 0 status/ctrl
    2       FFFF88     LCD data
    3       FFFF8C     LCD status/ctrl
-   4       FFFF90
+   4       FFFF90     buttons and switches
    5       FFFF94
-   6       FFFF98
-   7       FFFF9C
-   8       FFFFA0
-   9       FFFFA4
+   6       FFFF98     high precision timer 1 data
+   7       FFFF9C     high precision timer 1 status/ctrl
+   8       FFFFA0     serial line 1 data
+   9       FFFFA4     serial line 1 status/ctrl
   10       FFFFA8
   11       FFFFAC
   12       FFFFB0

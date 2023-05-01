@@ -66,3 +66,20 @@
 	tag version 1.0 (the last version that contains both Oberon
 	implementations, RISC5 *and* ECO32)
 	delete all ECO32 parts from the master branch
+
+
+01-May-2023
+	Add new and/or enhanced I/O devices:
+	1. Add interrupt control to the millisecond timer.
+	3. Add a new flag "transmitter empty" to the RS232 controller.
+	2. Add interrupt control to the RS232 controller.
+	4. The SD card controller now allows to inquire the card's capacity.
+	5. Add a "shutdown device" (only usable in the simulator).
+	   Writing to this device terminates the simulator with an exit
+	   code. This is needed to automate running tests on the simulator.
+	6. Add interrupt control to the high precision timer.
+	7. Add a new controller for button/switches which can detect button
+	   press/release actions in hardware, and can trigger an interrupt
+	   on specific actions.
+	8. Add a second high precision timer.
+	9. Add a second RS232 controller.

@@ -34,10 +34,13 @@
 #define MSEC_PER_CHAR	(10 * (1000.0 / BAUD_RATE))
 #define INST_PER_CHAR	((int)(INST_PER_MSEC * MSEC_PER_CHAR + 0.5))
 
-#define IRQ_HPT		15			/* high prec timer IRQ */
+#define IRQ_HPT_0	15			/* high prec timer 0 IRQ */
+#define IRQ_HPT_1	14			/* high prec timer 1 IRQ */
 #define IRQ_TIMER	11			/* millisec timer IRQ */
-#define IRQ_RS232_RCV	7			/* RS232 receive IRQ */
-#define IRQ_RS232_XMT	6			/* RS232 transmit IRQ */
+#define IRQ_RS232_0_RCV	7			/* RS232 0 receive IRQ */
+#define IRQ_RS232_0_XMT	6			/* RS232 0 transmit IRQ */
+#define IRQ_RS232_1_RCV	5			/* RS232 1 receive IRQ */
+#define IRQ_RS232_1_XMT	4			/* RS232 1 transmit IRQ */
 #define IRQ_BUTTONS	3			/* buttons IRQ */
 
 #define RAM_BASE	0x00000000		/* byte address */
@@ -76,16 +79,24 @@ void cpuResetInterrupt(int priority);
  */
 
 
+#define TIMER_IEN		0x01
+
+
 static Word milliSeconds;
+static Word timerControl;
+static Bool timerExpired;
 
 
 void tickTimer(void) {
   static int count = 0;
 
-  if (count++ == INST_PER_MSEC) {
+  if (++count == INST_PER_MSEC) {
     count = 0;
     milliSeconds++;
-    cpuSetInterrupt(IRQ_TIMER);
+    timerExpired = true;
+    if (timerControl & TIMER_IEN) {
+      cpuSetInterrupt(IRQ_TIMER);
+    }
   }
 }
 
@@ -96,21 +107,37 @@ void tickTimer(void) {
  *     return milliseconds counter value
  */
 Word readTimer(void) {
-  cpuResetInterrupt(IRQ_TIMER);
+  timerExpired = false;
+  if (timerControl & TIMER_IEN) {
+    cpuResetInterrupt(IRQ_TIMER);
+  }
   return milliSeconds;
 }
 
 
 /*
  * write device 0:
- *     ignore
+ *     control
+ *     { 31'bx, ien }
  */
 void writeTimer(Word data) {
+  if (data & TIMER_IEN) {
+    timerControl |= TIMER_IEN;
+  } else {
+    timerControl &= ~TIMER_IEN;
+  }
+  if ((timerControl & TIMER_IEN) && timerExpired) {
+    cpuSetInterrupt(IRQ_TIMER);
+  } else {
+    cpuResetInterrupt(IRQ_TIMER);
+  }
 }
 
 
 void initTimer(void) {
   milliSeconds = 0;
+  timerControl = 0;
+  timerExpired = false;
 }
 
 
@@ -179,41 +206,64 @@ void initSWLED(Word initialSwitches) {
 /**************************************************************/
 
 /*
- * I/O devices 2, 3: RS232
+ * I/O devices 2, 3: RS232 0
  */
 
 
 #define SERIAL_RCV_RDY		0x01
 #define SERIAL_XMT_RDY		0x02
+#define SERIAL_XMT_EMPTY	0x04
+
+#define SERIAL_RCV_RDY_IEN	0x01
+#define SERIAL_XMT_RDY_IEN	0x02
+#define SERIAL_XMT_EMPTY_IEN	0x04
 
 
-static FILE *serialIn;
-static FILE *serialOut;
-static Word serialRxData;
-static Word serialTxData;
-static Word serialStatus;
+static FILE *serialIn_0;
+static FILE *serialOut_0;
+static Word serialRcvData_0;
+static Word serialXmtData_0;
+static Word serialStatus_0;
+static Word serialControl_0;
 
 
-void tickSerial(void) {
-  static int rxCount = 0;
-  static int txCount = 0;
+void tickRS232_0(void) {
+  static int rcvCount = 0;
+  static int xmtCount = 0;
+  static int emptyCount = 0;
   int c;
 
-  if (rxCount++ == INST_PER_CHAR) {
-    rxCount = 0;
-    c = fgetc(serialIn);
+  if (rcvCount++ == INST_PER_CHAR) {
+    rcvCount = 0;
+    c = fgetc(serialIn_0);
     if (c != EOF) {
-      serialRxData = c & 0xFF;
-      serialStatus |= SERIAL_RCV_RDY;
-      cpuSetInterrupt(IRQ_RS232_RCV);
+      serialRcvData_0 = c & 0xFF;
+      serialStatus_0 |= SERIAL_RCV_RDY;
+      if (serialControl_0 & SERIAL_RCV_RDY_IEN) {
+        cpuSetInterrupt(IRQ_RS232_0_RCV);
+      }
     }
   }
-  if ((serialStatus & SERIAL_XMT_RDY) == 0) {
-    if (txCount++ == INST_PER_CHAR) {
-      txCount = 0;
-      fputc(serialTxData & 0xFF, serialOut);
-      serialStatus |= SERIAL_XMT_RDY;
-      cpuSetInterrupt(IRQ_RS232_XMT);
+  if ((serialStatus_0 & SERIAL_XMT_RDY) == 0) {
+    if (xmtCount++ == INST_PER_CHAR) {
+      xmtCount = 0;
+      emptyCount = 0;
+      fputc(serialXmtData_0 & 0xFF, serialOut_0);
+      serialStatus_0 |= SERIAL_XMT_RDY;
+      if (serialControl_0 & SERIAL_XMT_RDY_IEN) {
+        cpuSetInterrupt(IRQ_RS232_0_XMT);
+      }
+    }
+  } else {
+    if ((serialStatus_0 & SERIAL_XMT_EMPTY) == 0) {
+      // one character delay until transmitter empty
+      if (emptyCount++ == INST_PER_CHAR) {
+        emptyCount = 0;
+        serialStatus_0 |= SERIAL_XMT_EMPTY;
+        if (serialControl_0 & SERIAL_XMT_EMPTY_IEN) {
+          cpuSetInterrupt(IRQ_RS232_0_XMT);
+        }
+      }
     }
   }
 }
@@ -222,62 +272,98 @@ void tickSerial(void) {
 /*
  * read device 2:
  *     receiver data
- *     { 24'bx, rx_data[7:0] }
+ *     { 24'bx, rcv_data[7:0] }
  */
-Word readRS232data(void) {
-  serialStatus &= ~SERIAL_RCV_RDY;
-  cpuResetInterrupt(IRQ_RS232_RCV);
-  return serialRxData;
+Word readRS232data_0(void) {
+  serialStatus_0 &= ~SERIAL_RCV_RDY;
+  if (serialControl_0 & SERIAL_RCV_RDY_IEN) {
+    cpuResetInterrupt(IRQ_RS232_0_RCV);
+  }
+  return serialRcvData_0;
 }
 
 
 /*
  * write device 2:
  *     transmitter data
- *     { 24'bx, tx_data[7:0] }
+ *     { 24'bx, xmt_data[7:0] }
  */
-void writeRS232data(Word data) {
-  serialTxData = data & 0xFF;
-  serialStatus &= ~SERIAL_XMT_RDY;
-  cpuResetInterrupt(IRQ_RS232_XMT);
+void writeRS232data_0(Word data) {
+  serialXmtData_0 = data & 0xFF;
+  serialStatus_0 &= ~(SERIAL_XMT_RDY | SERIAL_XMT_EMPTY);
+  if (serialControl_0 & (SERIAL_XMT_RDY_IEN | SERIAL_XMT_EMPTY_IEN)) {
+    cpuResetInterrupt(IRQ_RS232_0_XMT);
+  }
 }
 
 
 /*
  * read device 3:
  *     status
- *     { 30'bx, tx_rdy, rx_rdy }
+ *     { 29'bx, xmt_empty, xmt_rdy, rcv_rdy }
  */
-Word readRS232ctrl(void) {
-  return serialStatus;
+Word readRS232ctrl_0(void) {
+  return serialStatus_0;
 }
 
 
 /*
  * write device 3:
  *     control
- *     { 29'bx, bitrate[2:0] }
- *     bitrate: 000 =   2400 bps
- *              001 =   4800 bps
- *              010 =   9600 bps (default)
- *              011 =  19200 bps
- *              100 =  31250 bps
- *              101 =  38400 bps
- *              110 =  57600 bps
- *              111 = 115200 bps
+ *     { set_baud, baud[2:0], 25'bx,
+ *       xmt_empty_ien, xmt_rdy_ien, rcv_rdy_ien }
+ *     baud    baud rate
+ *     000     2400
+ *     001     4800
+ *     010     9600    (default)
+ *     011     19200
+ *     100     31250   (for MIDI)
+ *     101     38400
+ *     110     57600
+ *     111     115200
  */
-void writeRS232ctrl(Word data) {
-  /* ignore bitrate in simulation */
+void writeRS232ctrl_0(Word data) {
+  /* handle interrupt control */
+  if (data & SERIAL_RCV_RDY_IEN) {
+    serialControl_0 |= SERIAL_RCV_RDY_IEN;
+  } else {
+    serialControl_0 &= ~SERIAL_RCV_RDY_IEN;
+  }
+  if ((serialControl_0 & SERIAL_RCV_RDY_IEN) &&
+      (serialStatus_0 & SERIAL_RCV_RDY)) {
+    cpuSetInterrupt(IRQ_RS232_0_RCV);
+  } else {
+    cpuResetInterrupt(IRQ_RS232_0_RCV);
+  }
+  if (data & SERIAL_XMT_RDY_IEN) {
+    serialControl_0 |= SERIAL_XMT_RDY_IEN;
+  } else {
+    serialControl_0 &= ~SERIAL_XMT_RDY_IEN;
+  }
+  if (data & SERIAL_XMT_EMPTY_IEN) {
+    serialControl_0 |= SERIAL_XMT_EMPTY_IEN;
+  } else {
+    serialControl_0 &= ~SERIAL_XMT_EMPTY_IEN;
+  }
+  if (((serialControl_0 & SERIAL_XMT_RDY_IEN) &&
+       (serialStatus_0 & SERIAL_XMT_RDY)) ||
+      ((serialControl_0 & SERIAL_XMT_EMPTY_IEN) &&
+       (serialStatus_0 & SERIAL_XMT_EMPTY))) {
+    cpuSetInterrupt(IRQ_RS232_0_XMT);
+  } else {
+    cpuResetInterrupt(IRQ_RS232_0_XMT);
+  }
+  /* ignore setting the baud rate in simulation */
 }
 
 
-void initRS232(void) {
+void initRS232_0(void) {
   int master;
   char slavePath[100];
   FILE *serdevFile;
 
-  serialIn = NULL;
-  serialOut = NULL;
+  serialIn_0 = NULL;
+  serialOut_0 = NULL;
   master = open("/dev/ptmx", O_RDWR | O_NONBLOCK);
   if (master < 0) {
     error("cannot open pseudo terminal master for serial line");
@@ -285,7 +371,7 @@ void initRS232(void) {
   grantpt(master);
   unlockpt(master);
   strcpy(slavePath, ptsname(master));
-  printf("The serial line can be accessed by opening device '%s'.\n",
+  printf("Serial line 0 can be accessed by opening device '%s'.\n",
          slavePath);
   serdevFile = fopen(SERDEV_FILE, "w");
   if (serdevFile == NULL) {
@@ -295,13 +381,13 @@ void initRS232(void) {
   fclose(serdevFile);
   printf("This path was also written to file '%s'.\n", SERDEV_FILE);
   fcntl(master, F_SETFL, O_NONBLOCK);
-  serialIn = fdopen(master, "r");
-  setvbuf(serialIn, NULL, _IONBF, 0);
-  serialOut = fdopen(master, "w");
-  setvbuf(serialOut, NULL, _IONBF, 0);
-  while (fgetc(serialIn) != EOF) ;
-  serialStatus = SERIAL_XMT_RDY;
-  cpuSetInterrupt(IRQ_RS232_XMT);
+  serialIn_0 = fdopen(master, "r");
+  setvbuf(serialIn_0, NULL, _IONBF, 0);
+  serialOut_0 = fdopen(master, "w");
+  setvbuf(serialOut_0, NULL, _IONBF, 0);
+  while (fgetc(serialIn_0) != EOF) ;
+  serialStatus_0 = SERIAL_XMT_RDY | SERIAL_XMT_EMPTY;
+  serialControl_0 = 0;
 }
 
 
@@ -330,7 +416,9 @@ void initRS232(void) {
 #define DISK_WRT1	3
 
 
-static Bool debugDisk = false;
+static Bool debugDiskSectorOp = false;
+static Bool debugDiskCommand = false;
+static Bool debugDiskRdWrWord = false;
 
 static FILE *diskImage;
 static int diskState;
@@ -341,9 +429,14 @@ static Word diskTxBuf[128 + 2];
 static int diskTxCnt;
 static int diskTxIdx;
 
+static Byte csd[16] = {
+  0x40, 0x0E, 0x00, 0x32, 0x5B, 0x59, 0x00, 0x00,
+  0x00, 0x00, 0x7F, 0x80, 0x0A, 0x40, 0x40, 0xC3,
+};
+
 
 static void diskSeekSector(Word secnum) {
-  if (debugDisk) {
+  if (debugDiskSectorOp) {
     printf("DISK: seek to sector 0x%08X\n", secnum);
   }
   if (diskImage == NULL) {
@@ -357,7 +450,7 @@ static void diskReadSector(Word *buf) {
   Byte bytes[512];
   int i;
 
-  if (debugDisk) {
+  if (debugDiskSectorOp) {
     printf("DISK: read sector\n");
   }
   if (diskImage == NULL) {
@@ -379,7 +472,7 @@ static void diskWriteSector(Word *buf) {
   Byte bytes[512];
   int i;
 
-  if (debugDisk) {
+  if (debugDiskSectorOp) {
     printf("DISK: write sector\n");
   }
   if (diskImage == NULL) {
@@ -400,14 +493,29 @@ static void diskWriteSector(Word *buf) {
 static void diskRunCmd(void) {
   Word cmd;
   Word arg;
+  int i;
 
   cmd = diskRxBuf[0];
   arg = diskRxBuf[1] << 24 |
         diskRxBuf[2] << 16 |
         diskRxBuf[3] <<  8 |
         diskRxBuf[4] <<  0;
+  if (debugDiskCommand) {
+    printf("DISK: cmd = 0x%02X, arg = 0x%08X\n", cmd, arg);
+  }
   switch (cmd) {
-    case 81:
+    case 64+9:
+      /* CMD9: send CSD */
+      diskState = DISK_READ;
+      diskTxBuf[0] = 0;
+      diskTxBuf[1] = 254;
+      for (i = 0; i < 16; i++) {
+        diskTxBuf[2 + i] = csd[i];
+      }
+      diskTxCnt = 2 + 16;
+      break;
+    case 64+17:
+      /* CMD17: read single block */
       diskState = DISK_READ;
       diskTxBuf[0] = 0;
       diskTxBuf[1] = 254;
@@ -415,13 +523,15 @@ static void diskRunCmd(void) {
       diskReadSector(diskTxBuf + 2);
       diskTxCnt = 2 + 128;
       break;
-    case 88:
+    case 64+24:
+      /* CMD24: write single block */
       diskState = DISK_WRT0;
       diskSeekSector(arg - diskOffset);
       diskTxBuf[0] = 0;
       diskTxCnt = 1;
       break;
     default:
+      /* all other commands */
       diskTxBuf[0] = 0;
       diskTxCnt = 1;
       break;
@@ -438,7 +548,7 @@ static Word diskRead(void) {
   } else {
     result = 255;
   }
-  if (debugDisk) {
+  if (debugDiskRdWrWord) {
     printf("DISK: read, result = 0x%08X\n", result);
   }
   return result;
@@ -446,7 +556,7 @@ static Word diskRead(void) {
 
 
 static void diskWrite(Word value) {
-  if (debugDisk) {
+  if (debugDiskRdWrWord) {
     printf("DISK: write, value = 0x%08X, state = %d\n",
            value, diskState);
   }
@@ -495,6 +605,10 @@ static void diskWrite(Word value) {
 
 
 void diskInit(char *diskName) {
+  long numBytes;
+  Word numSectors;
+  Word csize;
+
   if (diskName == NULL) {
     diskImage = NULL;
     return;
@@ -503,6 +617,21 @@ void diskInit(char *diskName) {
   if (diskImage == NULL) {
     error("cannot open disk file '%s'", diskName);
   }
+  /* determine disk capacity and set CSD */
+  fseek(diskImage, 0, SEEK_END);
+  numBytes = ftell(diskImage);
+  fseek(diskImage, 0, SEEK_SET);
+  if (numBytes % (1024 * 512) != 0) {
+    printf("Warning: disk image '%s' is not "
+           "a multiple of 1024 sectors.\n",
+           diskName);
+  }
+  numSectors = numBytes / 512;
+  csize = numSectors / 1024 - 1;
+  csd[7] = (csize >> 16) & 0x3F;
+  csd[8] = (csize >>  8) & 0xFF;
+  csd[9] = (csize >>  0) & 0xFF;
+  /* init SD card controller */
   diskState = DISK_CMD;
   diskSeekSector(0);
   diskReadSector(diskTxBuf);
@@ -681,7 +810,7 @@ void initMouseKeybd(void) {
  * read device 8:
  *     ignore, return 0
  */
-Word readGPIO_0(void) {
+Word readGPIOdata(void) {
   return 0;
 }
 
@@ -690,7 +819,7 @@ Word readGPIO_0(void) {
  * write device 8:
  *     ignore
  */
-void writeGPIO_0(Word data) {
+void writeGPIOdata(Word data) {
 }
 
 
@@ -698,7 +827,7 @@ void writeGPIO_0(Word data) {
  * read device 9:
  *     ignore, return 0
  */
-Word readGPIO_1(void) {
+Word readGPIOdir(void) {
   return 0;
 }
 
@@ -707,11 +836,40 @@ Word readGPIO_1(void) {
  * write device 9:
  *     ignore
  */
-void writeGPIO_1(Word data) {
+void writeGPIOdir(Word data) {
 }
 
 
 void initGPIO(void) {
+}
+
+
+/**************************************************************/
+
+/*
+ * I/O device 15: Shutdown
+ */
+
+
+/*
+ * read device 15:
+ *     it is an error to read from the shutdown device
+ */
+Word readShutdown(void) {
+  error("read from shutdown device");
+  /* never reached */
+  return 0;
+}
+
+
+/*
+ * write device 15:
+ *     exit simulator with lowest 8 bits of value as status
+ */
+void writeShutdown(Word data) {
+  graphExit();
+  printf("RISC5 simulator shutdown\n");
+  exit(data & 0xFF);
 }
 
 
@@ -734,10 +892,10 @@ Word readIO(int dev) {
       data = readSwitches();
       break;
     case 2:
-      data = readRS232data();
+      data = readRS232data_0();
       break;
     case 3:
-      data = readRS232ctrl();
+      data = readRS232ctrl_0();
       break;
     case 4:
       data = readSPIdata();
@@ -752,10 +910,13 @@ Word readIO(int dev) {
       data = readKeybd();
       break;
     case 8:
-      data = readGPIO_0();
+      data = readGPIOdata();
       break;
     case 9:
-      data = readGPIO_1();
+      data = readGPIOdir();
+      break;
+    case 15:
+      data = readShutdown();
       break;
     default:
       error("reading from unknown I/O device %d", dev);
@@ -775,10 +936,10 @@ void writeIO(int dev, Word data) {
       writeLEDs(data);
       break;
     case 2:
-      writeRS232data(data);
+      writeRS232data_0(data);
       break;
     case 3:
-      writeRS232ctrl(data);
+      writeRS232ctrl_0(data);
       break;
     case 4:
       writeSPIdata(data);
@@ -793,10 +954,13 @@ void writeIO(int dev, Word data) {
       writeKeybd(data);
       break;
     case 8:
-      writeGPIO_0(data);
+      writeGPIOdata(data);
       break;
     case 9:
-      writeGPIO_1(data);
+      writeGPIOdir(data);
+      break;
+    case 15:
+      writeShutdown(data);
       break;
     default:
       error("writing to unknown I/O device %d, data = 0x%08X",
@@ -809,32 +973,36 @@ void writeIO(int dev, Word data) {
 /**************************************************************/
 
 /*
- * Extended I/O devices 0, 1: high precision timer
+ * Extended I/O devices 0, 1: high precision timer 0
  */
 
 
 #define HPT_EXPIRED		0x01
+#define HPT_IEN			0x01
 
 #define HPT_SCALING		100
 
 
-static Word HPTcounter;
-static Word HPTdivisor;
-static Word HPTstatus;
+static Word HPTcounter_0;
+static Word HPTdivisor_0;
+static Word HPTstatus_0;
+static Word HPTcontrol_0;
 
 
-static void tickHPTcounter(int clockCycles) {
-  if (HPTcounter <= clockCycles) {
-    HPTcounter += HPTdivisor - clockCycles;
-    HPTstatus |= HPT_EXPIRED;
-    cpuSetInterrupt(IRQ_HPT);
+static void tickHPTcounter_0(int clockCycles) {
+  if (HPTcounter_0 <= clockCycles) {
+    HPTcounter_0 += HPTdivisor_0 - clockCycles;
+    HPTstatus_0 |= HPT_EXPIRED;
+    if (HPTcontrol_0 & HPT_IEN) {
+      cpuSetInterrupt(IRQ_HPT_0);
+    }
   } else {
-    HPTcounter -= clockCycles;
+    HPTcounter_0 -= clockCycles;
   }
 }
 
 
-void tickHPT(void) {
+void tickHPT_0(void) {
   static int accumulator = 0;
   int clockCycles;
 
@@ -849,7 +1017,7 @@ void tickHPT(void) {
     clockCycles++;
   }
   if (clockCycles > 0) {
-    tickHPTcounter(clockCycles);
+    tickHPTcounter_0(clockCycles);
   }
 }
 
@@ -859,8 +1027,8 @@ void tickHPT(void) {
  *     HPT counter
  *     { data[31:0] }
  */
-Word readHPTdata(void) {
-  return HPTcounter;
+Word readHPTdata_0(void) {
+  return HPTcounter_0;
 }
 
 
@@ -869,10 +1037,10 @@ Word readHPTdata(void) {
  *     HPT divisor
  *     { data[31:0] }
  */
-void writeHPTdata(Word data) {
-  HPTdivisor = data;
+void writeHPTdata_0(Word data) {
+  HPTdivisor_0 = data;
   /* must also reset the counter */
-  HPTcounter = data;
+  HPTcounter_0 = data;
 }
 
 
@@ -881,12 +1049,14 @@ void writeHPTdata(Word data) {
  *     HPT status
  *     { 31'bx, expired }
  */
-Word readHPTctrl(void) {
+Word readHPTctrl_0(void) {
   Word data;
 
-  data = HPTstatus;
-  HPTstatus &= ~HPT_EXPIRED;
-  cpuResetInterrupt(IRQ_HPT);
+  data = HPTstatus_0;
+  HPTstatus_0 &= ~HPT_EXPIRED;
+  if (HPTcontrol_0 & HPT_IEN) {
+    cpuResetInterrupt(IRQ_HPT_0);
+  }
   return data;
 }
 
@@ -894,16 +1064,28 @@ Word readHPTctrl(void) {
 /*
  * write extended device 1:
  *     HPT ctrl
- *     ignore
+ *     { 31'bx, ien }
  */
-void writeHPTctrl(Word data) {
+void writeHPTctrl_0(Word data) {
+  if (data & HPT_IEN) {
+    HPTcontrol_0 |= HPT_IEN;
+  } else {
+    HPTcontrol_0 &= ~HPT_IEN;
+  }
+  if ((HPTcontrol_0 & HPT_IEN) &&
+      (HPTstatus_0 & HPT_EXPIRED)) {
+    cpuSetInterrupt(IRQ_HPT_0);
+  } else {
+    cpuResetInterrupt(IRQ_HPT_0);
+  }
 }
 
 
-void initHPT(void) {
-  HPTdivisor = 0xFFFFFFFF;
-  HPTcounter = 0xFFFFFFFF;
-  HPTstatus = 0;
+void initHPT_0(void) {
+  HPTdivisor_0 = 0xFFFFFFFF;
+  HPTcounter_0 = 0xFFFFFFFF;
+  HPTstatus_0 = 0;
+  HPTcontrol_0 = 0;
 }
 
 
@@ -1231,6 +1413,402 @@ void initLCD(void) {
 /**************************************************************/
 
 /*
+ * Extended I/O device 4: BTNSWT
+ */
+
+
+#define PRESS_SHIFT		28
+#define RELEASE_SHIFT		24
+#define BUTTON_SHIFT		8
+
+#define NUM_BUTTONS		4
+#define BUTTON_MASK		((1 << NUM_BUTTONS) - 1)
+
+#define NUM_SWITCHES		8
+#define SWITCH_MASK		((1 << NUM_SWITCHES) - 1)
+
+#define ALL_STATES		((BUTTON_MASK << BUTTON_SHIFT) | SWITCH_MASK)
+#define PRESS_MASK		(BUTTON_MASK << PRESS_SHIFT)
+#define RELEASE_MASK		(BUTTON_MASK << RELEASE_SHIFT)
+#define ALL_EDGES		(PRESS_MASK | RELEASE_MASK)
+
+
+static Bool debugBTNSWT = false;
+
+static Word BTNSWTstatus;
+static Word BTNSWTcontrol;
+
+
+void setBTNSWT(Word data) {
+  Word before, after;
+  Word raising, falling;
+
+  if (debugBTNSWT) {
+    printf("DEBUG: enter setBTNSWT(data)\n");
+    printf("       BTNSWTstatus  = 0x%08X\n", BTNSWTstatus);
+    printf("       data          = 0x%08X\n", data);
+  }
+  before = (BTNSWTstatus >> BUTTON_SHIFT) & BUTTON_MASK;
+  after = (data >> BUTTON_SHIFT) & BUTTON_MASK;
+  raising = (~before & after) << PRESS_SHIFT;
+  falling = (before & ~after) << RELEASE_SHIFT;
+  if (debugBTNSWT) {
+    printf("DEBUG: raising       = 0x%08X\n", raising);
+    printf("       falling       = 0x%08X\n", falling);
+  }
+  BTNSWTstatus = (BTNSWTstatus & ~ALL_STATES) | (data & ALL_STATES);
+  BTNSWTstatus |= raising | falling;
+  if (debugBTNSWT) {
+    printf("DEBUG: leave setBTNSWT()\n");
+    printf("       BTNSWTstatus  = 0x%08X\n", BTNSWTstatus);
+    printf("       BTNSWTcontrol = 0x%08X\n", BTNSWTcontrol);
+  }
+  if (BTNSWTstatus & BTNSWTcontrol) {
+    cpuSetInterrupt(IRQ_BUTTONS);
+  } else {
+    cpuResetInterrupt(IRQ_BUTTONS);
+  }
+}
+
+
+/*
+ * read extended device 4:
+ *     return button and switch status
+ *     { press[3:0], release[3:0], 12'bx, button[3:0], switch[7:0] }
+ *     reset all press/release bits
+ */
+Word readBTNSWT(void) {
+  Word data;
+
+  data = BTNSWTstatus;
+  BTNSWTstatus &= ~ALL_EDGES;
+  cpuResetInterrupt(IRQ_BUTTONS);
+  return data;
+}
+
+
+/*
+ * write extended device 4:
+ *     set interrupt control bits
+ *     { press[3:0], release[3:0], 24'bx }
+ */
+void writeBTNSWT(Word data) {
+  BTNSWTcontrol = data & ALL_EDGES;
+  if (BTNSWTstatus & BTNSWTcontrol) {
+    cpuSetInterrupt(IRQ_BUTTONS);
+  } else {
+    cpuResetInterrupt(IRQ_BUTTONS);
+  }
+}
+
+
+void initBTNSWT(Word initialBtnSwt) {
+  if (debugBTNSWT) {
+    printf("DEBUG: BUTTON_MASK = 0x%08X\n", BUTTON_MASK);
+    printf("       SWITCH_MASK = 0x%08X\n", SWITCH_MASK);
+    printf("       ALL_STATES  = 0x%08X\n", ALL_STATES);
+    printf("       ALL_EDGES   = 0x%08X\n", ALL_EDGES);
+  }
+  BTNSWTstatus = initialBtnSwt & ALL_STATES;
+  BTNSWTcontrol = 0;
+}
+
+
+/**************************************************************/
+
+/*
+ * Extended I/O devices 6, 7: high precision timer 1
+ */
+
+
+static Word HPTcounter_1;
+static Word HPTdivisor_1;
+static Word HPTstatus_1;
+static Word HPTcontrol_1;
+
+
+static void tickHPTcounter_1(int clockCycles) {
+  if (HPTcounter_1 <= clockCycles) {
+    HPTcounter_1 += HPTdivisor_1 - clockCycles;
+    HPTstatus_1 |= HPT_EXPIRED;
+    if (HPTcontrol_1 & HPT_IEN) {
+      cpuSetInterrupt(IRQ_HPT_1);
+    }
+  } else {
+    HPTcounter_1 -= clockCycles;
+  }
+}
+
+
+void tickHPT_1(void) {
+  static int accumulator = 0;
+  int clockCycles;
+
+  /*
+   * approximate possibly non-integer CC_PER_INST by the
+   * integer ratio (CC_PER_INST * HPT_SCALING) / HPT_SCALING
+   */
+  accumulator += (int) (CC_PER_INST * HPT_SCALING + 0.5);
+  clockCycles = 0;
+  while (accumulator >= HPT_SCALING) {
+    accumulator -= HPT_SCALING;
+    clockCycles++;
+  }
+  if (clockCycles > 0) {
+    tickHPTcounter_1(clockCycles);
+  }
+}
+
+
+/*
+ * read extended device 6:
+ *     HPT counter
+ *     { data[31:0] }
+ */
+Word readHPTdata_1(void) {
+  return HPTcounter_1;
+}
+
+
+/*
+ * write extended device 6:
+ *     HPT divisor
+ *     { data[31:0] }
+ */
+void writeHPTdata_1(Word data) {
+  HPTdivisor_1 = data;
+  /* must also reset the counter */
+  HPTcounter_1 = data;
+}
+
+
+/*
+ * read extended device 7:
+ *     HPT status
+ *     { 31'bx, expired }
+ */
+Word readHPTctrl_1(void) {
+  Word data;
+
+  data = HPTstatus_1;
+  HPTstatus_1 &= ~HPT_EXPIRED;
+  if (HPTcontrol_1 & HPT_IEN) {
+    cpuResetInterrupt(IRQ_HPT_1);
+  }
+  return data;
+}
+
+
+/*
+ * write extended device 7:
+ *     HPT ctrl
+ *     { 31'bx, ien }
+ */
+void writeHPTctrl_1(Word data) {
+  if (data & HPT_IEN) {
+    HPTcontrol_1 |= HPT_IEN;
+  } else {
+    HPTcontrol_1 &= ~HPT_IEN;
+  }
+  if ((HPTcontrol_1 & HPT_IEN) &&
+      (HPTstatus_1 & HPT_EXPIRED)) {
+    cpuSetInterrupt(IRQ_HPT_1);
+  } else {
+    cpuResetInterrupt(IRQ_HPT_1);
+  }
+}
+
+
+void initHPT_1(void) {
+  HPTdivisor_1 = 0xFFFFFFFF;
+  HPTcounter_1 = 0xFFFFFFFF;
+  HPTstatus_1 = 0;
+  HPTcontrol_1 = 0;
+}
+
+
+/**************************************************************/
+
+/*
+ * Extended I/O devices 8, 9: RS232 1
+ */
+
+
+static FILE *serialIn_1;
+static FILE *serialOut_1;
+static Word serialRcvData_1;
+static Word serialXmtData_1;
+static Word serialStatus_1;
+static Word serialControl_1;
+
+
+void tickRS232_1(void) {
+  static int rcvCount = 0;
+  static int xmtCount = 0;
+  static int emptyCount = 0;
+  int c;
+
+  if (rcvCount++ == INST_PER_CHAR) {
+    rcvCount = 0;
+    c = fgetc(serialIn_1);
+    if (c != EOF) {
+      serialRcvData_1 = c & 0xFF;
+      serialStatus_1 |= SERIAL_RCV_RDY;
+      if (serialControl_1 & SERIAL_RCV_RDY_IEN) {
+        cpuSetInterrupt(IRQ_RS232_1_RCV);
+      }
+    }
+  }
+  if ((serialStatus_1 & SERIAL_XMT_RDY) == 0) {
+    if (xmtCount++ == INST_PER_CHAR) {
+      xmtCount = 0;
+      emptyCount = 0;
+      fputc(serialXmtData_1 & 0xFF, serialOut_1);
+      serialStatus_1 |= SERIAL_XMT_RDY;
+      if (serialControl_1 & SERIAL_XMT_RDY_IEN) {
+        cpuSetInterrupt(IRQ_RS232_1_XMT);
+      }
+    }
+  } else {
+    if ((serialStatus_1 & SERIAL_XMT_EMPTY) == 0) {
+      // one character delay until transmitter empty
+      if (emptyCount++ == INST_PER_CHAR) {
+        emptyCount = 0;
+        serialStatus_1 |= SERIAL_XMT_EMPTY;
+        if (serialControl_1 & SERIAL_XMT_EMPTY_IEN) {
+          cpuSetInterrupt(IRQ_RS232_1_XMT);
+        }
+      }
+    }
+  }
+}
+
+
+/*
+ * read extended device 8:
+ *     receiver data
+ *     { 24'bx, rcv_data[7:0] }
+ */
+Word readRS232data_1(void) {
+  serialStatus_1 &= ~SERIAL_RCV_RDY;
+  if (serialControl_1 & SERIAL_RCV_RDY_IEN) {
+    cpuResetInterrupt(IRQ_RS232_1_RCV);
+  }
+  return serialRcvData_1;
+}
+
+
+/*
+ * write extended device 8:
+ *     transmitter data
+ *     { 24'bx, xmt_data[7:0] }
+ */
+void writeRS232data_1(Word data) {
+  serialXmtData_1 = data & 0xFF;
+  serialStatus_1 &= ~(SERIAL_XMT_RDY | SERIAL_XMT_EMPTY);
+  if (serialControl_1 & (SERIAL_XMT_RDY_IEN | SERIAL_XMT_EMPTY_IEN)) {
+    cpuResetInterrupt(IRQ_RS232_1_XMT);
+  }
+}
+
+
+/*
+ * read extended device 9:
+ *     status
+ *     { 29'bx, xmt_empty, xmt_rdy, rcv_rdy }
+ */
+Word readRS232ctrl_1(void) {
+  return serialStatus_1;
+}
+
+
+/*
+ * write extended device 9:
+ *     control
+ *     { set_baud, baud[2:0], 25'bx,
+ *       xmt_empty_ien, xmt_rdy_ien, rcv_rdy_ien }
+ *     baud    baud rate
+ *     000     2400
+ *     001     4800
+ *     010     9600    (default)
+ *     011     19200
+ *     100     31250   (for MIDI)
+ *     101     38400
+ *     110     57600
+ *     111     115200
+ */
+void writeRS232ctrl_1(Word data) {
+  /* handle interrupt control */
+  if (data & SERIAL_RCV_RDY_IEN) {
+    serialControl_1 |= SERIAL_RCV_RDY_IEN;
+  } else {
+    serialControl_1 &= ~SERIAL_RCV_RDY_IEN;
+  }
+  if ((serialControl_1 & SERIAL_RCV_RDY_IEN) &&
+      (serialStatus_1 & SERIAL_RCV_RDY)) {
+    cpuSetInterrupt(IRQ_RS232_1_RCV);
+  } else {
+    cpuResetInterrupt(IRQ_RS232_1_RCV);
+  }
+  if (data & SERIAL_XMT_RDY_IEN) {
+    serialControl_1 |= SERIAL_XMT_RDY_IEN;
+  } else {
+    serialControl_1 &= ~SERIAL_XMT_RDY_IEN;
+  }
+  if (data & SERIAL_XMT_EMPTY_IEN) {
+    serialControl_1 |= SERIAL_XMT_EMPTY_IEN;
+  } else {
+    serialControl_1 &= ~SERIAL_XMT_EMPTY_IEN;
+  }
+  if (((serialControl_1 & SERIAL_XMT_RDY_IEN) &&
+       (serialStatus_1 & SERIAL_XMT_RDY)) ||
+      ((serialControl_1 & SERIAL_XMT_EMPTY_IEN) &&
+       (serialStatus_1 & SERIAL_XMT_EMPTY))) {
+    cpuSetInterrupt(IRQ_RS232_1_XMT);
+  } else {
+    cpuResetInterrupt(IRQ_RS232_1_XMT);
+  }
+  /* ignore setting the baud rate in simulation */
+}
+
+
+void initRS232_1(void) {
+  int master;
+  char slavePath[100];
+  FILE *serdevFile;
+
+  serialIn_1 = NULL;
+  serialOut_1 = NULL;
+  master = open("/dev/ptmx", O_RDWR | O_NONBLOCK);
+  if (master < 0) {
+    error("cannot open pseudo terminal master for serial line");
+  }
+  grantpt(master);
+  unlockpt(master);
+  strcpy(slavePath, ptsname(master));
+  printf("Serial line 1 can be accessed by opening device '%s'.\n",
+         slavePath);
+  serdevFile = fopen(SERDEV_FILE, "a");
+  if (serdevFile == NULL) {
+    error("cannot open file for writing serial device path");
+  }
+  fprintf(serdevFile, "%s\n", slavePath);
+  fclose(serdevFile);
+  printf("This path was also written to file '%s'.\n", SERDEV_FILE);
+  fcntl(master, F_SETFL, O_NONBLOCK);
+  serialIn_1 = fdopen(master, "r");
+  setvbuf(serialIn_1, NULL, _IONBF, 0);
+  serialOut_1 = fdopen(master, "w");
+  setvbuf(serialOut_1, NULL, _IONBF, 0);
+  while (fgetc(serialIn_1) != EOF) ;
+  serialStatus_1 = SERIAL_XMT_RDY | SERIAL_XMT_EMPTY;
+  serialControl_1 = 0;
+}
+
+
+/**************************************************************/
+
+/*
  * Extended I/O : address of device n = XIO_BASE + 4 * n
  *                this can be expressed in decimal as -4 * (32 - n)
  */
@@ -1241,16 +1819,31 @@ Word readXIO(int dev) {
 
   switch (dev) {
     case 0:
-      data = readHPTdata();
+      data = readHPTdata_0();
       break;
     case 1:
-      data = readHPTctrl();
+      data = readHPTctrl_0();
       break;
     case 2:
       data = readLCDdata();
       break;
     case 3:
       data = readLCDctrl();
+      break;
+    case 4:
+      data = readBTNSWT();
+      break;
+    case 6:
+      data = readHPTdata_1();
+      break;
+    case 7:
+      data = readHPTctrl_1();
+      break;
+    case 8:
+      data = readRS232data_1();
+      break;
+    case 9:
+      data = readRS232ctrl_1();
       break;
     default:
       error("reading from unknown extended I/O device %d", dev);
@@ -1264,16 +1857,31 @@ Word readXIO(int dev) {
 void writeXIO(int dev, Word data) {
   switch (dev) {
     case 0:
-      writeHPTdata(data);
+      writeHPTdata_0(data);
       break;
     case 1:
-      writeHPTctrl(data);
+      writeHPTctrl_0(data);
       break;
     case 2:
       writeLCDdata(data);
       break;
     case 3:
       writeLCDctrl(data);
+      break;
+    case 4:
+      writeBTNSWT(data);
+      break;
+    case 6:
+      writeHPTdata_1(data);
+      break;
+    case 7:
+      writeHPTctrl_1(data);
+      break;
+    case 8:
+      writeRS232data_1(data);
+      break;
+    case 9:
+      writeRS232ctrl_1(data);
       break;
     default:
       error("writing to unknown extended I/O device %d, data = 0x%08X",
@@ -2056,8 +2664,10 @@ void cpuResetBreak(void) {
 
 void cpuStep(void) {
   tickTimer();
-  tickSerial();
-  tickHPT();
+  tickRS232_0();
+  tickRS232_1();
+  tickHPT_0();
+  tickHPT_1();
   execNextInstruction();
   handleInterrupts();
 }
@@ -2067,8 +2677,10 @@ void cpuRun(void) {
   run = true;
   while (run) {
     tickTimer();
-    tickSerial();
-    tickHPT();
+    tickRS232_0();
+    tickRS232_1();
+    tickHPT_0();
+    tickHPT_1();
     execNextInstruction();
     handleInterrupts();
     if (breakSet && pc == breakAddr) {
@@ -3028,6 +3640,8 @@ static void doSwitches(char *tokens[], int n) {
       return;
     }
     setSwitches(cs);
+    /* feed the second interface also */
+    setBTNSWT(cs);
   } else {
     helpSwitches();
   }
@@ -3218,11 +3832,14 @@ int main(int argc, char *argv[]) {
   }
   initTimer();
   initSWLED(initialSwitches);
-  initRS232();
+  initBTNSWT(initialSwitches);
+  initRS232_0();
+  initRS232_1();
   initSPI(diskName);
   initMouseKeybd();
   initGPIO();
-  initHPT();
+  initHPT_0();
+  initHPT_1();
   initLCD();
   graphInit();
   promInit(promName);

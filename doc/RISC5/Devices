@@ -1,5 +1,5 @@
 
-High Performance Timer (HPTMR)
+High Precision Timer 0 (HPTMR)
 ==============================
 
 IRQ:  15
@@ -73,6 +73,27 @@ format: { press_ien[3:0], release_ien[3:0], 24'bx }
 Note: I/O device "SWTLED" remains functional also
 
 
+High Precision Timer 1 (HPTMR)
+==============================
+
+IRQ:  14
+base: 0xFFFF98
+
+Other than a different IRQ and a different base address, this
+timer is an exact duplicate of High Precision Timer 0 (see above).
+
+
+Serial Line 1 (RS232)
+=====================
+
+IRQ:  XMT = 4
+      RCV = 5
+base: 0xFFFFA0
+
+Other than different IRQs and a different base address, this
+serial line is an exact duplicate of Serial Line 0 (see below).
+
+
 Millisecond Timer (MSTMR)
 =========================
 
@@ -110,8 +131,8 @@ format: { 24'bx, led[7:0] }
 Note: I/O device "BTNSWT" offers a better interface to buttons
 
 
-Serial Line (RS232)
-===================
+Serial Line 0 (RS232)
+=====================
 
 IRQ:  XMT = 6
       RCV = 7
@@ -131,10 +152,15 @@ format: { 24'bx, xmt_data[7:0] }
 reset xmt interrupt
 
 (C)
-format: { 30'bx, xmt_rdy, rcv_rdy }
+format: { 29'bx, xmt_empty, xmt_rdy, rcv_rdy }
+rcv_rdy indicates:   a byte has been received and can be read
+xmt_rdy indicates:   a byte can be written to the transmitter
+xmt_empty indicates: the transmitter has no more bits to send, i.e.,
+                     it is safe to change transmission parameters
 
 (D)
-format: { set_baud, baud[2:0], 26'bx, xmt_ien, rcv_ien }
+format: { set_baud, baud[2:0], 25'bx,
+          xmt_empty_ien, xmt_rdy_ien, rcv_rdy_ien }
 if set_baud = 0 : ignore the 3 bits defining the baud rate
 if set_baud = 1 : set baud rate according to the following table
    baud     baud rate
@@ -146,6 +172,10 @@ if set_baud = 1 : set baud rate according to the following table
       5     38400
       6     57600
       7     115200
+
+Note: RCV IRQ set <=> (rcv_rdy AND rcv_rdy_ien)
+      XMT IRQ set <=> (xmt_rdy AND xmt_rdy_ien) OR
+                      (xmt_empty AND xmt_empty_ien)
 
 
 Serial Peripheral Interface (SPI)
@@ -170,4 +200,24 @@ format: { 31'bx, spi_rdy }
 
 (D)
 format: { 28'bx, net_en, fast, wifi_sel, sdc_sel }
+
+
+Shutdown Device (simulator only)
+================================
+
+IRQ:  --
+base: 0xFFFFFC
+
+addr    read            write
+-----------------------------------
++0      data (A)        data (B)
+
+(A)
+format: { 32'bx }
+reading from the shutdown device results in a fatal error
+
+(B)
+format: { 24'bx, data[7:0] }
+writing to the shutdown device results in terminating the simulator
+(with the lowest 8 bits of the data as the simulator's exit status)
 
