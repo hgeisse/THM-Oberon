@@ -1,6 +1,6 @@
 //
 // prom.v -- PROM interface and PROM simulation
-//           512 x 32 bit = 2 KB
+//           1024 x 32 bit = 4 KB
 //
 
 
@@ -15,11 +15,11 @@ module prom(clk, rst,
     input rst;
     input stb;
     input we;
-    input [10:2] addr;
+    input [11:2] addr;
     output reg [31:0] data_out;
     output reg ack;
 
-  reg [31:0] mem[0:511];
+  reg [31:0] mem[0:1023];
 
   initial begin
     $readmemh("../prom.mem", mem);
