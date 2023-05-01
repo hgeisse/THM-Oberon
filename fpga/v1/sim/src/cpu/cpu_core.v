@@ -67,6 +67,7 @@ module cpu_core(clk, rst,
   reg C;			// flag register "carry"
   reg V;			// flag register "overflow"
   reg I;			// interrupt enable flag
+  reg P;			// previous interrupt enable flag
   reg [4:0] ACK;		// interrupt most recently acknowledged
   reg [15:0] MASK;		// interrupt request mask
   wire put_spc;			// put special register
@@ -194,7 +195,7 @@ module cpu_core(clk, rst,
         X <= reg_do2;
       end
       if (irq_ack) begin
-        X <= { N, Z, C, V, I, 3'b000, pc[23:0] };
+        X <= { 8'h00, pc[23:0] };
       end
     end
     // PSW
@@ -204,6 +205,7 @@ module cpu_core(clk, rst,
       C <= 1'b0;
       V <= 1'b0;
       I <= 1'b0;
+      P <= 1'b0;
       ACK <= 5'b00000;
       MASK <= 16'h0000;
     end else begin
@@ -213,6 +215,7 @@ module cpu_core(clk, rst,
         C <= reg_do2[29];
         V <= reg_do2[28];
         I <= reg_do2[27];
+        P <= reg_do2[26];
         ACK <= reg_do2[20:16];
         MASK <= reg_do2[15:0];
       end
@@ -229,14 +232,11 @@ module cpu_core(clk, rst,
       end
       if (irq_ack) begin
         I <= 1'b0;
+        P <= I;
         ACK <= { 1'b0, irq_prio[3:0] };
       end
       if (irq_ret) begin
-        N <= X[31];
-        Z <= X[30];
-        C <= X[29];
-        V <= X[28];
-        I <= X[27];
+        I <= P;
       end
     end
   end
@@ -254,7 +254,7 @@ module cpu_core(clk, rst,
     (ir_c == 4'h0) ? ID :
     (ir_c == 4'h1) ? H :
     (ir_c == 4'h2) ? X :
-    (ir_c == 4'h3) ? { N, Z, C, V, I, 6'h00, ACK[4:0], MASK[15:0] } :
+    (ir_c == 4'h3) ? { N, Z, C, V, I, P, 5'h00, ACK[4:0], MASK[15:0] } :
     32'hxxxxxxxx;
   assign alu_op2 =
     (alu_src2 == 3'b000) ? 32'h00000004 :	// next instr

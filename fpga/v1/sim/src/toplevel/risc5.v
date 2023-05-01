@@ -84,7 +84,7 @@ module risc5(clk_in,
     .rst(rst),
     .stb(prom_stb),
     .we(bus_we),
-    .addr(bus_addr[10:2]),
+    .addr(bus_addr[11:2]),
     .data_out(prom_dout[31:0]),
     .ack(prom_ack)
   );
