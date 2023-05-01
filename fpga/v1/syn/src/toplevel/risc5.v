@@ -412,11 +412,11 @@ module risc5(clk_in,
   // bus interrupt request assignments
   //--------------------------------------
 
-  assign bus_irq[15] = tmr_irq;
+  assign bus_irq[15] = 1'b0;
   assign bus_irq[14] = 1'b0;
   assign bus_irq[13] = 1'b0;
   assign bus_irq[12] = 1'b0;
-  assign bus_irq[11] = 1'b0;
+  assign bus_irq[11] = tmr_irq;
   assign bus_irq[10] = 1'b0;
   assign bus_irq[ 9] = 1'b0;
   assign bus_irq[ 8] = 1'b0;
