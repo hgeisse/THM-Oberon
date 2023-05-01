@@ -237,6 +237,8 @@ module risc5(clk_in,
     .clk(clk),
     .rst(rst),
     .stb(tmr_stb),
+    .we(bus_we),
+    .data_in(bus_dout[31:0]),
     .data_out(tmr_dout[31:0]),
     .ack(tmr_ack),
     .irq(tmr_irq)

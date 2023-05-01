@@ -7,18 +7,22 @@
 `default_nettype none
 
 
-module tmr(clk, rst, stb, data_out, ack, irq);
+module tmr(clk, rst, stb, we, data_in, data_out, ack, irq);
     input clk;
     input rst;
     input stb;
+    input we;
+    input [31:0] data_in;
     output [31:0] data_out;
     output ack;
-    output reg irq;
+    output irq;
 
   wire millisec;
   reg [15:0] cnt0;
   reg [31:0] cnt1;
   reg tick;
+  reg expired;
+  reg ien;
 
   assign millisec = (cnt0[15:0] == 16'd49999);
 
@@ -50,14 +54,24 @@ module tmr(clk, rst, stb, data_out, ack, irq);
 
   always @(posedge clk) begin
     if (rst) begin
-      irq <= 1'b0;
+      expired <= 1'b0;
     end else begin
       if (tick) begin
-        irq <= 1'b1;
+        expired <= 1'b1;
       end else begin
-        if (stb) begin
-          irq <= 1'b0;
+        if (stb & ~we) begin
+          expired <= 1'b0;
         end
+      end
+    end
+  end
+
+  always @(posedge clk) begin
+    if (rst) begin
+      ien <= 1'b0;
+    end else begin
+      if (stb & we) begin
+        ien <= data_in[0];
       end
     end
   end
@@ -65,5 +79,7 @@ module tmr(clk, rst, stb, data_out, ack, irq);
   assign data_out[31:0] = cnt1[31:0];
 
   assign ack = stb;
+
+  assign irq = expired & ien;
 
 endmodule
