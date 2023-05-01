@@ -52,7 +52,12 @@ module risc5(clk_in,
              key3_n,
              key2_n,
              key1_n,
-             sw
+             sw,
+             lcd_on,
+             lcd_en,
+             lcd_rw,
+             lcd_rs,
+             lcd_data
             );
 
     // clock and reset
@@ -110,6 +115,12 @@ module risc5(clk_in,
     input key2_n;
     input key1_n;
     input [17:0] sw;
+    // LCD
+    output lcd_on;
+    output lcd_en;
+    output lcd_rw;
+    output lcd_rs;
+    inout [7:0] lcd_data;
 
   // clk_rst
   wire clk_ok;				// clocks stable
@@ -168,6 +179,10 @@ module risc5(clk_in,
   wire [31:0] hpt_0_dout;		// high prec timer 0 data output
   wire hpt_0_ack;			// high prec timer 0 acknowledge
   wire hpt_0_irq;			// high prec timer 0 interrupt request
+  // lcd
+  wire lcd_stb;				// LCD strobe
+  wire [31:0] lcd_dout;			// LCD data output
+  wire lcd_ack;				// LCD acknowledge
   // hpt 1
   wire hpt_1_stb;			// high prec timer 1 strobe
   wire [31:0] hpt_1_dout;		// high prec timer 1 data output
@@ -349,6 +364,22 @@ module risc5(clk_in,
     .irq(hpt_0_irq)
   );
 
+  lcd lcd_0(
+    .clk(clk),
+    .rst(rst),
+    .stb(lcd_stb),
+    .we(bus_we),
+    .addr(bus_addr[2]),
+    .data_in(bus_dout[31:0]),
+    .data_out(lcd_dout[31:0]),
+    .ack(lcd_ack),
+    .lcd_on(lcd_on),
+    .lcd_en(lcd_en),
+    .lcd_rw(lcd_rw),
+    .lcd_rs(lcd_rs),
+    .lcd_data(lcd_data[7:0])
+  );
+
   hpt hpt_1(
     .clk(clk),
     .rst(rst),
@@ -414,6 +445,8 @@ module risc5(clk_in,
                      && bus_addr[7:6] == 2'b10) ? 1'b1 : 1'b0;
   assign hpt_0_stb =
     (x_i_o_stb == 1'b1 && bus_addr[5:3] == 3'b000) ? 1'b1 : 1'b0;
+  assign lcd_stb =
+    (x_i_o_stb == 1'b1 && bus_addr[5:3] == 3'b001) ? 1'b1 : 1'b0;
   assign hpt_1_stb =
     (x_i_o_stb == 1'b1 && bus_addr[5:3] == 3'b011) ? 1'b1 : 1'b0;
   assign ser_1_stb =
@@ -432,6 +465,7 @@ module risc5(clk_in,
     sdc_stb   ? sdc_dout[31:0]   :
     kbd_stb   ? kbd_dout[31:0]   :
     hpt_0_stb ? hpt_0_dout[31:0] :
+    lcd_stb   ? lcd_dout[31:0]   :
     hpt_1_stb ? hpt_1_dout[31:0] :
     ser_1_stb ? ser_1_dout[31:0] :
     32'h00000000;
@@ -445,6 +479,7 @@ module risc5(clk_in,
     sdc_stb   ? sdc_ack   :
     kbd_stb   ? kbd_ack   :
     hpt_0_stb ? hpt_0_ack :
+    lcd_stb   ? lcd_ack   :
     hpt_1_stb ? hpt_1_ack :
     ser_1_stb ? ser_1_ack :
     1'b0;

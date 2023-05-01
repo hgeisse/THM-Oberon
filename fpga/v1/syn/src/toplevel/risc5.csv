@@ -296,6 +296,23 @@ sw[1],Input,PIN_AC28,5,B5_N2,2.5 V,
 sw[0],Input,PIN_AB28,5,B5_N1,2.5 V,
 
 #
+# LCD
+#
+#lcd_blon,Output,PIN_L6,1,B1_N2,3.3-V LVTTL,
+lcd_on,Output,PIN_L5,1,B1_N1,3.3-V LVTTL,
+lcd_en,Output,PIN_L4,1,B1_N1,3.3-V LVTTL,
+lcd_rw,Output,PIN_M1,1,B1_N2,3.3-V LVTTL,
+lcd_rs,Output,PIN_M2,1,B1_N2,3.3-V LVTTL,
+lcd_data[7],Bidir,PIN_M5,1,B1_N2,3.3-V LVTTL,
+lcd_data[6],Bidir,PIN_M3,1,B1_N1,3.3-V LVTTL,
+lcd_data[5],Bidir,PIN_K2,1,B1_N1,3.3-V LVTTL,
+lcd_data[4],Bidir,PIN_K1,1,B1_N1,3.3-V LVTTL,
+lcd_data[3],Bidir,PIN_K7,1,B1_N1,3.3-V LVTTL,
+lcd_data[2],Bidir,PIN_L2,1,B1_N2,3.3-V LVTTL,
+lcd_data[1],Bidir,PIN_L1,1,B1_N2,3.3-V LVTTL,
+lcd_data[0],Bidir,PIN_L3,1,B1_N1,3.3-V LVTTL,
+
+#
 # SRAM
 #
 #sram_addr[19],Output,PIN_T8,2,B2_N1,3.3-V LVTTL,
@@ -488,19 +505,6 @@ sw[0],Input,PIN_AB28,5,B5_N1,2.5 V,
 #I2C_SCLK,Output,PIN_B7,8,B8_N1,3.3-V LVTTL,
 #I2C_SDAT,Bidir,PIN_A8,8,B8_N1,3.3-V LVTTL,
 #IRDA_RXD,Input,PIN_Y15,3,B3_N0,3.3-V LVTTL,
-#LCD_BLON,Output,PIN_L6,1,B1_N2,3.3-V LVTTL,
-#LCD_DATA[7],Bidir,PIN_M5,1,B1_N2,3.3-V LVTTL,
-#LCD_DATA[6],Bidir,PIN_M3,1,B1_N1,3.3-V LVTTL,
-#LCD_DATA[5],Bidir,PIN_K2,1,B1_N1,3.3-V LVTTL,
-#LCD_DATA[4],Bidir,PIN_K1,1,B1_N1,3.3-V LVTTL,
-#LCD_DATA[3],Bidir,PIN_K7,1,B1_N1,3.3-V LVTTL,
-#LCD_DATA[2],Bidir,PIN_L2,1,B1_N2,3.3-V LVTTL,
-#LCD_DATA[1],Bidir,PIN_L1,1,B1_N2,3.3-V LVTTL,
-#LCD_DATA[0],Bidir,PIN_L3,1,B1_N1,3.3-V LVTTL,
-#LCD_EN,Output,PIN_L4,1,B1_N1,3.3-V LVTTL,
-#LCD_ON,Output,PIN_L5,1,B1_N1,3.3-V LVTTL,
-#LCD_RS,Output,PIN_M2,1,B1_N2,3.3-V LVTTL,
-#LCD_RW,Output,PIN_M1,1,B1_N2,3.3-V LVTTL,
 #OTG_ADDR[1],Output,PIN_C3,8,B8_N2,3.3-V LVTTL,
 #OTG_ADDR[0],Output,PIN_H7,1,B1_N0,3.3-V LVTTL,
 #OTG_CS_N,Output,PIN_A3,8,B8_N2,3.3-V LVTTL,
