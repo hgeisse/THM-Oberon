@@ -7,11 +7,12 @@
 `default_nettype none
 
 
-module rcv(clk, rst, bit_len, full, parallel_out, serial_in);
+module rcv(clk, rst, bit_len,
+           sr_full, parallel_out, serial_in);
     input clk;
     input rst;
     input [15:0] bit_len;
-    output reg full;
+    output reg sr_full;
     output [7:0] parallel_out;
     input serial_in;
 
@@ -31,10 +32,10 @@ module rcv(clk, rst, bit_len, full, parallel_out, serial_in);
   always @(posedge clk) begin
     if (rst) begin
       state <= 4'h0;
-      full <= 1'b0;
+      sr_full <= 1'b0;
     end else begin
       if (state == 4'h0) begin
-        full <= 1'b0;
+        sr_full <= 1'b0;
         if (serial_s == 1'b0) begin
           state <= 4'h1;
           count <= { 1'b0, bit_len[15:1] };
@@ -42,7 +43,7 @@ module rcv(clk, rst, bit_len, full, parallel_out, serial_in);
       end else
       if (state == 4'hb) begin
         state <= 4'h0;
-        full <= 1'b1;
+        sr_full <= 1'b1;
       end else begin
         if (count == 16'd0) begin
           state <= state + 4'h1;

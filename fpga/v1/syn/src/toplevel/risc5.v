@@ -142,10 +142,12 @@ module risc5(clk_in,
   wire bio_stb;				// board i/o strobe
   wire [31:0] bio_dout;			// board i/o data output
   wire bio_ack;				// board i/o acknowledge
-  // ser
-  wire ser_stb;				// serial line strobe
-  wire [31:0] ser_dout;			// serial line data output
-  wire ser_ack;				// serial line acknowledge
+  // ser 0
+  wire ser_0_stb;			// serial line 0 strobe
+  wire [31:0] ser_0_dout;		// serial line 0 data output
+  wire ser_0_ack;			// serial line 0 acknowledge
+  wire ser_0_rcv_irq;			// serial line 0 rcv interrupt request
+  wire ser_0_xmt_irq;			// serial line 0 xmt interrupt request
   // sdc
   wire sdc_stb;				// SDC strobe
   wire [31:0] sdc_dout;			// SDC data output
@@ -271,12 +273,14 @@ module risc5(clk_in,
   ser ser_0(
     .clk(clk),
     .rst(rst),
-    .stb(ser_stb),
+    .stb(ser_0_stb),
     .we(bus_we),
     .addr(bus_addr[2]),
     .data_in(bus_dout[31:0]),
-    .data_out(ser_dout[31:0]),
-    .ack(ser_ack),
+    .data_out(ser_0_dout[31:0]),
+    .ack(ser_0_ack),
+    .rcv_irq(ser_0_rcv_irq),
+    .xmt_irq(ser_0_xmt_irq),
     .rxd(rs232_0_rxd),
     .txd(rs232_0_txd)
   );
@@ -336,7 +340,7 @@ module risc5(clk_in,
     (i_o_stb == 1'b1 && bus_addr[5:2] == 4'b0000) ? 1'b1 : 1'b0;
   assign bio_stb =
     (i_o_stb == 1'b1 && bus_addr[5:2] == 4'b0001) ? 1'b1 : 1'b0;
-  assign ser_stb =
+  assign ser_0_stb =
     (i_o_stb == 1'b1 && bus_addr[5:3] == 3'b001) ? 1'b1 : 1'b0;
   assign sdc_stb =
     (i_o_stb == 1'b1 && bus_addr[5:3] == 3'b010) ? 1'b1 : 1'b0;
@@ -348,23 +352,23 @@ module risc5(clk_in,
   //--------------------------------------
 
   assign bus_din[31:0] =
-    prom_stb ? prom_dout[31:0] :
-    ram_stb  ? ram_dout[31:0]  :
-    tmr_stb  ? tmr_dout[31:0]  :
-    bio_stb  ? bio_dout[31:0]  :
-    ser_stb  ? ser_dout[31:0]  :
-    sdc_stb  ? sdc_dout[31:0]  :
-    kbd_stb  ? kbd_dout[31:0]  :
+    prom_stb  ? prom_dout[31:0]  :
+    ram_stb   ? ram_dout[31:0]   :
+    tmr_stb   ? tmr_dout[31:0]   :
+    bio_stb   ? bio_dout[31:0]   :
+    ser_0_stb ? ser_0_dout[31:0] :
+    sdc_stb   ? sdc_dout[31:0]   :
+    kbd_stb   ? kbd_dout[31:0]   :
     32'h00000000;
 
   assign bus_ack =
-    prom_stb ? prom_ack :
-    ram_stb  ? ram_ack  :
-    tmr_stb  ? tmr_ack  :
-    bio_stb  ? bio_ack  :
-    ser_stb  ? ser_ack  :
-    sdc_stb  ? sdc_ack  :
-    kbd_stb  ? kbd_ack  :
+    prom_stb  ? prom_ack  :
+    ram_stb   ? ram_ack   :
+    tmr_stb   ? tmr_ack   :
+    bio_stb   ? bio_ack   :
+    ser_0_stb ? ser_0_ack :
+    sdc_stb   ? sdc_ack   :
+    kbd_stb   ? kbd_ack   :
     1'b0;
 
   //--------------------------------------
@@ -379,8 +383,8 @@ module risc5(clk_in,
   assign bus_irq[10] = 1'b0;
   assign bus_irq[ 9] = 1'b0;
   assign bus_irq[ 8] = 1'b0;
-  assign bus_irq[ 7] = 1'b0;
-  assign bus_irq[ 6] = 1'b0;
+  assign bus_irq[ 7] = ser_0_rcv_irq;
+  assign bus_irq[ 6] = ser_0_xmt_irq;
   assign bus_irq[ 5] = 1'b0;
   assign bus_irq[ 4] = 1'b0;
   assign bus_irq[ 3] = 1'b0;
