@@ -385,6 +385,10 @@ set_location_assignment PIN_G12 -to rs232_0_rxd
 set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to rs232_0_rxd
 set_location_assignment PIN_G9 -to rs232_0_txd
 set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to rs232_0_txd
+set_location_assignment PIN_J13 -to rs232_1_rxd
+set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to rs232_1_rxd
+set_location_assignment PIN_G14 -to rs232_1_txd
+set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to rs232_1_txd
 set_location_assignment PIN_G13 -to vga_hsync
 set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to vga_hsync
 set_location_assignment PIN_C13 -to vga_vsync
@@ -459,6 +463,33 @@ set_location_assignment PIN_G5 -to ps2_1_clk
 set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to ps2_1_clk
 set_location_assignment PIN_F5 -to ps2_1_data
 set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to ps2_1_data
+set_location_assignment PIN_M5 -to lcd_data[7]
+set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to lcd_data[7]
+set_location_assignment PIN_M3 -to lcd_data[6]
+set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to lcd_data[6]
+set_location_assignment PIN_K2 -to lcd_data[5]
+set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to lcd_data[5]
+set_location_assignment PIN_K1 -to lcd_data[4]
+set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to lcd_data[4]
+set_location_assignment PIN_K7 -to lcd_data[3]
+set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to lcd_data[3]
+set_location_assignment PIN_L2 -to lcd_data[2]
+set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to lcd_data[2]
+set_location_assignment PIN_L1 -to lcd_data[1]
+set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to lcd_data[1]
+set_location_assignment PIN_L3 -to lcd_data[0]
+set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to lcd_data[0]
+set_location_assignment PIN_L4 -to lcd_en
+set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to lcd_en
+set_location_assignment PIN_L5 -to lcd_on
+set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to lcd_on
+set_location_assignment PIN_M2 -to lcd_rs
+set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to lcd_rs
+set_location_assignment PIN_M1 -to lcd_rw
+set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to lcd_rw
+set_global_assignment -name VERILOG_FILE ../src/bsw/bsw.v
+set_global_assignment -name VERILOG_FILE ../src/hpt/hpt.v
+set_global_assignment -name VERILOG_FILE ../src/lcd/lcd.v
 set_global_assignment -name VERILOG_FILE ../src/kbd/mouse.v
 set_global_assignment -name VERILOG_FILE ../src/kbd/keybd.v
 set_global_assignment -name VERILOG_FILE ../src/kbd/kbd.v
