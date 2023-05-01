@@ -346,10 +346,9 @@ module risc5(clk_in,
   // address decoder (16 MB addr space)
   //--------------------------------------
 
-  // PROM: 2 KB @ 0xFFE000
+  // PROM: 4 KB @ 0xFFE000
   assign prom_stb =
-    (bus_stb == 1'b1 && bus_addr[23:12] == 12'hFFE
-                     && bus_addr[11] == 1'b0) ? 1'b1 : 1'b0;
+    (bus_stb == 1'b1 && bus_addr[23:12] == 12'hFFE) ? 1'b1 : 1'b0;
 
   // RAM: (16 MB - 8 KB) @ 0x000000
   assign ram_stb =
