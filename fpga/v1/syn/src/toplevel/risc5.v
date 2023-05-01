@@ -168,6 +168,11 @@ module risc5(clk_in,
   wire [31:0] hpt_0_dout;		// high prec timer 0 data output
   wire hpt_0_ack;			// high prec timer 0 acknowledge
   wire hpt_0_irq;			// high prec timer 0 interrupt request
+  // hpt 1
+  wire hpt_1_stb;			// high prec timer 1 strobe
+  wire [31:0] hpt_1_dout;		// high prec timer 1 data output
+  wire hpt_1_ack;			// high prec timer 1 acknowledge
+  wire hpt_1_irq;			// high prec timer 1 interrupt request
   // ser 1
   wire ser_1_stb;			// serial line 1 strobe
   wire [31:0] ser_1_dout;		// serial line 1 data output
@@ -344,6 +349,18 @@ module risc5(clk_in,
     .irq(hpt_0_irq)
   );
 
+  hpt hpt_1(
+    .clk(clk),
+    .rst(rst),
+    .stb(hpt_1_stb),
+    .we(bus_we),
+    .addr(bus_addr[2]),
+    .data_in(bus_dout[31:0]),
+    .data_out(hpt_1_dout[31:0]),
+    .ack(hpt_1_ack),
+    .irq(hpt_1_irq)
+  );
+
   ser ser_1(
     .clk(clk),
     .rst(rst),
@@ -397,6 +414,8 @@ module risc5(clk_in,
                      && bus_addr[7:6] == 2'b10) ? 1'b1 : 1'b0;
   assign hpt_0_stb =
     (x_i_o_stb == 1'b1 && bus_addr[5:3] == 3'b000) ? 1'b1 : 1'b0;
+  assign hpt_1_stb =
+    (x_i_o_stb == 1'b1 && bus_addr[5:3] == 3'b011) ? 1'b1 : 1'b0;
   assign ser_1_stb =
     (x_i_o_stb == 1'b1 && bus_addr[5:3] == 3'b100) ? 1'b1 : 1'b0;
 
@@ -413,6 +432,7 @@ module risc5(clk_in,
     sdc_stb   ? sdc_dout[31:0]   :
     kbd_stb   ? kbd_dout[31:0]   :
     hpt_0_stb ? hpt_0_dout[31:0] :
+    hpt_1_stb ? hpt_1_dout[31:0] :
     ser_1_stb ? ser_1_dout[31:0] :
     32'h00000000;
 
@@ -425,6 +445,7 @@ module risc5(clk_in,
     sdc_stb   ? sdc_ack   :
     kbd_stb   ? kbd_ack   :
     hpt_0_stb ? hpt_0_ack :
+    hpt_1_stb ? hpt_1_ack :
     ser_1_stb ? ser_1_ack :
     1'b0;
 
@@ -433,7 +454,7 @@ module risc5(clk_in,
   //--------------------------------------
 
   assign bus_irq[15] = hpt_0_irq;
-  assign bus_irq[14] = 1'b0;
+  assign bus_irq[14] = hpt_1_irq;
   assign bus_irq[13] = 1'b0;
   assign bus_irq[12] = 1'b0;
   assign bus_irq[11] = tmr_irq;
