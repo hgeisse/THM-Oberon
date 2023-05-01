@@ -1,0 +1,22 @@
+  //--------------------------------------
+  // address decoder (16 MB addr space)
+  //--------------------------------------
+
+  // PROM: 2 KB @ 0xFFE000
+  assign prom_stb =
+    (bus_stb == 1'b1 && bus_addr[23:12] == 12'hFFE
+                     && bus_addr[11] == 1'b0) ? 1'b1 : 1'b0;
+
+  // RAM: (16 MB - 8 KB) @ 0x000000
+  assign ram_stb =
+    (bus_stb == 1'b1 && bus_addr[23:13] != 11'h7FF) ? 1'b1 : 1'b0;
+
+  // VID: 96 KB @ 0xFE0000
+  assign vid_stb =
+    (bus_stb == 1'b1 && bus_addr[23:17] == 7'h7F
+                     && bus_addr[16:15] != 2'b11) ? 1'b1 : 1'b0;
+
+  // I/O: 64 bytes (16 words) @ 0xFFFFC0
+  assign i_o_stb =
+    (bus_stb == 1'b1 && bus_addr[23:8] == 16'hFFFF
+                     && bus_addr[7:6] == 2'b11) ? 1'b1 : 1'b0;

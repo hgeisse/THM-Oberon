@@ -29,6 +29,7 @@ int main(int argc, char *argv[]) {
   int any_change;
   int selected;
 
+  printf("\n");
   printf("ADDR        PROM    RAM     VIDEO   I/O\n");
   printf("---------------------------------------\n");
   prom = UNDEF;
@@ -77,5 +78,6 @@ int main(int argc, char *argv[]) {
     /* increment address */
     addr = (addr + 1) & ADDR_MASK;
   } while (addr != 0);
+  printf("\n");
   return 0;
 }
