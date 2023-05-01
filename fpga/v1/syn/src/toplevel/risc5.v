@@ -183,6 +183,11 @@ module risc5(clk_in,
   wire lcd_stb;				// LCD strobe
   wire [31:0] lcd_dout;			// LCD data output
   wire lcd_ack;				// LCD acknowledge
+  // bsw
+  wire bsw_stb;				// buttons/switches strobe
+  wire [31:0] bsw_dout;			// buttons/switches data output
+  wire bsw_ack;				// buttons/switches acknowledge
+  wire bsw_irq;				// buttons/switches interrupt request
   // hpt 1
   wire hpt_1_stb;			// high prec timer 1 strobe
   wire [31:0] hpt_1_dout;		// high prec timer 1 data output
@@ -380,6 +385,19 @@ module risc5(clk_in,
     .lcd_data(lcd_data[7:0])
   );
 
+  bsw bsw_0(
+    .clk(clk),
+    .rst(rst),
+    .stb(bsw_stb),
+    .we(bus_we),
+    .data_in(bus_dout[31:0]),
+    .data_out(bsw_dout[31:0]),
+    .ack(bsw_ack),
+    .irq(bsw_irq),
+    .keys_n({ key3_n, key2_n, key1_n, rst_in_n }),
+    .sw(sw[7:0])
+  );
+
   hpt hpt_1(
     .clk(clk),
     .rst(rst),
@@ -447,6 +465,8 @@ module risc5(clk_in,
     (x_i_o_stb == 1'b1 && bus_addr[5:3] == 3'b000) ? 1'b1 : 1'b0;
   assign lcd_stb =
     (x_i_o_stb == 1'b1 && bus_addr[5:3] == 3'b001) ? 1'b1 : 1'b0;
+  assign bsw_stb =
+    (x_i_o_stb == 1'b1 && bus_addr[5:2] == 4'b0100) ? 1'b1 : 1'b0;
   assign hpt_1_stb =
     (x_i_o_stb == 1'b1 && bus_addr[5:3] == 3'b011) ? 1'b1 : 1'b0;
   assign ser_1_stb =
@@ -466,6 +486,7 @@ module risc5(clk_in,
     kbd_stb   ? kbd_dout[31:0]   :
     hpt_0_stb ? hpt_0_dout[31:0] :
     lcd_stb   ? lcd_dout[31:0]   :
+    bsw_stb   ? bsw_dout[31:0]   :
     hpt_1_stb ? hpt_1_dout[31:0] :
     ser_1_stb ? ser_1_dout[31:0] :
     32'h00000000;
@@ -480,6 +501,7 @@ module risc5(clk_in,
     kbd_stb   ? kbd_ack   :
     hpt_0_stb ? hpt_0_ack :
     lcd_stb   ? lcd_ack   :
+    bsw_stb   ? bsw_ack   :
     hpt_1_stb ? hpt_1_ack :
     ser_1_stb ? ser_1_ack :
     1'b0;
@@ -500,7 +522,7 @@ module risc5(clk_in,
   assign bus_irq[ 6] = ser_0_xmt_irq;
   assign bus_irq[ 5] = ser_1_rcv_irq;
   assign bus_irq[ 4] = ser_1_xmt_irq;
-  assign bus_irq[ 3] = 1'b0;
+  assign bus_irq[ 3] = bsw_irq;
   assign bus_irq[ 2] = 1'b0;
   assign bus_irq[ 1] = 1'b0;
   assign bus_irq[ 0] = 1'b0;
