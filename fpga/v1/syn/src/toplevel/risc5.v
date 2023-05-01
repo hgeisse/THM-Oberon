@@ -33,6 +33,8 @@ module risc5(clk_in,
              ps2_1_data,
              rs232_0_rxd,
              rs232_0_txd,
+             rs232_1_rxd,
+             rs232_1_txd,
              sdcard_ss_n,
              sdcard_sclk,
              sdcard_mosi,
@@ -82,9 +84,12 @@ module risc5(clk_in,
     // mouse
     inout ps2_1_clk;
     inout ps2_1_data;
-    // RS-232
+    // RS-232 0
     input rs232_0_rxd;
     output rs232_0_txd;
+    // RS-232 1
+    input rs232_1_rxd;
+    output rs232_1_txd;
     // SD card
     output sdcard_ss_n;
     output sdcard_sclk;
@@ -156,6 +161,14 @@ module risc5(clk_in,
   wire kbd_stb;				// keyboard strobe
   wire [31:0] kbd_dout;			// keyboard data output
   wire kbd_ack;				// keyboard acknowledge
+  // extended i/o
+  wire x_i_o_stb;			// extended i/o strobe
+  // ser 1
+  wire ser_1_stb;			// serial line 1 strobe
+  wire [31:0] ser_1_dout;		// serial line 1 data output
+  wire ser_1_ack;			// serial line 1 acknowledge
+  wire ser_1_rcv_irq;			// serial line 1 rcv interrupt request
+  wire ser_1_xmt_irq;			// serial line 1 xmt interrupt request
 
   //--------------------------------------
   // module instances
@@ -314,6 +327,21 @@ module risc5(clk_in,
     .mouse_data(ps2_1_data)
   );
 
+  ser ser_1(
+    .clk(clk),
+    .rst(rst),
+    .stb(ser_1_stb),
+    .we(bus_we),
+    .addr(bus_addr[2]),
+    .data_in(bus_dout[31:0]),
+    .data_out(ser_1_dout[31:0]),
+    .ack(ser_1_ack),
+    .rcv_irq(ser_1_rcv_irq),
+    .xmt_irq(ser_1_xmt_irq),
+    .rxd(rs232_1_rxd),
+    .txd(rs232_1_txd)
+  );
+
   //--------------------------------------
   // address decoder (16 MB addr space)
   //--------------------------------------
@@ -347,6 +375,13 @@ module risc5(clk_in,
   assign kbd_stb =
     (i_o_stb == 1'b1 && bus_addr[5:3] == 3'b011) ? 1'b1 : 1'b0;
 
+  // extended I/O: 64 bytes (16 words) @ 0xFFFF80
+  assign x_i_o_stb =
+    (bus_stb == 1'b1 && bus_addr[23:8] == 16'hFFFF
+                     && bus_addr[7:6] == 2'b10) ? 1'b1 : 1'b0;
+  assign ser_1_stb =
+    (x_i_o_stb == 1'b1 && bus_addr[5:3] == 3'b100) ? 1'b1 : 1'b0;
+
   //--------------------------------------
   // data and acknowledge multiplexers
   //--------------------------------------
@@ -359,6 +394,7 @@ module risc5(clk_in,
     ser_0_stb ? ser_0_dout[31:0] :
     sdc_stb   ? sdc_dout[31:0]   :
     kbd_stb   ? kbd_dout[31:0]   :
+    ser_1_stb ? ser_1_dout[31:0] :
     32'h00000000;
 
   assign bus_ack =
@@ -369,6 +405,7 @@ module risc5(clk_in,
     ser_0_stb ? ser_0_ack :
     sdc_stb   ? sdc_ack   :
     kbd_stb   ? kbd_ack   :
+    ser_1_stb ? ser_1_ack :
     1'b0;
 
   //--------------------------------------
@@ -385,8 +422,8 @@ module risc5(clk_in,
   assign bus_irq[ 8] = 1'b0;
   assign bus_irq[ 7] = ser_0_rcv_irq;
   assign bus_irq[ 6] = ser_0_xmt_irq;
-  assign bus_irq[ 5] = 1'b0;
-  assign bus_irq[ 4] = 1'b0;
+  assign bus_irq[ 5] = ser_1_rcv_irq;
+  assign bus_irq[ 4] = ser_1_xmt_irq;
   assign bus_irq[ 3] = 1'b0;
   assign bus_irq[ 2] = 1'b0;
   assign bus_irq[ 1] = 1'b0;
