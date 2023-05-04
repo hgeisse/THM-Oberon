@@ -109,8 +109,21 @@ MODULE ORL;  (*Oberon boot linker/loader for RISC / AP 1.4.21 Extended Oberon*)
       END ;
       IF res = noerr THEN (*read file*)
         INC(p, DescSize); (*allocate descriptor*)
-        FOR i := 0 TO MnLength-1 DO mod.name[i] := 0X END ;
-        mod.name := name; mod.key := key; mod.refcnt := 0;
+        (* HG: the next line will not work for clearing the mod.name array,
+           as afterwards always 32 bytes are copied from the "name" source *)
+        (* FOR i := 0 TO MnLength-1 DO mod.name[i] := 0X END ; *)
+        (* instead, copy the name first *)
+        mod.name := name;
+        (* and then clear the unused part of the array *)
+        i := 0;
+        WHILE (i <= MnLength-1) & (mod.name[i] # 0X) DO
+          i := i + 1
+        END ;
+        WHILE (i <= MnLength-1) DO
+          mod.name[i] := 0X;
+          i := i + 1
+        END ;
+        mod.key := key; mod.refcnt := 0;
         mod.selected := FALSE; mod.hidden := FALSE; mod.marked := FALSE; mod.sel := FALSE;
         mod.data := p;  (*data*)
         Files.ReadInt(R, n);
