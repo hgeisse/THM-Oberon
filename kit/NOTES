@@ -4,30 +4,37 @@ This kit is based on Andreas Pirklbauer's Extended-Oberon-1.6 release.
 Dropped from AP's release:
   BootLoadDisk.Mod	bootstrap loader for disk only: not used
   BootLoadLine.Mod	bootstrap loader for serial line only: not used
-  Build.Tool		we script the build on the host system
+  Build.Tool		we script the build process on the host system
   Clipboard.Mod		not usable with a real FPGA
   Net.Mod		no net yet
   ORC.Mod		connection to RISC: we use serlink instead
   Oberon0Tool.Mod	no need to run Oberon0 outside of system setup
+  PCLink1.Mod		use PCLink2.Mod instead, see below
   PIO.Mod		we don't have a PIC interface
   RISC.Mod		this simulation is much too coarse
   SCC.Mod		no radio yet
   SmallPrograms.Mod	a few example modules in a single source file
   System1.Mod		no need for a boot file with the entire system
 
-Modified from AP's release:
-  PCLink1.Mod		use PCLink2.Mod instead: modified file transfer
+Added to AP's release:
+  Dummy.Mod		an empty module, used to load the compiler into
+			main memory while preparing to rebuild the system
+  PCLink2.Mod		replaces PCLink1.Mod: modified file transfer
 			protocol with more handshaking to avoid buffer
 			overruns, execute commands sent from host system
+
+Modified from AP's release:
   BootLoad.Mod		slightly modified protocol, file system offset
 			set to 0, origins and limits changed for 16 MB:
 			MemLim = 0FE0000H; stackOrg = 800000H;
-  ORG.Mod		change limits: maxCode = 10000; maxStrx = 3500;
   Disk.Mod		locate file system at start of disk: FSoffset = 0;
-  Oberon0.Mod		change display base address: screenbase = 0FE0000H;
-  PCLink0.Mod		implement the same protocol as in PCLink2.Mod
   Display.Mod		change display base address: base = 0FE0000H;
   Input.Mod		correct key table for German, add ALT modifier
+  ORG.Mod		change limits: maxCode = 10000; maxStrx = 3500;
+			change code for getting at contents of H register
+  ORL.Mod		correct code for clearing mod.name character array
+  Oberon0.Mod		change display base address: screenbase = 0FE0000H;
+  PCLink0.Mod		implement the same protocol as in PCLink2.Mod
   System.Tool		delete Oberon0Tool.Run and Oberon0Tool.Stop
 			change PCLink1.Run/Stop to PCLink2.Run/Stop
 
