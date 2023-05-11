@@ -1,0 +1,18 @@
+
+Files are stored on disk in units called "sectors" of 1 KB size.
+Note that a "sector" normally is called a "block". In accordance
+with the SD card specification, a "block" here denotes the storage
+unit on an SD card, which is 512 bytes. Note that with respect to
+disk storage technology, this normally is called a "sector".
+Cheers to consistent terminology! ;-)
+
+The constant "FSoffset" (file system offset) is set to 0 in our
+implementation, so that the Oberon file system starts immediately
+at the beginning of the storage area, i.e., either the disk image
+file or the raw SD card device. Sector 0 is not used; sector 1
+holds the root page of the directory.
+
+The single, flat directory is realized as a B-tree. The nodes of
+this tree are called "pages". Each page holds up to 24 directory
+entries, stored in a single sector.
+
