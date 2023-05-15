@@ -1,5 +1,5 @@
 /*
- * showobj.c -- show Extended Oberon object file (RISC5)
+ * showobj.c -- show Extended Oberon object file
  */
 
 /*
@@ -10,7 +10,7 @@
  *              code commands entries
  *              ptrrefs pvrrefs
  *              fixP fixD fixT fixM
- *              body "O".
+ *              body final "O".
  *   imports = {modname modkey} 0X.
  *   typedesc = nof {byte}.
  *   strings = nof {char}.
@@ -31,6 +31,7 @@
  *  - fixT:	Int
  *  - fixM:	Int
  *  - body:	Int
+ *  - final:	Int
  *  - "O":	Chr
  *  - modname:	Str
  *  - modkey:	Int
@@ -106,8 +107,11 @@
  * - fixM
  *   fixup chain of method tables
  * - body
- *   This is the entry point offset of the module body (in bytes,
- *   from the start of the code section of the module).
+ *   This is the entry point offset of the module's body code (in
+ *   bytes, from the start of the code section of the module).
+ * - final
+ *   This is the entry point offset of the module's final code (in
+ *   bytes, from the start of the code section of the module).
  * - "O" (a big Oh, not a zero)
  *   This allows a simple check for a corrupted object file.
  */
@@ -633,6 +637,7 @@ int main(int argc, char *argv[]) {
   Fixup *fixM;
   Fixup *fixMeth;
   unsigned int body;
+  unsigned int final;
   unsigned int mno;
   unsigned int val;
   unsigned int disp;
@@ -982,6 +987,13 @@ int main(int argc, char *argv[]) {
   /* body */
   readInt(&body);
   printf("body\t\t\t: 0x%08X\n", body);
+  /* final */
+  readInt(&final);
+  if ((int) final < 0) {
+    printf("final\t\t\t: <not present>\n");
+  } else {
+    printf("final\t\t\t: 0x%08X\n", final);
+  }
   /* now display the code */
   if (codesize != 0) {
     if (dFlag) {
