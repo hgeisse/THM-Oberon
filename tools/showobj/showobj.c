@@ -281,7 +281,7 @@ void bindump(unsigned char *bytes, unsigned int nbytes) {
  */
 
 
-#define SIGN_EXT_24(x)	((x) & 0x00800000 ? (x) | 0xFF000000 : (x))
+#define ADDR_MASK	0x00FFFFFF
 #define SIGN_EXT_20(x)	((x) & 0x00080000 ? (x) | 0xFFF00000 : (x))
 
 
@@ -309,13 +309,13 @@ static void disasmF0(unsigned int instr) {
       /* u = 0: move from any general register */
       sprintf(instrBuffer, "%-7s R%d,R%d", regOps[op], a, c);
     } else {
-      /* u = 1: move from special register */
+      /* u = 1: move to/from special register */
       if (((instr >> 28) & 1) == 0) {
-        /* v = 0: get H register */
-        sprintf(instrBuffer, "%-7s R%d", "GETH", a);
+        /* v = 0: put special register */
+        sprintf(instrBuffer, "%-7s R%d,%d", "PUTS", a, c);
       } else {
-        /* v = 1: get flag values and CPU ID */
-        sprintf(instrBuffer, "%-7s R%d", "GETF", a);
+        /* v = 1: get special register */
+        sprintf(instrBuffer, "%-7s R%d,%d", "GETS", a, c);
       }
     }
   } else {
@@ -359,7 +359,7 @@ static void disasmF1(unsigned int instr) {
       sprintf(instrBuffer, "%-7s R%d,0x%08X", regOps[op], a, im);
     } else {
       /* u = 1: shift immediate value to upper 16 bits */
-      sprintf(instrBuffer, "%-7s R%d,0x%08X", regOps[op], a, im);
+      sprintf(instrBuffer, "%-7s R%d,0x%08X", regOps[op], a, im << 16);
       instrBuffer[3] = 'H';
     }
   } else {
@@ -379,31 +379,46 @@ static void disasmF1(unsigned int instr) {
 
 static void disasmF2(unsigned int instr) {
   char *opName;
+  unsigned int mask;
   int a, b;
   int offset;
 
   if (((instr >> 29) & 1) == 0) {
     /* u = 0: load */
     if (((instr >> 28) & 1) == 0) {
-      /* v = 0: word */
-      opName = "LDW";
+      /* v = 0: word/half */
+      if ((instr & 1) == 0) {
+        opName = "LDW";
+        mask = 0x000FFFFC;
+      } else {
+        opName = "LDH";
+        mask = 0x000FFFFE;
+      }
     } else {
       /* v = 1: byte */
       opName = "LDB";
+      mask = 0x000FFFFF;
     }
   } else {
     /* u = 1: store */
     if (((instr >> 28) & 1) == 0) {
-      /* v = 0: word */
-      opName = "STW";
+      /* v = 0: word/half */
+      if ((instr & 1) == 0) {
+        opName = "STW";
+        mask = 0x000FFFFC;
+      } else {
+        opName = "STH";
+        mask = 0x000FFFFE;
+      }
     } else {
       /* v = 1: byte */
       opName = "STB";
+      mask = 0x000FFFFF;
     }
   }
   a = (instr >> 24) & 0x0F;
   b = (instr >> 20) & 0x0F;
-  offset = SIGN_EXT_20(instr & 0x000FFFFF);
+  offset = SIGN_EXT_20(instr & mask);
   sprintf(instrBuffer, "%-7s R%d,R%d,%s0x%05X",
           opName, a, b,
           offset < 0 ? "-" : "+",
@@ -456,15 +471,15 @@ static void disasmF3(unsigned int instr, unsigned int locus) {
       sprintf(instrBuffer, "C%-6s R%d", cond, c);
     }
   } else {
-    /* u = 1: branch target is pc + 1 + offset */
-    offset = SIGN_EXT_24(instr & 0x00FFFFFF);
-    target = ((locus >> 2) + 1 + offset) << 2;
+    /* u = 1: branch target is pc + 4 + offset * 4 */
+    offset = instr & 0x003FFFFF;
+    target = (locus + 4 + (offset << 2)) & ADDR_MASK;
     if (((instr >> 28) & 1) == 0) {
       /* v = 0: branch */
-      sprintf(instrBuffer, "B%-6s %08X", cond, target);
+      sprintf(instrBuffer, "B%-6s 0x%08X", cond, target);
     } else {
       /* v = 1: call */
-      sprintf(instrBuffer, "C%-6s %08X", cond, target);
+      sprintf(instrBuffer, "C%-6s 0x%08X", cond, target);
     }
   }
 }
