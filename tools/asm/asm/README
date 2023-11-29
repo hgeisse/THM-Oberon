@@ -56,6 +56,7 @@ Machine Instructions
 //
   LSL	<r1>,<r2>,<r3 or imm>	// logic shift left:  r1 <- r2 lsl (r3 or imm)
   ASR	<r1>,<r2>,<r3 or imm>	// arith shift right: r1 <- r2 asr (r3 or imm)
+  LSR	<r1>,<r2>,<r3 or imm>	// logic shift right: r1 <- r2 lsr (r3 or imm)
   ROR	<r1>,<r2>,<r3 or imm>	// rotate right:      r1 <- r2 ror (r3 or imm)
 
 //

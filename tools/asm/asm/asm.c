@@ -34,6 +34,7 @@
 
 #define OP_LSL		0x00010000
 #define OP_ASR		0x00020000
+#define OP_LSR		0x20020000
 #define OP_ROR		0x00030000
 #define OP_AND		0x00040000
 #define OP_ANN		0x00050000
@@ -983,6 +984,7 @@ Instr instrTable[] = {
   /* shift */
   { "LSL",    format_3, OP_LSL	},
   { "ASR",    format_3, OP_ASR	},
+  { "LSR",    format_3, OP_LSR	},
   { "ROR",    format_3, OP_ROR	},
   /* logic */
   { "AND",    format_3, OP_AND	},

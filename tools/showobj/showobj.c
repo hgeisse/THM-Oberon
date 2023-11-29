@@ -321,6 +321,10 @@ static void disasmF0(unsigned int instr) {
   } else {
     /* any operation other than MOV */
     sprintf(instrBuffer, "%-7s R%d,R%d,R%d", regOps[op], a, b, c);
+    if (op == 2 && ((instr >> 29) & 1) != 0) {
+      /* ASR with u = 1: LSR */
+      instrBuffer[0] = 'L';
+    } else
     if ((op == 8 || op == 9) && ((instr >> 29) & 1) != 0) {
       /* ADD/SUB with u = 1: add/subtract with carry/borrow */
       instrBuffer[3] = (op == 8) ? 'C' : 'B';
@@ -365,6 +369,10 @@ static void disasmF1(unsigned int instr) {
   } else {
     /* any operation other than MOV */
     sprintf(instrBuffer, "%-7s R%d,R%d,0x%08X", regOps[op], a, b, im);
+    if (op == 2 && ((instr >> 29) & 1) != 0) {
+      /* ASR with u = 1: LSR */
+      instrBuffer[0] = 'L';
+    } else
     if ((op == 8 || op == 9) && ((instr >> 29) & 1) != 0) {
       /* ADD/SUB with u = 1: add/subtract with carry/borrow */
       instrBuffer[3] = (op == 8) ? 'C' : 'B';
