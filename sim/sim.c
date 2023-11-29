@@ -2311,10 +2311,16 @@ static void execNextInstruction(void) {
         res = b << (d & 0x1F);
         break;
       case 0x02:
-        /* ASR */
-        mask = b & 0x80000000 ?
-                 ~(((Word) 0xFFFFFFFF) >> (d & 0x1F)) : 0x00000000;
-        res = mask | (b >> (d & 0x1F));
+        /* ASR, LSR */
+        if (u == 0) {
+          /* ASR */
+          mask = b & 0x80000000 ?
+                   ~(((Word) 0xFFFFFFFF) >> (d & 0x1F)) : 0x00000000;
+          res = mask | (b >> (d & 0x1F));
+        } else {
+          /* LSR */
+          res = b >> (d & 0x1F);
+        }
         break;
       case 0x03:
         /* ROR */
@@ -2765,6 +2771,10 @@ static void disasmF0(Word instr) {
   } else {
     /* any operation other than MOV */
     sprintf(instrBuffer, "%-7s R%d,R%d,R%d", regOps[op], a, b, c);
+    if (op == 2 && ((instr >> 29) & 1) != 0) {
+      /* ASR with u = 1: LSR */
+      instrBuffer[0] = 'L';
+    } else
     if ((op == 8 || op == 9) && ((instr >> 29) & 1) != 0) {
       /* ADD/SUB with u = 1: add/subtract with carry/borrow */
       instrBuffer[3] = (op == 8) ? 'C' : 'B';
@@ -2809,6 +2819,10 @@ static void disasmF1(Word instr) {
   } else {
     /* any operation other than MOV */
     sprintf(instrBuffer, "%-7s R%d,R%d,0x%08X", regOps[op], a, b, im);
+    if (op == 2 && ((instr >> 29) & 1) != 0) {
+      /* ASR with u = 1: LSR */
+      instrBuffer[0] = 'L';
+    } else
     if ((op == 8 || op == 9) && ((instr >> 29) & 1) != 0) {
       /* ADD/SUB with u = 1: add/subtract with carry/borrow */
       instrBuffer[3] = (op == 8) ? 'C' : 'B';
