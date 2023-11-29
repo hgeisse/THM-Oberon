@@ -454,6 +454,7 @@ module alu(clk, run, stall,
   );
 
   asr asr_0(
+    .op_unsigned(ir_u),
     .value(op1),
     .shcnt(op2[4:0]),
     .res(asr_res)

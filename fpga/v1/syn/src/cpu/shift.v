@@ -1,5 +1,5 @@
 //
-// shift.v -- the shifters (lsl, asr, ror)
+// shift.v -- the shifters (lsl, asr/lsr, ror)
 //
 
 
@@ -36,7 +36,8 @@ module lsl(value, shcnt, res);
 endmodule
 
 
-module asr(value, shcnt, res);
+module asr(op_unsigned, value, shcnt, res);
+    input op_unsigned;
     input [31:0] value;
     input [4:0] shcnt;
     output [31:0] res;
@@ -47,20 +48,21 @@ module asr(value, shcnt, res);
   always @(*) begin
     case (shcnt[1:0])
       2'b00: aux_0 = value[31:0];
-      2'b01: aux_0 = { {1{value[31]}}, value[31:1] };
-      2'b10: aux_0 = { {2{value[31]}}, value[31:2] };
-      2'b11: aux_0 = { {3{value[31]}}, value[31:3] };
+      2'b01: aux_0 = { {1{~op_unsigned & value[31]}}, value[31:1] };
+      2'b10: aux_0 = { {2{~op_unsigned & value[31]}}, value[31:2] };
+      2'b11: aux_0 = { {3{~op_unsigned & value[31]}}, value[31:3] };
     endcase
   end
   always @(*) begin
     case (shcnt[3:2])
       2'b00: aux_1 = aux_0[31:0];
-      2'b01: aux_1 = { { 4{value[31]}}, aux_0[31: 4] };
-      2'b10: aux_1 = { { 8{value[31]}}, aux_0[31: 8] };
-      2'b11: aux_1 = { {12{value[31]}}, aux_0[31:12] };
+      2'b01: aux_1 = { { 4{~op_unsigned & value[31]}}, aux_0[31: 4] };
+      2'b10: aux_1 = { { 8{~op_unsigned & value[31]}}, aux_0[31: 8] };
+      2'b11: aux_1 = { {12{~op_unsigned & value[31]}}, aux_0[31:12] };
     endcase
   end
-  assign res = ~shcnt[4] ? aux_1 : { {16{value[31]}}, aux_1[31:16] };
+  assign res = ~shcnt[4] ? aux_1 :
+                           { {16{~op_unsigned & value[31]}}, aux_1[31:16] };
 
 endmodule
 
