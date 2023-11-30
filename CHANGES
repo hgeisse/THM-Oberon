@@ -83,3 +83,13 @@
 	   on specific actions.
 	8. Add a second high precision timer.
 	9. Add a second RS232 controller.
+
+
+30-Nov-2023
+	1. Add a "logical shift right" instruction (LSR) to RISC5,
+	   complementing the "arithmetical shift right" instruction (ASR).
+	   Both formats, F0 and F1, are supported. The instruction coding
+	   is that of ASR, but with the u-bit set. Affected components:
+	   - simulator, including disassembler
+	   - toolchain, including "showobj" tool
+	   - FPGA implementation, but *not* v0
